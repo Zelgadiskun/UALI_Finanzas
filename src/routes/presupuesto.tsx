@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { MoreVertical } from "lucide-react";
 import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
 import { EmptyState } from "@/components/ffos/EmptyState";
+import { ConfirmModal } from "@/components/ffos/ConfirmModal";
+import { CategorySpendChart } from "@/components/ffos/CategorySpendChart";
 import { money, sameMonth } from "@/lib/ffos/format";
-import { useAddBudgetMutation } from "@/lib/supabase/mutations";
+import {
+  useAddBudgetMutation,
+  useDeleteBudgetMutation,
+  useUpdateBudgetMutation,
+} from "@/lib/supabase/mutations";
 import { useBudgetsQuery, useProfileQuery, useTransactionsQuery } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -93,43 +100,121 @@ function Presupuesto() {
           />
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
-          {budgets.map((b) => {
-            const pct = (b.spent / b.planned) * 100;
-            const delta = b.planned - b.spent;
-            return (
-              <article
-                key={b.id}
-                className="rounded-2xl border border-border bg-card p-4 shadow-card"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{b.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{b.group}</p>
-                  </div>
-                  <p className="shrink-0 text-sm tabular-nums">{money(b.planned)}</p>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <ProgressBar value={pct} state={barState(pct)} className="flex-1" />
-                  <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
-                    {Math.round(pct)}%
-                  </span>
-                  <span
-                    className={cn(
-                      "w-16 shrink-0 text-right text-[11px] font-medium tabular-nums",
-                      delta < 0 ? "text-danger" : "text-accent",
-                    )}
-                  >
-                    {delta < 0 ? "−" : "+"}
-                    {money(Math.abs(delta))}
-                  </span>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <>
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+            <h2 className="mb-1 text-sm font-semibold">Gasto por rubro este mes</h2>
+            <CategorySpendChart spentByCategory={spentByCategory} />
+          </div>
+          <div className="mt-4 space-y-3">
+            {budgets.map((b) => (
+              <BudgetCard key={b.id} budget={b} />
+            ))}
+          </div>
+        </>
       )}
     </main>
+  );
+}
+
+function BudgetCard({
+  budget,
+}: {
+  budget: { id: string; name: string; group: string; planned: number; spent: number };
+}) {
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [planned, setPlanned] = useState(String(budget.planned));
+  const updateMutation = useUpdateBudgetMutation();
+  const deleteMutation = useDeleteBudgetMutation();
+  const pct = (budget.spent / budget.planned) * 100;
+  const delta = budget.planned - budget.spent;
+
+  async function saveEdit() {
+    const value = Number(planned.replace(",", "."));
+    if (!value || value <= 0) {
+      toast.error("El monto planificado debe ser mayor a 0.");
+      return;
+    }
+    try {
+      await updateMutation.mutateAsync({ id: budget.id, planned: value });
+      setEditing(false);
+    } catch {
+      toast.error("No se pudo guardar. Probá de nuevo.");
+    }
+  }
+
+  return (
+    <article className="rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{budget.name}</p>
+          <p className="text-[11px] text-muted-foreground">{budget.group}</p>
+        </div>
+        {editing ? (
+          <input
+            autoFocus
+            inputMode="decimal"
+            value={planned}
+            onChange={(e) => setPlanned(e.target.value.replace(/[^\d.,]/g, ""))}
+            className="h-8 w-24 rounded-lg border border-border bg-background px-2 text-right text-sm tabular-nums"
+          />
+        ) : (
+          <p className="shrink-0 text-sm tabular-nums">{money(budget.planned)}</p>
+        )}
+        <button
+          aria-label={`Opciones de ${budget.name}`}
+          onClick={() => setEditing((v) => !v)}
+          className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
+        >
+          <MoreVertical className="size-4" strokeWidth={1.75} />
+        </button>
+      </div>
+
+      {editing ? (
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => void saveEdit()}
+            disabled={updateMutation.isPending}
+            className="h-9 flex-1 rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            Guardar
+          </button>
+          <button
+            onClick={() => setDeleting(true)}
+            className="h-9 flex-1 rounded-lg border border-border text-[13px] font-medium text-danger"
+          >
+            Eliminar
+          </button>
+        </div>
+      ) : (
+        <div className="mt-2 flex items-center gap-2">
+          <ProgressBar value={pct} state={barState(pct)} className="flex-1" />
+          <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+            {Math.round(pct)}%
+          </span>
+          <span
+            className={cn(
+              "w-16 shrink-0 text-right text-[11px] font-medium tabular-nums",
+              delta < 0 ? "text-danger" : "text-accent",
+            )}
+          >
+            {delta < 0 ? "−" : "+"}
+            {money(Math.abs(delta))}
+          </span>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={deleting}
+        title={`¿Eliminar "${budget.name}"?`}
+        description="Se borra el rubro del presupuesto. Los movimientos ya registrados no se tocan."
+        onCancel={() => setDeleting(false)}
+        onConfirm={() => {
+          deleteMutation.mutate(budget.id, { onError: () => toast.error("No se pudo eliminar.") });
+          setDeleting(false);
+        }}
+      />
+    </article>
   );
 }
 

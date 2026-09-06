@@ -57,6 +57,12 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
   --color-ring-offset-background: var(--background);
   --shadow-card: 0 1px 3px rgb(0 0 0 / 0.06);
   --shadow-fab: 0 6px 16px rgb(15 23 42 / 0.24);
@@ -96,6 +102,17 @@
   --border: oklch(0.928 0.006 264.5);
   --input: oklch(0.928 0.006 264.5);
   --ring: oklch(0.208 0.04 265.8);
+
+  /* Paleta categórica para gráficos (gasto por rubro) — validada contra
+     daltonismo, orden fijo, del skill de dataviz. No reusar --accent/
+     --danger/--warning/--info acá: esos son colores de estado reservados
+     (ingreso/gasto/alerta), no identidad de una serie arbitraria. */
+  --chart-1: #2a78d6; /* azul */
+  --chart-2: #eb6834; /* naranja */
+  --chart-3: #1baf7a; /* aqua */
+  --chart-4: #eda100; /* amarillo */
+  --chart-5: #e87ba4; /* magenta */
+  --chart-6: #008300; /* verde */
 }
 
 .dark {
@@ -130,6 +147,13 @@
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.711 0.035 256.8);
+
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
 }
 
 @layer base {

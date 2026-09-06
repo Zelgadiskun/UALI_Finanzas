@@ -11,11 +11,11 @@ import { EmptyState } from "@/components/ffos/EmptyState";
 import { useTxActions } from "@/components/ffos/useTxActions";
 import { Fab } from "@/components/ffos/Fab";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
-import { useFfos } from "@/lib/ffos/store";
 import { greeting, inMonthOffset, money, percentChange, sameMonth } from "@/lib/ffos/format";
 import {
   useBudgetsQuery,
   useCurrentUserId,
+  useDebtsQuery,
   useMemberDisplayNameMap,
   useProgressQuery,
   useTransactionsQuery,
@@ -39,12 +39,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Inicio() {
-  // La deuda sigue en el store local (demo) hasta la fase 5, que la modela
-  // de verdad (acreedor, tasa, pagos). El presupuesto ya es de la familia.
-  const state = useFfos();
   const txQuery = useTransactionsQuery();
   const progressQuery = useProgressQuery();
   const budgetsQuery = useBudgetsQuery();
+  const debtsQuery = useDebtsQuery();
   const currentUserId = useCurrentUserId();
   const memberNames = useMemberDisplayNameMap();
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
@@ -90,6 +88,18 @@ function Inicio() {
     () => [...budgets].sort((a, b) => b.spent / b.planned - a.spent / a.planned).slice(0, 3),
     [budgets],
   );
+
+  const debtRemaining = useMemo(() => {
+    const paidByDebt = new Map<string, number>();
+    for (const t of transactions) {
+      if (t.type !== "pago_deuda" || !t.debtId) continue;
+      paidByDebt.set(t.debtId, (paidByDebt.get(t.debtId) ?? 0) + t.amount);
+    }
+    return (debtsQuery.data ?? []).reduce(
+      (a, d) => a + Math.max(0, d.principal - (paidByDebt.get(d.id) ?? 0)),
+      0,
+    );
+  }, [debtsQuery.data, transactions]);
 
   const alerts = useMemo(() => {
     const list: { tone: "warning" | "danger" | "info"; text: string }[] = [];
@@ -146,7 +156,7 @@ function Inicio() {
       <section aria-label="Indicadores del mes" className="mt-4 grid grid-cols-3 gap-2">
         <KpiCard label="Ingresos" value={stats.income} delta={stats.incomeDelta} tone="accent" />
         <KpiCard label="Gastos" value={stats.expense} delta={stats.expenseDelta} tone="danger" />
-        <KpiCard label="Deuda" value={state.debtTotal} tone="warning" />
+        <KpiCard label="Deuda" value={debtRemaining} tone="warning" />
       </section>
 
       {alerts.length > 0 && (

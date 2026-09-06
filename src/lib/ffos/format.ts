@@ -58,6 +58,11 @@ export function inMonthOffset(iso: string, offset: number): boolean {
   return isSameMonth(parseISO(iso), addMonths(new Date(), offset));
 }
 
+/** Etiqueta corta ("ene", "feb") del mes `offset` meses desde hoy — para ejes de gráfico. */
+export function monthLabelOffset(offset: number): string {
+  return format(addMonths(new Date(), offset), "MMM", { locale: es });
+}
+
 /**
  * Percent change from `previous` to `current`, rounded to a whole number.
  * Returns undefined when there's no prior-period baseline to compare against

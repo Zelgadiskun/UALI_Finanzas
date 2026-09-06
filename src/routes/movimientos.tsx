@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { TransactionRow } from "@/components/ffos/TransactionRow";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
+import { MonthlyTrendChart } from "@/components/ffos/MonthlyTrendChart";
 import { Fab } from "@/components/ffos/Fab";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { RowsSkeleton } from "@/components/ffos/Skeletons";
@@ -115,6 +116,13 @@ function Movimientos() {
           </button>
         ))}
       </div>
+
+      {!txQuery.isPending && transactions.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+          <h2 className="mb-1 text-sm font-semibold">Evolución mensual</h2>
+          <MonthlyTrendChart transactions={transactions} />
+        </div>
+      )}
 
       {txQuery.isPending ? (
         <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">

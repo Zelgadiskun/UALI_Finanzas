@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Award, LogOut, Target, Users } from "lucide-react";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { FamilySheet } from "@/components/ffos/FamilySheet";
+import { GoalsSheet } from "@/components/ffos/GoalsSheet";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
 import { signOut } from "@/lib/supabase/auth";
 import {
@@ -34,8 +35,10 @@ function Mas() {
   const profile = useProfileQuery();
   const pendingQuery = usePendingInvitationsQuery();
   const pendingCount = pendingQuery.data?.length ?? 0;
+  const inFamily = !!profile.data?.family_id;
   const [progressOpen, setProgressOpen] = useState(false);
   const [familyOpen, setFamilyOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const info = levelInfo(progress?.xp ?? 0);
 
@@ -76,15 +79,19 @@ function Mas() {
           )}
         </button>
 
-        <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 opacity-60">
-          <Target className="size-5" strokeWidth={1.75} aria-hidden="true" />
+        <button
+          onClick={() => setGoalsOpen(true)}
+          disabled={!inFamily}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-card disabled:opacity-60"
+        >
+          <Target className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">Metas</span>
             <span className="block text-[12px] text-muted-foreground">
-              Disponible en la próxima fase
+              {inFamily ? "Ver y crear metas de ahorro" : "Unite a una familia primero"}
             </span>
           </span>
-        </div>
+        </button>
 
         <button
           onClick={() => setConfirmingSignOut(true)}
@@ -105,6 +112,7 @@ function Mas() {
         />
       )}
       <FamilySheet open={familyOpen} onClose={() => setFamilyOpen(false)} />
+      <GoalsSheet open={goalsOpen} onClose={() => setGoalsOpen(false)} />
       <ConfirmModal
         open={confirmingSignOut}
         title="¿Cerrar sesión?"

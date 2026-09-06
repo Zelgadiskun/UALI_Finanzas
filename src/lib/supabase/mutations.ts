@@ -72,6 +72,8 @@ export function useAddTransactionMutation() {
           occurred_on: payload.date,
           note: payload.note ?? null,
           shared: payload.shared,
+          debt_id: payload.debtId ?? null,
+          goal_id: payload.goalId ?? null,
         });
         if (error) throw error;
       });
@@ -95,6 +97,8 @@ export function useUpdateTransactionMutation() {
       if (patch.date !== undefined) dbPatch["occurred_on"] = patch.date;
       if (patch.note !== undefined) dbPatch["note"] = patch.note ?? null;
       if (patch.shared !== undefined) dbPatch["shared"] = patch.shared;
+      if (patch.debtId !== undefined) dbPatch["debt_id"] = patch.debtId ?? null;
+      if (patch.goalId !== undefined) dbPatch["goal_id"] = patch.goalId ?? null;
 
       const { error } = await supabase.from("transactions").update(dbPatch).eq("id", id);
       if (error) throw error;
@@ -248,6 +252,123 @@ export function useAddBudgetMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets", familyId] });
+    },
+  });
+}
+
+export function useUpdateBudgetMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async ({ id, planned }: { id: string; planned: number }) => {
+      const { error } = await supabase
+        .from("budgets")
+        .update({ planned_cents: Math.round(planned * 100) })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets", familyId] });
+    },
+  });
+}
+
+export function useDeleteBudgetMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("budgets").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets", familyId] });
+    },
+  });
+}
+
+export function useAddDebtMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async (payload: {
+      name: string;
+      principal: number;
+      annualRate: number | null;
+      minimum: number | null;
+    }) => {
+      if (!familyId) throw new Error("No estás en una familia todavía");
+      const { error } = await supabase.from("debts").insert({
+        family_id: familyId,
+        name: payload.name,
+        principal_cents: Math.round(payload.principal * 100),
+        annual_rate: payload.annualRate,
+        minimum_cents: payload.minimum !== null ? Math.round(payload.minimum * 100) : null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["debts", familyId] });
+    },
+  });
+}
+
+export function useDeleteDebtMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("debts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["debts", familyId] });
+    },
+  });
+}
+
+export function useAddGoalMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async (payload: { name: string; target: number; dueDate: string | null }) => {
+      if (!familyId) throw new Error("No estás en una familia todavía");
+      const { error } = await supabase.from("goals").insert({
+        family_id: familyId,
+        name: payload.name,
+        target_cents: Math.round(payload.target * 100),
+        due_date: payload.dueDate,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals", familyId] });
+    },
+  });
+}
+
+export function useDeleteGoalMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("goals").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals", familyId] });
     },
   });
 }

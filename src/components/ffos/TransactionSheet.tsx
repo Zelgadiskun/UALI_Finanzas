@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, TX_TYPES, type Transaction, type TxType } from "@/lib/ffos/types";
 import { todayISO } from "@/lib/ffos/format";
 import { useAddTransactionMutation, useUpdateTransactionMutation } from "@/lib/supabase/mutations";
-import { useProfileQuery } from "@/lib/supabase/queries";
+import { useDebtsQuery, useGoalsQuery, useProfileQuery } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -21,11 +21,17 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [shared, setShared] = useState(false);
+  const [debtId, setDebtId] = useState("");
+  const [goalId, setGoalId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const addMutation = useAddTransactionMutation();
   const updateMutation = useUpdateTransactionMutation();
   const profile = useProfileQuery();
+  const debtsQuery = useDebtsQuery();
+  const goalsQuery = useGoalsQuery();
   const inFamily = !!profile.data?.family_id;
+  const debts = debtsQuery.data ?? [];
+  const goals = goalsQuery.data ?? [];
 
   useEffect(() => {
     if (!open) return;
@@ -37,6 +43,8 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
       setDate(editing.date);
       setNote(editing.note ?? "");
       setShared(editing.shared);
+      setDebtId(editing.debtId ?? "");
+      setGoalId(editing.goalId ?? "");
     } else {
       setType("gasto");
       setCategory("");
@@ -44,6 +52,8 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
       setDate(todayISO());
       setNote("");
       setShared(false);
+      setDebtId("");
+      setGoalId("");
     }
   }, [open, editing]);
 
@@ -63,6 +73,8 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
       date,
       note: note.trim() || undefined,
       shared: inFamily ? shared : false,
+      debtId: type === "pago_deuda" && debtId ? debtId : undefined,
+      goalId: type === "ahorro" && goalId ? goalId : undefined,
     };
 
     try {
@@ -159,6 +171,40 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
             )}
           />
         </Field>
+
+        {type === "pago_deuda" && debts.length > 0 && (
+          <Field label="¿Qué deuda estás pagando? (opcional)">
+            <select
+              value={debtId}
+              onChange={(e) => setDebtId(e.target.value)}
+              className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
+            >
+              <option value="">Sin especificar</option>
+              {debts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+
+        {type === "ahorro" && goals.length > 0 && (
+          <Field label="¿Para qué meta? (opcional)">
+            <select
+              value={goalId}
+              onChange={(e) => setGoalId(e.target.value)}
+              className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
+            >
+              <option value="">Sin especificar</option>
+              {goals.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         <Field label="Nota (opcional)">
           <input

@@ -13,6 +13,18 @@ type InvitationRow = Database["public"]["Tables"]["invitations"]["Row"];
 /** Sin "spent": eso se deriva de las transacciones donde se lo necesite. */
 export type BudgetRow = { id: string; name: string; group: string; planned: number };
 
+/** Sin "remaining": se deriva restando los pago_deuda enlazados por debt_id. */
+export type DebtRow = {
+  id: string;
+  name: string;
+  principal: number;
+  annualRate: number | null;
+  minimum: number | null;
+};
+
+/** Sin "saved": se deriva sumando los ahorro enlazados por goal_id. */
+export type GoalRow = { id: string; name: string; target: number; dueDate: string | null };
+
 export const queryKeys = {
   profile: (userId: string) => ["profile", userId] as const,
   achievements: (userId: string) => ["achievements", userId] as const,
@@ -29,6 +41,8 @@ export function fromRow(row: TransactionRow): Transaction {
     date: row.occurred_on,
     note: row.note ?? undefined,
     shared: row.shared,
+    debtId: row.debt_id ?? undefined,
+    goalId: row.goal_id ?? undefined,
   };
 }
 
@@ -197,6 +211,47 @@ export function useBudgetsQuery() {
         name: b.name,
         group: b.bucket,
         planned: b.planned_cents / 100,
+      }));
+    },
+  });
+}
+
+export function useDebtsQuery() {
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["debts", familyId],
+    enabled: !!familyId,
+    queryFn: async (): Promise<DebtRow[]> => {
+      const { data, error } = await supabase.from("debts").select("*").eq("family_id", familyId!);
+      if (error) throw error;
+      return data.map((d) => ({
+        id: d.id,
+        name: d.name,
+        principal: d.principal_cents / 100,
+        annualRate: d.annual_rate,
+        minimum: d.minimum_cents !== null ? d.minimum_cents / 100 : null,
+      }));
+    },
+  });
+}
+
+export function useGoalsQuery() {
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["goals", familyId],
+    enabled: !!familyId,
+    queryFn: async (): Promise<GoalRow[]> => {
+      const { data, error } = await supabase.from("goals").select("*").eq("family_id", familyId!);
+      if (error) throw error;
+      return data.map((g) => ({
+        id: g.id,
+        name: g.name,
+        target: g.target_cents / 100,
+        dueDate: g.due_date,
       }));
     },
   });

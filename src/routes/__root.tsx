@@ -14,7 +14,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/ffos/BottomNav";
 import { Celebration } from "@/components/ffos/Celebration";
 import { AuthScreen } from "@/components/ffos/AuthScreen";
-import { hydrate } from "@/lib/ffos/store";
 import { useSession } from "@/lib/supabase/auth";
 
 function NotFoundComponent() {
@@ -119,7 +118,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    hydrate();
     const theme = window.localStorage.getItem("ffos-theme");
     if (theme === "dark") document.documentElement.classList.add("dark");
   }, []);

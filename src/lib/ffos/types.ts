@@ -25,14 +25,10 @@ export type Transaction = {
   note?: string | undefined;
   /** Visible para el resto de la familia, no solo para quien lo cargó. */
   shared: boolean;
-};
-
-export type BudgetItem = {
-  id: string;
-  name: string;
-  group: string;
-  planned: number;
-  spent: number;
+  /** A qué deuda amortiza este pago, si type es "pago_deuda". */
+  debtId?: string | undefined;
+  /** A qué meta aporta este ahorro, si type es "ahorro". */
+  goalId?: string | undefined;
 };
 
 export type Progress = {
