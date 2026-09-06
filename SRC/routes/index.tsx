@@ -12,7 +12,7 @@ import { useTxActions } from "@/components/ffos/useTxActions";
 import { Fab } from "@/components/ffos/Fab";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
 import { useFfos, useIsHydrated } from "@/lib/ffos/store";
-import { greeting, money, sameMonth } from "@/lib/ffos/format";
+import { greeting, inMonthOffset, money, percentChange, sameMonth } from "@/lib/ffos/format";
 import { cn } from "@/lib/utils";
 
 const title = "FFOS Wallet — Finanzas familiares claras";
@@ -40,15 +40,20 @@ function Inicio() {
 
   const stats = useMemo(() => {
     const month = state.transactions.filter((t) => sameMonth(t.date));
-    const sum = (type: string) =>
-      month.filter((t) => t.type === type).reduce((a, t) => a + t.amount, 0);
-    const income = sum("ingreso");
-    const expense = sum("gasto");
-    const debtPaid = sum("pago_deuda");
-    const saved = sum("ahorro");
+    const prevMonth = state.transactions.filter((t) => inMonthOffset(t.date, -1));
+    const sumBy = (list: typeof month, type: string) =>
+      list.filter((t) => t.type === type).reduce((a, t) => a + t.amount, 0);
+
+    const income = sumBy(month, "ingreso");
+    const expense = sumBy(month, "gasto");
+    const debtPaid = sumBy(month, "pago_deuda");
+    const saved = sumBy(month, "ahorro");
+
     return {
       income,
       expense,
+      incomeDelta: percentChange(income, sumBy(prevMonth, "ingreso")),
+      expenseDelta: percentChange(expense, sumBy(prevMonth, "gasto")),
       balance: income - expense - debtPaid - saved,
       free: state.monthlyIncomePlan - state.budget.reduce((a, b) => a + b.planned, 0),
     };
@@ -104,9 +109,9 @@ function Inicio() {
       </div>
 
       <section aria-label="Indicadores del mes" className="mt-4 grid grid-cols-3 gap-2">
-        <KpiCard label="Ingresos" value={stats.income} delta={12} tone="accent" />
-        <KpiCard label="Gastos" value={stats.expense} delta={-4} tone="danger" />
-        <KpiCard label="Deuda" value={state.debtTotal} delta={-2} tone="warning" />
+        <KpiCard label="Ingresos" value={stats.income} delta={stats.incomeDelta} tone="accent" />
+        <KpiCard label="Gastos" value={stats.expense} delta={stats.expenseDelta} tone="danger" />
+        <KpiCard label="Deuda" value={state.debtTotal} tone="warning" />
       </section>
 
       {alerts.length > 0 && (

@@ -1,4 +1,4 @@
-import { format, isSameMonth, isSameYear, isToday, isYesterday, parseISO } from "date-fns";
+import { addMonths, format, isSameMonth, isSameYear, isToday, isYesterday, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 /**
@@ -43,6 +43,21 @@ export function groupLabel(iso: string): string {
 
 export function sameMonth(iso: string): boolean {
   return isSameMonth(parseISO(iso), new Date());
+}
+
+/** True when `iso` falls in the calendar month `offset` months from now (negative = past). */
+export function inMonthOffset(iso: string, offset: number): boolean {
+  return isSameMonth(parseISO(iso), addMonths(new Date(), offset));
+}
+
+/**
+ * Percent change from `previous` to `current`, rounded to a whole number.
+ * Returns undefined when there's no prior-period baseline to compare against
+ * — showing "+100%" (or any number) off a zero baseline would be fabricated.
+ */
+export function percentChange(current: number, previous: number): number | undefined {
+  if (previous <= 0) return undefined;
+  return Math.round(((current - previous) / previous) * 100);
 }
 
 export function greeting(): string {
