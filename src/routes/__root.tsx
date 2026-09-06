@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import {
   Outlet,
   Link,
@@ -15,6 +16,7 @@ import { BottomNav } from "@/components/ffos/BottomNav";
 import { Celebration } from "@/components/ffos/Celebration";
 import { AuthScreen } from "@/components/ffos/AuthScreen";
 import { useSession } from "@/lib/supabase/auth";
+import { queryPersister } from "@/lib/query-persister";
 
 function NotFoundComponent() {
   return (
@@ -85,6 +87,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "FFOS Wallet" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "FFOS Wallet" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -97,7 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/icon-180.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -128,11 +137,28 @@ function RootComponent() {
     if (theme === "dark") document.documentElement.classList.add("dark");
   }, []);
 
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // Sin service worker la app sigue andando online, solo pierde el
+        // cache de shell — no hay nada que mostrarle al usuario acá.
+      });
+    }
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: queryPersister, maxAge: 1000 * 60 * 60 * 24 }}
+      // Un reload ya online no dispara el listener de reconexión de
+      // TanStack Query (ese solo reacciona a la transición offline->online),
+      // así que una mutación pausada y persistida antes de cerrar la PWA
+      // necesita este empujón explícito al restaurar.
+      onSuccess={() => queryClient.resumePausedMutations()}
+    >
       <AppGate />
       <Toaster position="top-center" richColors closeButton />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
