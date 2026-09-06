@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Award, RotateCcw, Target } from "lucide-react";
+import { Award, LogOut, Target } from "lucide-react";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
-import { resetData, useFfos } from "@/lib/ffos/store";
+import { signOut } from "@/lib/supabase/auth";
+import { useProgressQuery } from "@/lib/supabase/queries";
 import { levelInfo } from "@/lib/ffos/gamification";
 
 const title = "Más — FFOS Wallet";
-const description =
-  "Progreso, logros, metas y ajustes de la cuenta familiar de FFOS Wallet, incluido el reinicio de los datos de demo.";
+const description = "Progreso, logros, metas y ajustes de la cuenta familiar de FFOS Wallet.";
 
 export const Route = createFileRoute("/mas")({
   head: () => ({
@@ -24,10 +24,11 @@ export const Route = createFileRoute("/mas")({
 });
 
 function Mas() {
-  const state = useFfos();
+  const progressQuery = useProgressQuery();
+  const progress = progressQuery.data;
   const [progressOpen, setProgressOpen] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const info = levelInfo(state.progress.xp);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const info = levelInfo(progress?.xp ?? 0);
 
   return (
     <main className="px-4 pt-4 pb-6">
@@ -36,13 +37,14 @@ function Mas() {
       <div className="mt-4 space-y-2">
         <button
           onClick={() => setProgressOpen(true)}
-          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-card"
+          disabled={!progress}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-card disabled:opacity-60"
         >
           <Award className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">Progreso y logros</span>
             <span className="block text-[12px] text-muted-foreground">
-              Nivel {info.level} · {info.name} · {state.progress.xp} XP
+              Nivel {info.level} · {info.name} · {progress?.xp ?? 0} XP
             </span>
           </span>
         </button>
@@ -58,34 +60,32 @@ function Mas() {
         </div>
 
         <button
-          onClick={() => setConfirming(true)}
+          onClick={() => setConfirmingSignOut(true)}
           className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left text-danger shadow-card"
         >
-          <RotateCcw className="size-5" strokeWidth={1.75} aria-hidden="true" />
+          <LogOut className="size-5" strokeWidth={1.75} aria-hidden="true" />
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">Reiniciar datos de demo</span>
-            <span className="block text-[12px] text-muted-foreground">
-              Vuelve al estado inicial guardado en este dispositivo
-            </span>
+            <span className="block text-sm font-medium">Cerrar sesión</span>
           </span>
         </button>
       </div>
 
-      <ProgressSheet
-        open={progressOpen}
-        onClose={() => setProgressOpen(false)}
-        progress={state.progress}
-      />
+      {progress && (
+        <ProgressSheet
+          open={progressOpen}
+          onClose={() => setProgressOpen(false)}
+          progress={progress}
+        />
+      )}
       <ConfirmModal
-        open={confirming}
-        title="¿Reiniciar los datos?"
-        description="Se borran los movimientos y el progreso guardados en este dispositivo."
-        confirmLabel="Reiniciar"
-        onCancel={() => setConfirming(false)}
+        open={confirmingSignOut}
+        title="¿Cerrar sesión?"
+        description="Vas a tener que volver a iniciar sesión para ver tus datos."
+        confirmLabel="Cerrar sesión"
+        onCancel={() => setConfirmingSignOut(false)}
         onConfirm={() => {
-          resetData();
-          setConfirming(false);
-          toast.success("Datos reiniciados");
+          setConfirmingSignOut(false);
+          void signOut().catch(() => toast.error("No se pudo cerrar sesión. Probá de nuevo."));
         }}
       />
     </main>

@@ -11,8 +11,9 @@ import { EmptyState } from "@/components/ffos/EmptyState";
 import { useTxActions } from "@/components/ffos/useTxActions";
 import { Fab } from "@/components/ffos/Fab";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
-import { useFfos, useIsHydrated } from "@/lib/ffos/store";
+import { useFfos } from "@/lib/ffos/store";
 import { greeting, inMonthOffset, money, percentChange, sameMonth } from "@/lib/ffos/format";
+import { useProgressQuery, useTransactionsQuery } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
 const title = "FFOS Wallet — Finanzas familiares claras";
@@ -32,15 +33,20 @@ export const Route = createFileRoute("/")({
 });
 
 function Inicio() {
+  // Presupuesto/deudas siguen en el store local (demo) hasta que la fase de
+  // Familia los mueva a Supabase — son entidades familiares y todavía no
+  // existe el concepto de familia en la app.
   const state = useFfos();
-  const hydrated = useIsHydrated();
+  const txQuery = useTransactionsQuery();
+  const progressQuery = useProgressQuery();
+  const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const [progressOpen, setProgressOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const actions = useTxActions();
 
   const stats = useMemo(() => {
-    const month = state.transactions.filter((t) => sameMonth(t.date));
-    const prevMonth = state.transactions.filter((t) => inMonthOffset(t.date, -1));
+    const month = transactions.filter((t) => sameMonth(t.date));
+    const prevMonth = transactions.filter((t) => inMonthOffset(t.date, -1));
     const sumBy = (list: typeof month, type: string) =>
       list.filter((t) => t.type === type).reduce((a, t) => a + t.amount, 0);
 
@@ -57,7 +63,7 @@ function Inicio() {
       balance: income - expense - debtPaid - saved,
       free: state.monthlyIncomePlan - state.budget.reduce((a, b) => a + b.planned, 0),
     };
-  }, [state]);
+  }, [transactions, state.monthlyIncomePlan, state.budget]);
 
   const topBudget = useMemo(
     () => [...state.budget].sort((a, b) => b.spent / b.planned - a.spent / a.planned).slice(0, 3),
@@ -78,20 +84,24 @@ function Inicio() {
           text: `${b.name} está al ${Math.round((b.spent / b.planned) * 100)}% del plan`,
         });
     }
-    if (state.progress.streak >= 3)
+    const streak = progressQuery.data?.streak ?? 0;
+    if (streak >= 3)
       list.push({
         tone: "info",
-        text: `Llevás ${state.progress.streak} días registrando. Seguí la racha.`,
+        text: `Llevás ${streak} días registrando. Seguí la racha.`,
       });
     return list;
-  }, [state]);
+  }, [state.budget, progressQuery.data?.streak]);
 
   const latest = useMemo(
-    () => [...state.transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
-    [state.transactions],
+    () => [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
+    [transactions],
   );
 
-  if (!hydrated) return <DashboardSkeleton />;
+  if (txQuery.isPending || progressQuery.isPending || !progressQuery.data) {
+    return <DashboardSkeleton />;
+  }
+  const progress = progressQuery.data;
 
   return (
     <main className="px-4 pt-4 pb-6">
@@ -109,11 +119,7 @@ function Inicio() {
       </header>
 
       <div className="mt-4">
-        <LevelBar
-          xp={state.progress.xp}
-          streak={state.progress.streak}
-          onOpen={() => setProgressOpen(true)}
-        />
+        <LevelBar xp={progress.xp} streak={progress.streak} onOpen={() => setProgressOpen(true)} />
       </div>
 
       <section aria-label="Indicadores del mes" className="mt-4 grid grid-cols-3 gap-2">
@@ -217,7 +223,7 @@ function Inicio() {
       <ProgressSheet
         open={progressOpen}
         onClose={() => setProgressOpen(false)}
-        progress={state.progress}
+        progress={progress}
       />
       <Fab label="Nueva transacción" onClick={() => setSheetOpen(true)} />
       <TransactionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />

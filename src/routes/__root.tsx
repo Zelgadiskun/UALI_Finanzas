@@ -13,7 +13,9 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/ffos/BottomNav";
 import { Celebration } from "@/components/ffos/Celebration";
+import { AuthScreen } from "@/components/ffos/AuthScreen";
 import { hydrate } from "@/lib/ffos/store";
+import { useSession } from "@/lib/supabase/auth";
 
 function NotFoundComponent() {
   return (
@@ -124,13 +126,31 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AppGate />
+      <Toaster position="top-center" richColors closeButton />
+    </QueryClientProvider>
+  );
+}
+
+function AppGate() {
+  const { session, loading } = useSession();
+
+  if (loading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
+
+  return (
+    <>
       <div className="mx-auto min-h-screen w-full max-w-[430px] bg-background pb-[calc(56px+env(safe-area-inset-bottom,0px))] md:shadow-[0_0_40px_rgb(15_23_42/0.08)]">
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </div>
       <BottomNav />
       <Celebration />
-      <Toaster position="top-center" richColors closeButton />
-    </QueryClientProvider>
+    </>
   );
 }

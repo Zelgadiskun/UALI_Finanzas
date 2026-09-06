@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { BottomSheet } from "./BottomSheet";
 import { ProgressBar } from "./ProgressBar";
 import { ACHIEVEMENTS, LESSONS, levelInfo, type Lesson } from "@/lib/ffos/gamification";
-import { completeLesson } from "@/lib/ffos/store";
+import { useCompleteLessonMutation } from "@/lib/supabase/mutations";
 import type { Progress } from "@/lib/ffos/types";
 import { cn } from "@/lib/utils";
 import { Award, BookOpen, Check, Lock } from "lucide-react";
@@ -132,14 +132,19 @@ function LessonSheet({
   onClose: () => void;
 }) {
   const [picked, setPicked] = useState<number | null>(null);
+  const completeMutation = useCompleteLessonMutation();
 
-  function answer(i: number) {
+  async function answer(i: number) {
     setPicked(i);
     if (i !== lesson.answer) return;
-    const event = completeLesson(lesson.id);
-    if (event) {
-      toast.success("Lección completada", { description: `+${event.xp} XP` });
-      if (event.levelUp) toast.success("¡Subiste de nivel!");
+    if (!done) {
+      try {
+        const event = await completeMutation.mutateAsync({ lessonId: lesson.id, xp: lesson.xp });
+        toast.success("Lección completada", { description: `+${event.xp} XP` });
+        if (event.levelUp) toast.success("¡Subiste de nivel!");
+      } catch {
+        toast.error("No se pudo guardar la lección. Probá de nuevo.");
+      }
     }
     setTimeout(onClose, 900);
   }

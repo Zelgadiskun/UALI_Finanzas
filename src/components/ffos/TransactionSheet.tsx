@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { BottomSheet } from "./BottomSheet";
 import { CATEGORIES, TX_TYPES, type Transaction, type TxType } from "@/lib/ffos/types";
 import { todayISO } from "@/lib/ffos/format";
-import { addTransaction, updateTransaction } from "@/lib/ffos/store";
+import { useAddTransactionMutation, useUpdateTransactionMutation } from "@/lib/supabase/mutations";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -19,6 +19,8 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const addMutation = useAddTransactionMutation();
+  const updateMutation = useUpdateTransactionMutation();
 
   useEffect(() => {
     if (!open) return;
@@ -38,7 +40,7 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
     }
   }, [open, editing]);
 
-  function submit() {
+  async function submit() {
     const value = Number(amount.replace(",", "."));
     const next: Record<string, string> = {};
     if (!value || value <= 0) next["amount"] = "El monto debe ser mayor a 0.";
@@ -49,17 +51,21 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
 
     const payload = { type, category, amount: value, date, note: note.trim() || undefined };
 
-    if (editing) {
-      updateTransaction(editing.id, payload);
-      toast.success("Movimiento actualizado");
-    } else {
-      const event = addTransaction(payload);
-      toast.success("Movimiento guardado", { description: `+${event.xp} XP` });
-      if (event.levelUp) toast.success("¡Subiste de nivel!");
-      for (const a of event.newAchievements)
-        toast.success("Logro desbloqueado", { description: a });
+    try {
+      if (editing) {
+        await updateMutation.mutateAsync({ id: editing.id, patch: payload });
+        toast.success("Movimiento actualizado");
+      } else {
+        const event = await addMutation.mutateAsync(payload);
+        toast.success("Movimiento guardado", { description: `+${event.xp} XP` });
+        if (event.levelUp) toast.success("¡Subiste de nivel!");
+        for (const a of event.newAchievements)
+          toast.success("Logro desbloqueado", { description: a });
+      }
+      onClose();
+    } catch {
+      toast.error("No se pudo guardar. Revisá tu conexión e intentá de nuevo.");
     }
-    onClose();
   }
 
   return (
@@ -150,10 +156,11 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
         </Field>
 
         <button
-          onClick={submit}
-          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+          onClick={() => void submit()}
+          disabled={addMutation.isPending || updateMutation.isPending}
+          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          Guardar
+          {addMutation.isPending || updateMutation.isPending ? "Guardando..." : "Guardar"}
         </button>
         <button onClick={onClose} className="h-11 w-full text-sm font-medium text-muted-foreground">
           Cancelar

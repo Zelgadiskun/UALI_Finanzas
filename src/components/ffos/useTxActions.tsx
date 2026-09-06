@@ -4,7 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { BottomSheet } from "./BottomSheet";
 import { ConfirmModal } from "./ConfirmModal";
 import { TransactionSheet } from "./TransactionSheet";
-import { deleteTransaction } from "@/lib/ffos/store";
+import { useDeleteTransactionMutation } from "@/lib/supabase/mutations";
 import type { Transaction } from "@/lib/ffos/types";
 
 /** Acciones rápidas de una transacción: editar o eliminar. */
@@ -12,6 +12,7 @@ export function useTxActions() {
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [confirming, setConfirming] = useState<Transaction | null>(null);
+  const deleteMutation = useDeleteTransactionMutation();
 
   const element = (
     <>
@@ -56,9 +57,13 @@ export function useTxActions() {
         description="Esta acción no se puede deshacer."
         onCancel={() => setConfirming(null)}
         onConfirm={() => {
-          if (confirming) deleteTransaction(confirming.id);
+          if (confirming) {
+            deleteMutation.mutate(confirming.id, {
+              onError: () => toast.error("No se pudo eliminar. Probá de nuevo."),
+            });
+            toast.success("Movimiento eliminado");
+          }
           setConfirming(null);
-          toast.success("Movimiento eliminado");
         }}
       />
     </>

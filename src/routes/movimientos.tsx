@@ -7,8 +7,8 @@ import { Fab } from "@/components/ffos/Fab";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { RowsSkeleton } from "@/components/ffos/Skeletons";
 import { useTxActions } from "@/components/ffos/useTxActions";
-import { useFfos, useIsHydrated } from "@/lib/ffos/store";
 import { groupLabel, money, sameMonth } from "@/lib/ffos/format";
+import { useTransactionsQuery } from "@/lib/supabase/queries";
 import { TX_TYPES, type TxType } from "@/lib/ffos/types";
 import { cn } from "@/lib/utils";
 
@@ -31,8 +31,8 @@ export const Route = createFileRoute("/movimientos")({
 type Filter = TxType | "todos";
 
 function Movimientos() {
-  const state = useFfos();
-  const hydrated = useIsHydrated();
+  const txQuery = useTransactionsQuery();
+  const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const [filter, setFilter] = useState<Filter>("todos");
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -40,11 +40,11 @@ function Movimientos() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return state.transactions
+    return transactions
       .filter((t) => (filter === "todos" ? true : t.type === filter))
       .filter((t) => (q ? `${t.category} ${t.note ?? ""}`.toLowerCase().includes(q) : true))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [state.transactions, filter, query]);
+  }, [transactions, filter, query]);
 
   const groups = useMemo(() => {
     const map = new Map<string, typeof filtered>();
@@ -110,7 +110,7 @@ function Movimientos() {
         ))}
       </div>
 
-      {!hydrated ? (
+      {txQuery.isPending ? (
         <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
           <RowsSkeleton count={6} />
         </div>

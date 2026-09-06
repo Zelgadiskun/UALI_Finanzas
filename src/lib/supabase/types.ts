@@ -210,25 +210,21 @@ export type Database = {
           completed_at: string
           lesson_id: string
           user_id: string
+          xp: number
         }
         Insert: {
           completed_at?: string
           lesson_id: string
           user_id: string
+          xp?: number
         }
         Update: {
           completed_at?: string
           lesson_id?: string
           user_id?: string
+          xp?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "lesson_progress_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "lesson_progress_user_id_fkey"
             columns: ["user_id"]
@@ -411,6 +407,32 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
