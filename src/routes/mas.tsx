@@ -44,7 +44,7 @@ function Mas() {
 
   return (
     <main className="px-4 pt-4 pb-6">
-      <h1 className="text-xl font-bold">Más</h1>
+      <h1 className="font-display text-xl font-bold">Más</h1>
 
       <div className="mt-4 space-y-2">
         <button

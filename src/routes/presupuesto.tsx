@@ -62,7 +62,7 @@ function Presupuesto() {
   if (!inFamily) {
     return (
       <main className="px-4 pt-4 pb-6">
-        <h1 className="text-xl font-bold">Presupuesto</h1>
+        <h1 className="font-display text-xl font-bold">Presupuesto</h1>
         <div className="mt-4 rounded-2xl border border-border bg-card">
           <EmptyState
             title="El presupuesto es de la familia"
@@ -77,7 +77,7 @@ function Presupuesto() {
   return (
     <main className="px-4 pt-4 pb-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Presupuesto</h1>
+        <h1 className="font-display text-xl font-bold">Presupuesto</h1>
         <button
           onClick={() => setAddOpen((v) => !v)}
           className="text-[13px] font-semibold text-primary"
@@ -175,7 +175,7 @@ function BudgetCard({
           <button
             onClick={() => void saveEdit()}
             disabled={updateMutation.isPending}
-            className="h-9 flex-1 rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-60"
+            className="btn-3d h-9 flex-1 rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-60"
           >
             Guardar
           </button>
@@ -285,7 +285,7 @@ function AddBudgetForm({ onDone }: { onDone: () => void }) {
       <button
         onClick={() => void submit()}
         disabled={addMutation.isPending}
-        className="h-11 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+        className="btn-3d h-11 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
         {addMutation.isPending ? "Guardando..." : "Guardar rubro"}
       </button>

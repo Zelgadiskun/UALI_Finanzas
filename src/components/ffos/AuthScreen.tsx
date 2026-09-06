@@ -44,7 +44,7 @@ export function AuthScreen() {
     <div className="flex min-h-screen items-center justify-center bg-background px-5">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold">FFOS Wallet</h1>
+          <h1 className="font-display text-3xl font-bold text-primary">FFOS Wallet</h1>
           <p className="text-sm text-muted-foreground">Finanzas familiares claras</p>
         </div>
 
@@ -105,7 +105,7 @@ export function AuthScreen() {
           <button
             type="submit"
             disabled={busy}
-            className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             {busy
               ? "Un momento..."

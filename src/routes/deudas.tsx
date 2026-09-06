@@ -70,7 +70,7 @@ function Deudas() {
   if (!inFamily) {
     return (
       <main className="px-4 pt-4 pb-6">
-        <h1 className="text-xl font-bold">Deudas</h1>
+        <h1 className="font-display text-xl font-bold">Deudas</h1>
         <div className="mt-4 rounded-2xl border border-border bg-card">
           <EmptyState
             title="Las deudas son de la familia"
@@ -85,7 +85,7 @@ function Deudas() {
   return (
     <main className="px-4 pt-4 pb-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Deudas</h1>
+        <h1 className="font-display text-xl font-bold">Deudas</h1>
         <button
           onClick={() => setAddOpen((v) => !v)}
           className="text-[13px] font-semibold text-primary"
@@ -98,7 +98,9 @@ function Deudas() {
         <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
           Saldo pendiente
         </p>
-        <p className="mt-1 text-3xl font-bold tabular-nums text-warning">{money(totalRemaining)}</p>
+        <p className="mt-1 font-display text-3xl font-bold tabular-nums text-warning">
+          {money(totalRemaining)}
+        </p>
         <p className="mt-1 text-[13px] text-muted-foreground">
           Pagado hasta hoy: <span className="font-semibold text-accent">{money(totalPaid)}</span>
         </p>
@@ -315,7 +317,7 @@ function AddDebtForm({ onDone }: { onDone: () => void }) {
         onClick={() => void submit()}
         disabled={addMutation.isPending}
         className={cn(
-          "h-11 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60",
+          "btn-3d h-11 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60",
         )}
       >
         {addMutation.isPending ? "Guardando..." : "Guardar deuda"}

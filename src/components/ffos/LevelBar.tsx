@@ -23,7 +23,7 @@ export function LevelBar({
           <p className="text-[10px] font-medium tracking-wide uppercase opacity-70">
             Nivel {info.level}
           </p>
-          <p className="truncate text-base font-semibold">{info.name}</p>
+          <p className="truncate font-display text-lg font-bold">{info.name}</p>
         </div>
         <span className="flex shrink-0 items-center gap-1 rounded-full bg-[rgb(255_255_255/0.14)] px-2.5 py-1 text-xs font-semibold">
           <Flame className="size-4 text-warning" strokeWidth={1.75} aria-hidden="true" />

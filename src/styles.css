@@ -19,6 +19,9 @@
  */
 
 @theme inline {
+  --font-sans: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-display: "Baloo 2", "Nunito", -apple-system, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -34,7 +37,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-light: var(--primary-light);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-soft: var(--primary-soft);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -77,31 +81,35 @@
   --card-foreground: oklch(0.258 0.025 271.3);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.258 0.025 271.3);
-  --primary: oklch(0.208 0.04 265.8);
+  /* Marca: índigo financiero (no verde Duolingo) — ver ffos_financial_mockup. */
+  --primary: oklch(0.461 0.222 269);
   --primary-foreground: oklch(1 0 0);
-  --primary-light: oklch(0.278 0.03 256.8);
+  --primary-deep: oklch(0.358 0.175 269);
+  --primary-soft: oklch(0.941 0.023 280.6);
   --secondary: oklch(0.96 0.005 264.5);
   --secondary-foreground: oklch(0.208 0.04 265.8);
   --muted: oklch(0.96 0.005 264.5);
   --muted-foreground: oklch(0.554 0.041 257.4);
   --subtle: oklch(0.711 0.035 256.8);
-  --accent: oklch(0.723 0.192 149.6);
+  /* Verde reservado para monto positivo/ingreso — nunca la marca. */
+  --accent: oklch(0.581 0.132 156.5);
   --accent-foreground: oklch(1 0 0);
-  --accent-soft: oklch(0.962 0.043 156.7);
-  --danger: oklch(0.637 0.208 25.3);
+  --accent-soft: oklch(0.954 0.022 164.5);
+  --danger: oklch(0.578 0.191 23.3);
   --danger-foreground: oklch(1 0 0);
-  --danger-soft: oklch(0.936 0.031 17.7);
-  --warning: oklch(0.769 0.165 70.1);
+  --danger-soft: oklch(0.942 0.023 14.3);
+  --warning: oklch(0.672 0.141 73.4);
   --warning-foreground: oklch(0.208 0.04 265.8);
-  --warning-soft: oklch(0.962 0.058 95.6);
-  --info: oklch(0.623 0.188 259.8);
+  --warning-soft: oklch(0.958 0.028 84.6);
+  /* Teal — ahorro/metas, distinto del azul de marca. */
+  --info: oklch(0.589 0.099 194.8);
   --info-foreground: oklch(1 0 0);
-  --info-soft: oklch(0.932 0.032 255.6);
-  --destructive: oklch(0.637 0.208 25.3);
+  --info-soft: oklch(0.953 0.02 196.8);
+  --destructive: oklch(0.578 0.191 23.3);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.928 0.006 264.5);
   --input: oklch(0.928 0.006 264.5);
-  --ring: oklch(0.208 0.04 265.8);
+  --ring: oklch(0.461 0.222 269);
 
   /* Paleta categórica para gráficos (gasto por rubro) — validada contra
      daltonismo, orden fijo, del skill de dataviz. No reusar --accent/
@@ -122,31 +130,32 @@
   --card-foreground: oklch(0.97 0.005 275);
   --popover: oklch(0.245 0.032 265.8);
   --popover-foreground: oklch(0.97 0.005 275);
-  --primary: oklch(0.97 0.005 275);
-  --primary-foreground: oklch(0.208 0.04 265.8);
-  --primary-light: oklch(0.32 0.03 256.8);
+  --primary: oklch(0.628 0.2 272.9);
+  --primary-foreground: oklch(1 0 0);
+  --primary-deep: oklch(0.534 0.218 271.1);
+  --primary-soft: oklch(0.278 0.063 274);
   --secondary: oklch(0.3 0.03 260);
   --secondary-foreground: oklch(0.97 0.005 275);
   --muted: oklch(0.3 0.03 260);
   --muted-foreground: oklch(0.711 0.035 256.8);
   --subtle: oklch(0.62 0.03 256.8);
-  --accent: oklch(0.723 0.192 149.6);
+  --accent: oklch(0.734 0.159 156.8);
   --accent-foreground: oklch(0.19 0.03 265.8);
-  --accent-soft: oklch(0.32 0.06 156.7);
-  --danger: oklch(0.68 0.19 25.3);
+  --accent-soft: oklch(0.298 0.042 164.8);
+  --danger: oklch(0.683 0.17 20.2);
   --danger-foreground: oklch(0.19 0.03 265.8);
-  --danger-soft: oklch(0.33 0.07 17.7);
-  --warning: oklch(0.79 0.16 70.1);
+  --danger-soft: oklch(0.279 0.041 10.1);
+  --warning: oklch(0.77 0.136 81.1);
   --warning-foreground: oklch(0.19 0.03 265.8);
-  --warning-soft: oklch(0.34 0.07 95.6);
-  --info: oklch(0.66 0.17 259.8);
+  --warning-soft: oklch(0.281 0.039 81.2);
+  --info: oklch(0.743 0.115 195);
   --info-foreground: oklch(0.19 0.03 265.8);
-  --info-soft: oklch(0.32 0.07 255.6);
-  --destructive: oklch(0.68 0.19 25.3);
+  --info-soft: oklch(0.288 0.033 192.3);
+  --destructive: oklch(0.683 0.17 20.2);
   --destructive-foreground: oklch(0.19 0.03 265.8);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.711 0.035 256.8);
+  --ring: oklch(0.628 0.2 272.9);
 
   --chart-1: #3987e5;
   --chart-2: #d95926;
@@ -163,7 +172,8 @@
 
   html {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -180,6 +190,20 @@
 
 @utility safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility btn-3d {
+  box-shadow: 0 4px 0 var(--primary-deep);
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease;
+  &:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--primary-deep);
+  }
+  &:disabled {
+    box-shadow: 0 4px 0 color-mix(in oklch, var(--primary-deep) 60%, transparent);
+  }
 }
 
 @utility no-scrollbar {

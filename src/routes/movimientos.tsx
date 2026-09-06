@@ -70,7 +70,7 @@ function Movimientos() {
 
   return (
     <main className="px-4 pt-4 pb-6">
-      <h1 className="text-xl font-bold">Movimientos</h1>
+      <h1 className="font-display text-xl font-bold">Movimientos</h1>
       <p className="mt-0.5 text-[13px] text-muted-foreground">
         Neto del mes:{" "}
         <span

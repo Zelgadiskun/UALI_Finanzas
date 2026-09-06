@@ -139,13 +139,15 @@ function Inicio() {
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
           <p className="text-[12px] text-muted-foreground">{greeting()},</p>
-          <h1 className="truncate text-xl font-bold">Familia</h1>
+          <h1 className="truncate font-display text-xl font-bold">Familia</h1>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
             Balance
           </p>
-          <p className="text-2xl font-bold tabular-nums text-primary">{money(stats.balance)}</p>
+          <p className="font-display text-2xl font-bold tabular-nums text-primary">
+            {money(stats.balance)}
+          </p>
         </div>
       </header>
 

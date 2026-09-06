@@ -144,7 +144,7 @@ function NoFamilyYet() {
         <button
           onClick={() => void submitCreate()}
           disabled={createMutation.isPending}
-          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
           {createMutation.isPending ? "Creando..." : "Crear familia"}
         </button>
@@ -176,7 +176,7 @@ function NoFamilyYet() {
         <button
           onClick={() => void submitJoin()}
           disabled={joinMutation.isPending}
-          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
           {joinMutation.isPending ? "Uniéndote..." : "Unirme"}
         </button>
@@ -195,7 +195,7 @@ function NoFamilyYet() {
       <p className="text-sm text-muted-foreground">Todavía no estás conectado a ninguna familia.</p>
       <button
         onClick={() => setMode("create")}
-        className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+        className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground"
       >
         Crear familia
       </button>
@@ -260,7 +260,7 @@ function FamilyDetails({
           {family.name}
         </p>
         <div className="mt-2 flex items-center gap-2">
-          <span className="flex-1 rounded-lg bg-secondary px-3 py-2 text-center font-mono text-lg tracking-widest">
+          <span className="flex-1 rounded-lg bg-secondary px-3 py-2 text-center font-display text-lg tracking-widest">
             {family.code}
           </span>
           <button
