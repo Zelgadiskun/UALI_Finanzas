@@ -34,9 +34,46 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_allocations: {
+        Row: {
+          allocated_cents: number
+          budget_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          allocated_cents: number
+          budget_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          allocated_cents?: number
+          budget_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_allocations_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_allocations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           bucket: string
+          created_by: string | null
           family_id: string
           id: string
           name: string
@@ -44,6 +81,7 @@ export type Database = {
         }
         Insert: {
           bucket: string
+          created_by?: string | null
           family_id: string
           id?: string
           name: string
@@ -51,12 +89,20 @@ export type Database = {
         }
         Update: {
           bucket?: string
+          created_by?: string | null
           family_id?: string
           id?: string
           name?: string
           planned_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "budgets_family_id_fkey"
             columns: ["family_id"]
@@ -290,6 +336,41 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          read_at: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          read_at?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          read_at?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

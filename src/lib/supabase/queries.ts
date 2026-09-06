@@ -11,7 +11,29 @@ type FamilyRow = Database["public"]["Tables"]["families"]["Row"];
 type InvitationRow = Database["public"]["Tables"]["invitations"]["Row"];
 
 /** Sin "spent": eso se deriva de las transacciones donde se lo necesite. */
-export type BudgetRow = { id: string; name: string; group: string; planned: number };
+export type BudgetRow = {
+  id: string;
+  name: string;
+  group: string;
+  planned: number;
+  createdBy: string | null;
+};
+
+/** Cuánto le repartió el administrador de un presupuesto a cada miembro. */
+export type BudgetAllocationRow = {
+  id: string;
+  budgetId: string;
+  userId: string;
+  allocated: number;
+};
+
+export type NotificationRow = {
+  id: string;
+  type: string;
+  payload: { level: "warning" | "over"; budgetId: string; budgetName: string; memberId: string };
+  readAt: string | null;
+  createdAt: string;
+};
 
 /** Sin "remaining": se deriva restando los pago_deuda enlazados por debt_id. */
 export type DebtRow = {
@@ -247,6 +269,51 @@ export function useBudgetsQuery() {
         name: b.name,
         group: b.bucket,
         planned: b.planned_cents / 100,
+        createdBy: b.created_by,
+      }));
+    },
+  });
+}
+
+/** Reparto por miembro de cada presupuesto de la familia — sin fila acá, ese presupuesto sigue siendo compartido sin repartir. */
+export function useBudgetAllocationsQuery() {
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["budget-allocations", familyId],
+    enabled: !!familyId,
+    queryFn: async (): Promise<BudgetAllocationRow[]> => {
+      const { data, error } = await supabase.from("budget_allocations").select("*");
+      if (error) throw error;
+      return data.map((a) => ({
+        id: a.id,
+        budgetId: a.budget_id,
+        userId: a.user_id,
+        allocated: a.allocated_cents / 100,
+      }));
+    },
+  });
+}
+
+export function useNotificationsQuery() {
+  const userId = useCurrentUserId();
+  return useQuery({
+    queryKey: userId ? ["notifications", userId] : ["notifications", "anon"],
+    enabled: !!userId,
+    queryFn: async (): Promise<NotificationRow[]> => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .is("read_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data.map((n) => ({
+        id: n.id,
+        type: n.type,
+        payload: n.payload as NotificationRow["payload"],
+        readAt: n.read_at,
+        createdAt: n.created_at,
       }));
     },
   });

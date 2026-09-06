@@ -1,24 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ChevronRight, Info } from "lucide-react";
+import { AlertTriangle, ChevronRight, Info, X } from "lucide-react";
 import { KpiCard } from "@/components/ffos/KpiCard";
 import { LevelBar } from "@/components/ffos/LevelBar";
 import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
 import { TransactionRow } from "@/components/ffos/TransactionRow";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
+import { TodayLessonCard } from "@/components/ffos/TodayLessonCard";
+import { LessonSheet } from "@/components/ffos/LessonSheet";
 import { DashboardSkeleton } from "@/components/ffos/Skeletons";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { useTxActions } from "@/components/ffos/useTxActions";
 import { Fab } from "@/components/ffos/Fab";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
 import { greeting, inMonthOffset, money, percentChange, sameMonth } from "@/lib/ffos/format";
+import { levelInfo } from "@/lib/ffos/gamification";
+import { useMarkNotificationReadMutation } from "@/lib/supabase/mutations";
 import {
   useBudgetsQuery,
   useCurrentUserId,
   useDebtsQuery,
+  useLessonsQuery,
   useMemberDisplayNameMap,
+  useNotificationsQuery,
   useProgressQuery,
   useTransactionsQuery,
+  type LessonRow,
 } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
@@ -43,12 +50,25 @@ function Inicio() {
   const progressQuery = useProgressQuery();
   const budgetsQuery = useBudgetsQuery();
   const debtsQuery = useDebtsQuery();
+  const notificationsQuery = useNotificationsQuery();
+  const markReadMutation = useMarkNotificationReadMutation();
+  const lessonsQuery = useLessonsQuery();
   const currentUserId = useCurrentUserId();
   const memberNames = useMemberDisplayNameMap();
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const [progressOpen, setProgressOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [openLesson, setOpenLesson] = useState<LessonRow | null>(null);
   const actions = useTxActions();
+
+  const nextLesson = useMemo(() => {
+    const xp = progressQuery.data?.xp ?? 0;
+    const done = progressQuery.data?.lessonsDone ?? [];
+    const level = levelInfo(xp).level;
+    return (
+      (lessonsQuery.data ?? []).find((l) => l.minLevel <= level && !done.includes(l.id)) ?? null
+    );
+  }, [lessonsQuery.data, progressQuery.data]);
 
   const stats = useMemo(() => {
     const month = transactions.filter((t) => sameMonth(t.date));
@@ -102,7 +122,26 @@ function Inicio() {
   }, [debtsQuery.data, transactions]);
 
   const alerts = useMemo(() => {
-    const list: { tone: "warning" | "danger" | "info"; text: string }[] = [];
+    const list: { tone: "warning" | "danger" | "info"; text: string; notificationId?: string }[] =
+      [];
+
+    // Avisos del servidor primero: son sobre el reparto de OTRO miembro
+    // cruzando su cupo — más accionables para quien administra el
+    // presupuesto que el aviso genérico de abajo sobre el total familiar.
+    for (const n of notificationsQuery.data ?? []) {
+      if (n.type !== "budget_alert") continue;
+      const memberName = memberNames[n.payload.memberId] ?? "Alguien";
+      const text =
+        n.payload.level === "over"
+          ? `${memberName} superó su reparto de ${n.payload.budgetName}`
+          : `${memberName} está por agotar su reparto de ${n.payload.budgetName}`;
+      list.push({
+        tone: n.payload.level === "over" ? "danger" : "warning",
+        text,
+        notificationId: n.id,
+      });
+    }
+
     for (const b of budgets) {
       if (b.spent > b.planned)
         list.push({
@@ -122,7 +161,7 @@ function Inicio() {
         text: `Llevás ${streak} días registrando. Seguí la racha.`,
       });
     return list;
-  }, [budgets, progressQuery.data?.streak]);
+  }, [budgets, progressQuery.data?.streak, notificationsQuery.data, memberNames]);
 
   const latest = useMemo(
     () => [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
@@ -155,6 +194,12 @@ function Inicio() {
         <LevelBar xp={progress.xp} streak={progress.streak} onOpen={() => setProgressOpen(true)} />
       </div>
 
+      {nextLesson && (
+        <div className="mt-3">
+          <TodayLessonCard lesson={nextLesson} onOpen={() => setOpenLesson(nextLesson)} />
+        </div>
+      )}
+
       <section aria-label="Indicadores del mes" className="mt-4 grid grid-cols-3 gap-2">
         <KpiCard label="Ingresos" value={stats.income} delta={stats.incomeDelta} tone="accent" />
         <KpiCard label="Gastos" value={stats.expense} delta={stats.expenseDelta} tone="danger" />
@@ -165,7 +210,7 @@ function Inicio() {
         <section aria-label="Alertas" className="mt-4 space-y-2">
           {alerts.slice(0, 2).map((a) => (
             <div
-              key={a.text}
+              key={a.notificationId ?? a.text}
               className={cn(
                 "flex items-start gap-2 rounded-xl px-3 py-2.5 text-[13px]",
                 a.tone === "danger" && "bg-danger-soft text-danger",
@@ -182,7 +227,16 @@ function Inicio() {
                   aria-hidden="true"
                 />
               )}
-              <span className="min-w-0">{a.text}</span>
+              <span className="min-w-0 flex-1">{a.text}</span>
+              {a.notificationId && (
+                <button
+                  aria-label="Descartar aviso"
+                  onClick={() => markReadMutation.mutate(a.notificationId!)}
+                  className="shrink-0 opacity-60 hover:opacity-100"
+                >
+                  <X className="size-3.5" strokeWidth={2} />
+                </button>
+              )}
             </div>
           ))}
           {alerts.length > 2 && (
@@ -268,6 +322,9 @@ function Inicio() {
       />
       <Fab label="Nueva transacción" onClick={() => setSheetOpen(true)} />
       <TransactionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      {openLesson && (
+        <LessonSheet lesson={openLesson} done={false} onClose={() => setOpenLesson(null)} />
+      )}
       {actions.element}
     </main>
   );

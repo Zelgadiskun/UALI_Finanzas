@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Users } from "lucide-react";
 import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
@@ -8,10 +8,20 @@ import { CategorySpendChart } from "@/components/ffos/CategorySpendChart";
 import { money, sameMonth } from "@/lib/ffos/format";
 import {
   useAddBudgetMutation,
+  useDeleteBudgetAllocationMutation,
   useDeleteBudgetMutation,
+  useSetBudgetAllocationMutation,
   useUpdateBudgetMutation,
 } from "@/lib/supabase/mutations";
-import { useBudgetsQuery, useProfileQuery, useTransactionsQuery } from "@/lib/supabase/queries";
+import {
+  useBudgetAllocationsQuery,
+  useBudgetsQuery,
+  useCurrentUserId,
+  useFamilyMembersQuery,
+  useProfileQuery,
+  useTransactionsQuery,
+  type BudgetAllocationRow,
+} from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -38,19 +48,37 @@ function Presupuesto() {
   const inFamily = !!profile.data?.family_id;
   const budgetsQuery = useBudgetsQuery();
   const txQuery = useTransactionsQuery();
+  const allocationsQuery = useBudgetAllocationsQuery();
+  const membersQuery = useFamilyMembersQuery();
+  const currentUserId = useCurrentUserId();
   const [addOpen, setAddOpen] = useState(false);
 
   // Lo gastado se deriva de los movimientos del mes por categoría — nunca
   // se guarda como columna, así no puede desincronizarse (el bug que se
-  // arregló en las tarjetas del panel de Inicio).
-  const spentByCategory = useMemo(() => {
-    const map = new Map<string, number>();
+  // arregló en las tarjetas del panel de Inicio). El desglose por miembro
+  // usa la misma fuente, solo agrupada también por user_id.
+  const { spentByCategory, spentByCategoryAndUser } = useMemo(() => {
+    const byCategory = new Map<string, number>();
+    const byCategoryAndUser = new Map<string, Map<string, number>>();
     for (const t of txQuery.data ?? []) {
       if (t.type !== "gasto" || !sameMonth(t.date)) continue;
-      map.set(t.category, (map.get(t.category) ?? 0) + t.amount);
+      byCategory.set(t.category, (byCategory.get(t.category) ?? 0) + t.amount);
+      const perUser = byCategoryAndUser.get(t.category) ?? new Map<string, number>();
+      perUser.set(t.userId, (perUser.get(t.userId) ?? 0) + t.amount);
+      byCategoryAndUser.set(t.category, perUser);
+    }
+    return { spentByCategory: byCategory, spentByCategoryAndUser: byCategoryAndUser };
+  }, [txQuery.data]);
+
+  const allocationsByBudget = useMemo(() => {
+    const map = new Map<string, BudgetAllocationRow[]>();
+    for (const a of allocationsQuery.data ?? []) {
+      const list = map.get(a.budgetId) ?? [];
+      list.push(a);
+      map.set(a.budgetId, list);
     }
     return map;
-  }, [txQuery.data]);
+  }, [allocationsQuery.data]);
 
   const budgets = (budgetsQuery.data ?? []).map((b) => ({
     ...b,
@@ -107,7 +135,14 @@ function Presupuesto() {
           </div>
           <div className="mt-4 space-y-3">
             {budgets.map((b) => (
-              <BudgetCard key={b.id} budget={b} />
+              <BudgetCard
+                key={b.id}
+                budget={b}
+                isAdmin={!!currentUserId && b.createdBy === currentUserId}
+                allocations={allocationsByBudget.get(b.id) ?? []}
+                members={membersQuery.data ?? []}
+                spentByUser={spentByCategoryAndUser.get(b.name) ?? new Map()}
+              />
             ))}
           </div>
         </>
@@ -118,10 +153,19 @@ function Presupuesto() {
 
 function BudgetCard({
   budget,
+  isAdmin,
+  allocations,
+  members,
+  spentByUser,
 }: {
   budget: { id: string; name: string; group: string; planned: number; spent: number };
+  isAdmin: boolean;
+  allocations: BudgetAllocationRow[];
+  members: { id: string; display_name: string }[];
+  spentByUser: Map<string, number>;
 }) {
   const [editing, setEditing] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [planned, setPlanned] = useState(String(budget.planned));
   const updateMutation = useUpdateBudgetMutation();
@@ -161,13 +205,15 @@ function BudgetCard({
         ) : (
           <p className="shrink-0 text-sm tabular-nums">{money(budget.planned)}</p>
         )}
-        <button
-          aria-label={`Opciones de ${budget.name}`}
-          onClick={() => setEditing((v) => !v)}
-          className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
-        >
-          <MoreVertical className="size-4" strokeWidth={1.75} />
-        </button>
+        {isAdmin && (
+          <button
+            aria-label={`Opciones de ${budget.name}`}
+            onClick={() => setEditing((v) => !v)}
+            className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
+          >
+            <MoreVertical className="size-4" strokeWidth={1.75} />
+          </button>
+        )}
       </div>
 
       {editing ? (
@@ -204,6 +250,46 @@ function BudgetCard({
         </div>
       )}
 
+      {allocations.length > 0 && (
+        <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+          {allocations.map((a) => {
+            const member = members.find((m) => m.id === a.userId);
+            const memberSpent = spentByUser.get(a.userId) ?? 0;
+            const memberPct = a.allocated > 0 ? (memberSpent / a.allocated) * 100 : 0;
+            return (
+              <li key={a.id} className="flex items-center gap-2 text-[12px]">
+                <span className="w-20 shrink-0 truncate text-muted-foreground">
+                  {member?.display_name ?? "…"}
+                </span>
+                <ProgressBar
+                  value={memberPct}
+                  state={barState(memberPct)}
+                  height={6}
+                  className="flex-1"
+                />
+                <span className="w-24 shrink-0 text-right tabular-nums text-muted-foreground">
+                  {money(memberSpent)} / {money(a.allocated)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {isAdmin && (
+        <button
+          onClick={() => setSharing((v) => !v)}
+          className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-primary"
+        >
+          <Users className="size-3.5" strokeWidth={2} aria-hidden="true" />
+          {sharing ? "Ocultar reparto" : "Repartir entre miembros"}
+        </button>
+      )}
+
+      {sharing && (
+        <AllocationEditor budgetId={budget.id} members={members} allocations={allocations} />
+      )}
+
       <ConfirmModal
         open={deleting}
         title={`¿Eliminar "${budget.name}"?`}
@@ -215,6 +301,73 @@ function BudgetCard({
         }}
       />
     </article>
+  );
+}
+
+function AllocationEditor({
+  budgetId,
+  members,
+  allocations,
+}: {
+  budgetId: string;
+  members: { id: string; display_name: string }[];
+  allocations: BudgetAllocationRow[];
+}) {
+  const setMutation = useSetBudgetAllocationMutation();
+  const deleteMutation = useDeleteBudgetAllocationMutation();
+
+  return (
+    <div className="mt-3 space-y-2 rounded-xl bg-secondary p-3">
+      <p className="text-[11px] text-muted-foreground">
+        Cuánto de este presupuesto le corresponde a cada quien. Quien lo supere, te avisa a vos.
+      </p>
+      {members.map((m) => {
+        const existing = allocations.find((a) => a.userId === m.id);
+        return (
+          <AllocationRow
+            key={m.id}
+            name={m.display_name}
+            initial={existing?.allocated ?? 0}
+            onSave={(value) => {
+              if (value <= 0) {
+                if (existing) deleteMutation.mutate(existing.id);
+                return;
+              }
+              setMutation.mutate(
+                { budgetId, userId: m.id, allocated: value },
+                { onError: () => toast.error("No se pudo guardar el reparto.") },
+              );
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function AllocationRow({
+  name,
+  initial,
+  onSave,
+}: {
+  name: string;
+  initial: number;
+  onSave: (value: number) => void;
+}) {
+  const [value, setValue] = useState(initial > 0 ? String(initial) : "");
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex-1 truncate text-[13px]">{name}</span>
+      <input
+        inputMode="decimal"
+        value={value}
+        placeholder="0.00"
+        onChange={(e) => setValue(e.target.value.replace(/[^\d.,]/g, ""))}
+        onBlur={() => onSave(Number(value.replace(",", ".")) || 0)}
+        className="h-9 w-24 rounded-lg border border-border bg-background px-2 text-right text-sm tabular-nums"
+      />
+    </div>
   );
 }
 

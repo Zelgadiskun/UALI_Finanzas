@@ -293,6 +293,70 @@ export function useDeleteBudgetMutation() {
   });
 }
 
+/** Solo el administrador del presupuesto (created_by) puede llamar esto — RLS lo hace cumplir igual, esto solo evita el viaje al servidor para descubrirlo. */
+export function useSetBudgetAllocationMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async ({
+      budgetId,
+      userId,
+      allocated,
+    }: {
+      budgetId: string;
+      userId: string;
+      allocated: number;
+    }) => {
+      const { error } = await supabase
+        .from("budget_allocations")
+        .upsert(
+          { budget_id: budgetId, user_id: userId, allocated_cents: Math.round(allocated * 100) },
+          { onConflict: "budget_id,user_id" },
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budget-allocations", familyId] });
+    },
+  });
+}
+
+export function useDeleteBudgetAllocationMutation() {
+  const queryClient = useQueryClient();
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("budget_allocations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budget-allocations", familyId] });
+    },
+  });
+}
+
+export function useMarkNotificationReadMutation() {
+  const queryClient = useQueryClient();
+  const userId = useCurrentUserId();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (userId) queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    },
+  });
+}
+
 export function useAddDebtMutation() {
   const queryClient = useQueryClient();
   const profile = useProfileQuery();
