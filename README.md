@@ -24,6 +24,15 @@ bun run build    # build estático en .output/public — ver "Despliegue"
 bun run lint
 ```
 
+## Tests
+
+```sh
+bun run test       # Vitest — funciones puras (format, gamification) y componentes de UI
+bun run test:e2e   # Playwright — build real servido como estático, contra un Chromium real
+```
+
+`test:e2e` corre `bun run build` primero: valida el artefacto que de verdad se despliega (fallback de SPA vía `public/_redirects`, manifest, service worker), no el servidor de desarrollo.
+
 ## Despliegue
 
 La app corre en modo SPA: no hay funciones de servidor ni rutas de API, todo habla directo con Supabase desde el cliente. `bun run build` prerenderiza un único shell HTML (`.output/public/index.html`) que el router hidrata y desde el que navega — el resultado es un sitio estático común y corriente, sin proceso Node que mantener en producción. Esto es a propósito: es el mismo artefacto que más adelante empaqueta Capacitor para las apps nativas.
@@ -47,7 +56,8 @@ App familiar multiusuario con cuentas reales, sincronización y RLS en Supabase,
 src/
   components/ffos/   componentes específicos del producto (KpiCard, LevelBar, TransactionSheet...)
   components/ui/     shadcn/ui, no se edita a mano — se regenera con su CLI
-  lib/ffos/          store, tipos, formato y motor de gamificación
+  lib/ffos/          tipos, formato y motor de gamificación (niveles, logros)
+  lib/supabase/      cliente, auth, queries y mutations — único acceso a datos, todo vía Supabase
   routes/            una ruta por archivo (TanStack Router file-based)
 ```
 
