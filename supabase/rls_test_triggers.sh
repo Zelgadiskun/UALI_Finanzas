@@ -58,11 +58,14 @@ CHEAT=$(curl -sS -X PATCH "$URL/rest/v1/profiles?id=eq.$UID_" \
   -d '{"xp":999999}')
 check "el cliente NO puede pisar xp a mano (bloqueado por grant de columna)" "$(echo "$CHEAT" | grep -q '"xp":999999' && echo 0 || echo 1)"
 
-# Completar una lección (id de texto, sin FK a la tabla lessons todavía).
+# Completar una lección — el xp ya no lo manda el cliente, sale de lessons.xp.
+INTRO_ID=$(curl -sS "$URL/rest/v1/lessons?slug=eq.intro&select=id" -H "apikey: $ANON" -H "Authorization: Bearer $TOKEN" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+check "lección 'intro' existe en el catálogo" "$([ -n "$INTRO_ID" ] && echo 1 || echo 0)"
+
 curl -sS -X POST "$URL/rest/v1/lesson_progress" \
   -H "apikey: $ANON" -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"user_id\":\"$UID_\",\"lesson_id\":\"intro\",\"xp\":25}" > /dev/null
+  -d "{\"user_id\":\"$UID_\",\"lesson_id\":\"$INTRO_ID\"}" > /dev/null
 
 AFTER3=$(curl -sS "$URL/rest/v1/profiles?id=eq.$UID_&select=xp" -H "apikey: $ANON" -H "Authorization: Bearer $TOKEN")
 check "xp subió a 40 (15+25) tras completar la lección" "$(echo "$AFTER3" | grep -q '"xp":40' && echo 1 || echo 0)"

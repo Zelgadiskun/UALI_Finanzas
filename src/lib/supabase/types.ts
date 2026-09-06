@@ -216,21 +216,25 @@ export type Database = {
           completed_at: string
           lesson_id: string
           user_id: string
-          xp: number
         }
         Insert: {
           completed_at?: string
           lesson_id: string
           user_id: string
-          xp?: number
         }
         Update: {
           completed_at?: string
           lesson_id?: string
           user_id?: string
-          xp?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_progress_user_id_fkey"
             columns: ["user_id"]
@@ -249,6 +253,7 @@ export type Database = {
           min_level: number
           options: Json
           question: string
+          slug: string
           title: string
           unit_id: string
           xp: number
@@ -261,6 +266,7 @@ export type Database = {
           min_level?: number
           options: Json
           question: string
+          slug: string
           title: string
           unit_id: string
           xp?: number
@@ -273,6 +279,7 @@ export type Database = {
           min_level?: number
           options?: Json
           question?: string
+          slug?: string
           title?: string
           unit_id?: string
           xp?: number

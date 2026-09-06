@@ -129,12 +129,14 @@ export function useCompleteLessonMutation() {
   const userId = useCurrentUserId();
 
   return useMutation({
-    mutationFn: async ({ lessonId, xp }: { lessonId: string; xp: number }): Promise<GameEvent> => {
+    mutationFn: async ({ lessonId }: { lessonId: string }): Promise<GameEvent> => {
       if (!userId) throw new Error("No hay sesión activa");
+      // El xp no lo manda el cliente: lo calcula el trigger del servidor
+      // leyendo lessons.xp (misma lógica que apply_transaction_rewards).
       return captureRewardEvent(queryClient, userId, async () => {
         const { error } = await supabase
           .from("lesson_progress")
-          .insert({ user_id: userId, lesson_id: lessonId, xp });
+          .insert({ user_id: userId, lesson_id: lessonId });
         if (error) throw error;
       });
     },

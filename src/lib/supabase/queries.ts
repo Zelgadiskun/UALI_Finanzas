@@ -25,6 +25,17 @@ export type DebtRow = {
 /** Sin "saved": se deriva sumando los ahorro enlazados por goal_id. */
 export type GoalRow = { id: string; name: string; target: number; dueDate: string | null };
 
+export type LessonRow = {
+  id: string;
+  minLevel: number;
+  title: string;
+  body: string;
+  question: string;
+  options: string[];
+  answer: number;
+  xp: number;
+};
+
 export const queryKeys = {
   profile: (userId: string) => ["profile", userId] as const,
   achievements: (userId: string) => ["achievements", userId] as const,
@@ -81,6 +92,31 @@ export function useAchievementsQuery() {
         .eq("user_id", userId!);
       if (error) throw error;
       return data.map((row) => row.achievement_id);
+    },
+  });
+}
+
+/** Contenido editable: viene de la tabla `lessons`, no de un array hardcodeado. */
+export function useLessonsQuery() {
+  return useQuery({
+    queryKey: ["lessons"],
+    staleTime: 1000 * 60 * 60,
+    queryFn: async (): Promise<LessonRow[]> => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("*")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data.map((l) => ({
+        id: l.id,
+        minLevel: l.min_level,
+        title: l.title,
+        body: l.body,
+        question: l.question,
+        options: l.options as string[],
+        answer: l.answer,
+        xp: l.xp,
+      }));
     },
   });
 }

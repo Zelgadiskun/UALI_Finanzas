@@ -2,8 +2,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { BottomSheet } from "./BottomSheet";
 import { ProgressBar } from "./ProgressBar";
-import { ACHIEVEMENTS, LESSONS, levelInfo, type Lesson } from "@/lib/ffos/gamification";
+import { ACHIEVEMENTS, levelInfo } from "@/lib/ffos/gamification";
 import { useCompleteLessonMutation } from "@/lib/supabase/mutations";
+import { useLessonsQuery, type LessonRow } from "@/lib/supabase/queries";
 import type { Progress } from "@/lib/ffos/types";
 import { cn } from "@/lib/utils";
 import { Award, BookOpen, Check, Lock } from "lucide-react";
@@ -17,8 +18,10 @@ export function ProgressSheet({
   onClose: () => void;
   progress: Progress;
 }) {
-  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [lesson, setLesson] = useState<LessonRow | null>(null);
   const info = levelInfo(progress.xp);
+  const lessonsQuery = useLessonsQuery();
+  const lessons = lessonsQuery.data ?? [];
 
   return (
     <>
@@ -42,7 +45,7 @@ export function ProgressSheet({
               Ruta de aprendizaje
             </h3>
             <ul className="space-y-2">
-              {LESSONS.map((l) => {
+              {lessons.map((l) => {
                 const done = progress.lessonsDone.includes(l.id);
                 const locked = info.level < l.minLevel;
                 return (
@@ -78,7 +81,7 @@ export function ProgressSheet({
                             ? `Se desbloquea en nivel ${l.minLevel}`
                             : done
                               ? "Completada"
-                              : "30 segundos · +25 XP"}
+                              : `30 segundos · +${l.xp} XP`}
                         </span>
                       </span>
                     </button>
@@ -127,7 +130,7 @@ function LessonSheet({
   done,
   onClose,
 }: {
-  lesson: Lesson;
+  lesson: LessonRow;
   done: boolean;
   onClose: () => void;
 }) {
@@ -139,7 +142,7 @@ function LessonSheet({
     if (i !== lesson.answer) return;
     if (!done) {
       try {
-        const event = await completeMutation.mutateAsync({ lessonId: lesson.id, xp: lesson.xp });
+        const event = await completeMutation.mutateAsync({ lessonId: lesson.id });
         toast.success("Lección completada", { description: `+${event.xp} XP` });
         if (event.levelUp) toast.success("¡Subiste de nivel!");
       } catch {
