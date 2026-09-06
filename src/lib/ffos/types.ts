@@ -16,12 +16,15 @@ export const CATEGORIES: Record<TxType, string[]> = {
 
 export type Transaction = {
   id: string;
+  userId: string;
   type: TxType;
   category: string;
   amount: number;
   /** ISO yyyy-MM-dd */
   date: string;
   note?: string | undefined;
+  /** Visible para el resto de la familia, no solo para quien lo cargó. */
+  shared: boolean;
 };
 
 export type BudgetItem = {
@@ -39,12 +42,4 @@ export type Progress = {
   lastActive: string | null;
   lessonsDone: string[];
   achievements: string[];
-};
-
-export type FfosState = {
-  transactions: Transaction[];
-  budget: BudgetItem[];
-  debtTotal: number;
-  monthlyIncomePlan: number;
-  progress: Progress;
 };

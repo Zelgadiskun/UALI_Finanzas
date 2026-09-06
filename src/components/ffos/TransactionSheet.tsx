@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BottomSheet } from "./BottomSheet";
+import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, TX_TYPES, type Transaction, type TxType } from "@/lib/ffos/types";
 import { todayISO } from "@/lib/ffos/format";
 import { useAddTransactionMutation, useUpdateTransactionMutation } from "@/lib/supabase/mutations";
+import { useProfileQuery } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,9 +20,12 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
+  const [shared, setShared] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const addMutation = useAddTransactionMutation();
   const updateMutation = useUpdateTransactionMutation();
+  const profile = useProfileQuery();
+  const inFamily = !!profile.data?.family_id;
 
   useEffect(() => {
     if (!open) return;
@@ -31,12 +36,14 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
       setAmount(String(editing.amount));
       setDate(editing.date);
       setNote(editing.note ?? "");
+      setShared(editing.shared);
     } else {
       setType("gasto");
       setCategory("");
       setAmount("");
       setDate(todayISO());
       setNote("");
+      setShared(false);
     }
   }, [open, editing]);
 
@@ -49,7 +56,14 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    const payload = { type, category, amount: value, date, note: note.trim() || undefined };
+    const payload = {
+      type,
+      category,
+      amount: value,
+      date,
+      note: note.trim() || undefined,
+      shared: inFamily ? shared : false,
+    };
 
     try {
       if (editing) {
@@ -154,6 +168,18 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
             className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
           />
         </Field>
+
+        {inFamily && (
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3.5 py-3">
+            <span className="min-w-0 pr-3">
+              <span className="block text-sm font-medium">Compartir con la familia</span>
+              <span className="block text-[12px] text-muted-foreground">
+                {shared ? "El resto de la familia lo va a ver" : "Solo vos lo vas a ver"}
+              </span>
+            </span>
+            <Switch checked={shared} onCheckedChange={setShared} />
+          </div>
+        )}
 
         <button
           onClick={() => void submit()}

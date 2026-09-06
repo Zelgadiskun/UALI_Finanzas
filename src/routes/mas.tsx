@@ -1,11 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Award, LogOut, Target } from "lucide-react";
+import { Award, LogOut, Target, Users } from "lucide-react";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
+import { FamilySheet } from "@/components/ffos/FamilySheet";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
 import { signOut } from "@/lib/supabase/auth";
-import { useProgressQuery } from "@/lib/supabase/queries";
+import {
+  useProgressQuery,
+  useProfileQuery,
+  usePendingInvitationsQuery,
+} from "@/lib/supabase/queries";
 import { levelInfo } from "@/lib/ffos/gamification";
 
 const title = "Más — FFOS Wallet";
@@ -26,7 +31,11 @@ export const Route = createFileRoute("/mas")({
 function Mas() {
   const progressQuery = useProgressQuery();
   const progress = progressQuery.data;
+  const profile = useProfileQuery();
+  const pendingQuery = usePendingInvitationsQuery();
+  const pendingCount = pendingQuery.data?.length ?? 0;
   const [progressOpen, setProgressOpen] = useState(false);
+  const [familyOpen, setFamilyOpen] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const info = levelInfo(progress?.xp ?? 0);
 
@@ -47,6 +56,24 @@ function Mas() {
               Nivel {info.level} · {info.name} · {progress?.xp ?? 0} XP
             </span>
           </span>
+        </button>
+
+        <button
+          onClick={() => setFamilyOpen(true)}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-card"
+        >
+          <Users className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">Familia</span>
+            <span className="block text-[12px] text-muted-foreground">
+              {profile.data?.family_id ? "Ver miembros e invitar" : "Crear o unirte a una familia"}
+            </span>
+          </span>
+          {pendingCount > 0 && (
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-danger text-[11px] font-bold text-danger-foreground">
+              {pendingCount}
+            </span>
+          )}
         </button>
 
         <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 opacity-60">
@@ -77,6 +104,7 @@ function Mas() {
           progress={progress}
         />
       )}
+      <FamilySheet open={familyOpen} onClose={() => setFamilyOpen(false)} />
       <ConfirmModal
         open={confirmingSignOut}
         title="¿Cerrar sesión?"

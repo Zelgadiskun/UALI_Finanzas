@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { onGameEvent } from "@/lib/ffos/store";
+import { onGameEvent } from "@/lib/supabase/gameEvents";
 
 const COLORS = ["var(--accent)", "var(--warning)", "var(--info)", "var(--danger)"];
 

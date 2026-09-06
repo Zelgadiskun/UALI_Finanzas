@@ -13,7 +13,13 @@ import { Fab } from "@/components/ffos/Fab";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
 import { useFfos } from "@/lib/ffos/store";
 import { greeting, inMonthOffset, money, percentChange, sameMonth } from "@/lib/ffos/format";
-import { useProgressQuery, useTransactionsQuery } from "@/lib/supabase/queries";
+import {
+  useBudgetsQuery,
+  useCurrentUserId,
+  useMemberDisplayNameMap,
+  useProgressQuery,
+  useTransactionsQuery,
+} from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
 const title = "FFOS Wallet — Finanzas familiares claras";
@@ -33,12 +39,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Inicio() {
-  // Presupuesto/deudas siguen en el store local (demo) hasta que la fase de
-  // Familia los mueva a Supabase — son entidades familiares y todavía no
-  // existe el concepto de familia en la app.
+  // La deuda sigue en el store local (demo) hasta la fase 5, que la modela
+  // de verdad (acreedor, tasa, pagos). El presupuesto ya es de la familia.
   const state = useFfos();
   const txQuery = useTransactionsQuery();
   const progressQuery = useProgressQuery();
+  const budgetsQuery = useBudgetsQuery();
+  const currentUserId = useCurrentUserId();
+  const memberNames = useMemberDisplayNameMap();
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const [progressOpen, setProgressOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -54,6 +62,7 @@ function Inicio() {
     const expense = sumBy(month, "gasto");
     const debtPaid = sumBy(month, "pago_deuda");
     const saved = sumBy(month, "ahorro");
+    const plannedTotal = (budgetsQuery.data ?? []).reduce((a, b) => a + b.planned, 0);
 
     return {
       income,
@@ -61,18 +70,30 @@ function Inicio() {
       incomeDelta: percentChange(income, sumBy(prevMonth, "ingreso")),
       expenseDelta: percentChange(expense, sumBy(prevMonth, "gasto")),
       balance: income - expense - debtPaid - saved,
-      free: state.monthlyIncomePlan - state.budget.reduce((a, b) => a + b.planned, 0),
+      free: income - plannedTotal,
     };
-  }, [transactions, state.monthlyIncomePlan, state.budget]);
+  }, [transactions, budgetsQuery.data]);
+
+  const budgets = useMemo(() => {
+    const spentByCategory = new Map<string, number>();
+    for (const t of transactions) {
+      if (t.type !== "gasto" || !sameMonth(t.date)) continue;
+      spentByCategory.set(t.category, (spentByCategory.get(t.category) ?? 0) + t.amount);
+    }
+    return (budgetsQuery.data ?? []).map((b) => ({
+      ...b,
+      spent: spentByCategory.get(b.name) ?? 0,
+    }));
+  }, [budgetsQuery.data, transactions]);
 
   const topBudget = useMemo(
-    () => [...state.budget].sort((a, b) => b.spent / b.planned - a.spent / a.planned).slice(0, 3),
-    [state.budget],
+    () => [...budgets].sort((a, b) => b.spent / b.planned - a.spent / a.planned).slice(0, 3),
+    [budgets],
   );
 
   const alerts = useMemo(() => {
     const list: { tone: "warning" | "danger" | "info"; text: string }[] = [];
-    for (const b of state.budget) {
+    for (const b of budgets) {
       if (b.spent > b.planned)
         list.push({
           tone: "danger",
@@ -91,7 +112,7 @@ function Inicio() {
         text: `Llevás ${streak} días registrando. Seguí la racha.`,
       });
     return list;
-  }, [state.budget, progressQuery.data?.streak]);
+  }, [budgets, progressQuery.data?.streak]);
 
   const latest = useMemo(
     () => [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
@@ -205,17 +226,25 @@ function Inicio() {
               description="Agregá tu primer movimiento para empezar."
             />
           ) : (
-            latest.map((tx) => (
-              <div
-                key={tx.id}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  actions.open(tx);
-                }}
-              >
-                <TransactionRow tx={tx} onOptions={actions.open} />
-              </div>
-            ))
+            latest.map((tx) => {
+              const isMine = tx.userId === currentUserId;
+              return (
+                <div
+                  key={tx.id}
+                  onContextMenu={(e) => {
+                    if (!isMine) return;
+                    e.preventDefault();
+                    actions.open(tx);
+                  }}
+                >
+                  <TransactionRow
+                    tx={tx}
+                    onOptions={isMine ? actions.open : undefined}
+                    ownerLabel={isMine ? undefined : memberNames[tx.userId]}
+                  />
+                </div>
+              );
+            })
           )}
         </div>
       </section>

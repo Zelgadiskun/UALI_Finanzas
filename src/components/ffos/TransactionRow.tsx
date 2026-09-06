@@ -14,10 +14,13 @@ export function TransactionRow({
   tx,
   onOptions,
   showDate = true,
+  ownerLabel,
 }: {
   tx: Transaction;
-  onOptions?: (tx: Transaction) => void;
+  onOptions?: ((tx: Transaction) => void) | undefined;
   showDate?: boolean;
+  /** Nombre del familiar dueño del movimiento, cuando no es el propio. */
+  ownerLabel?: string | undefined;
 }) {
   const m = meta[tx.type];
   const Icon = m.icon;
@@ -29,7 +32,14 @@ export function TransactionRow({
         <Icon className={cn("size-5", m.fg)} strokeWidth={1.75} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{tx.category}</p>
+        <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+          <span className="truncate">{tx.category}</span>
+          {ownerLabel && (
+            <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {ownerLabel}
+            </span>
+          )}
+        </p>
         <p className="truncate text-[12px] text-muted-foreground">
           {[showDate ? shortDate(tx.date) : null, tx.note].filter(Boolean).join(" · ") ||
             "Sin nota"}

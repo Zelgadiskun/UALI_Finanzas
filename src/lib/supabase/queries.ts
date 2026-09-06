@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "./client";
 import { useSession } from "./auth";
@@ -6,6 +7,11 @@ import type { Database } from "./types";
 
 type TransactionRow = Database["public"]["Tables"]["transactions"]["Row"];
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type FamilyRow = Database["public"]["Tables"]["families"]["Row"];
+type InvitationRow = Database["public"]["Tables"]["invitations"]["Row"];
+
+/** Sin "spent": eso se deriva de las transacciones donde se lo necesite. */
+export type BudgetRow = { id: string; name: string; group: string; planned: number };
 
 export const queryKeys = {
   profile: (userId: string) => ["profile", userId] as const,
@@ -16,11 +22,13 @@ export const queryKeys = {
 export function fromRow(row: TransactionRow): Transaction {
   return {
     id: row.id,
+    userId: row.user_id,
     type: row.type,
     category: row.category,
     amount: row.amount_cents / 100,
     date: row.occurred_on,
     note: row.note ?? undefined,
+    shared: row.shared,
   };
 }
 
@@ -106,6 +114,8 @@ export function useTransactionsQuery() {
     queryKey: userId ? queryKeys.transactions(userId) : ["transactions", "anon"],
     enabled: !!userId,
     queryFn: async (): Promise<Transaction[]> => {
+      // Sin filtro por user_id a propósito: RLS ya devuelve lo propio más lo
+      // que la familia compartió (tx_owner OR tx_family_read, fase 2).
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -114,4 +124,90 @@ export function useTransactionsQuery() {
       return data.map(fromRow);
     },
   });
+}
+
+export function useFamilyQuery() {
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["family", familyId],
+    enabled: !!familyId,
+    queryFn: async (): Promise<FamilyRow> => {
+      const { data, error } = await supabase
+        .from("families")
+        .select("*")
+        .eq("id", familyId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useFamilyMembersQuery() {
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["family-members", familyId],
+    enabled: !!familyId,
+    queryFn: async (): Promise<ProfileRow[]> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("family_id", familyId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function usePendingInvitationsQuery() {
+  const { session } = useSession();
+  const email = session?.user.email ?? null;
+
+  return useQuery({
+    queryKey: ["pending-invitations", email],
+    enabled: !!email,
+    queryFn: async (): Promise<InvitationRow[]> => {
+      const { data, error } = await supabase
+        .from("invitations")
+        .select("*")
+        .eq("to_email", email!)
+        .eq("status", "pending");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useBudgetsQuery() {
+  const profile = useProfileQuery();
+  const familyId = profile.data?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["budgets", familyId],
+    enabled: !!familyId,
+    queryFn: async (): Promise<BudgetRow[]> => {
+      const { data, error } = await supabase.from("budgets").select("*").eq("family_id", familyId!);
+      if (error) throw error;
+      return data.map((b) => ({
+        id: b.id,
+        name: b.name,
+        group: b.bucket,
+        planned: b.planned_cents / 100,
+      }));
+    },
+  });
+}
+
+/** id de miembro -> nombre, para mostrar de quién es un movimiento compartido. */
+export function useMemberDisplayNameMap(): Record<string, string> {
+  const members = useFamilyMembersQuery();
+  return useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const m of members.data ?? []) map[m.id] = m.display_name;
+    return map;
+  }, [members.data]);
 }

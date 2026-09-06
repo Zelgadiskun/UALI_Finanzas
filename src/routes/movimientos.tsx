@@ -8,7 +8,11 @@ import { EmptyState } from "@/components/ffos/EmptyState";
 import { RowsSkeleton } from "@/components/ffos/Skeletons";
 import { useTxActions } from "@/components/ffos/useTxActions";
 import { groupLabel, money, sameMonth } from "@/lib/ffos/format";
-import { useTransactionsQuery } from "@/lib/supabase/queries";
+import {
+  useCurrentUserId,
+  useMemberDisplayNameMap,
+  useTransactionsQuery,
+} from "@/lib/supabase/queries";
 import { TX_TYPES, type TxType } from "@/lib/ffos/types";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +36,8 @@ type Filter = TxType | "todos";
 
 function Movimientos() {
   const txQuery = useTransactionsQuery();
+  const currentUserId = useCurrentUserId();
+  const memberNames = useMemberDisplayNameMap();
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const [filter, setFilter] = useState<Filter>("todos");
   const [query, setQuery] = useState("");
@@ -137,17 +143,26 @@ function Movimientos() {
                 {groupLabel(date)}
               </h2>
               <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-                {list.map((tx) => (
-                  <div
-                    key={tx.id}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      actions.open(tx);
-                    }}
-                  >
-                    <TransactionRow tx={tx} onOptions={actions.open} showDate={false} />
-                  </div>
-                ))}
+                {list.map((tx) => {
+                  const isMine = tx.userId === currentUserId;
+                  return (
+                    <div
+                      key={tx.id}
+                      onContextMenu={(e) => {
+                        if (!isMine) return;
+                        e.preventDefault();
+                        actions.open(tx);
+                      }}
+                    >
+                      <TransactionRow
+                        tx={tx}
+                        onOptions={isMine ? actions.open : undefined}
+                        showDate={false}
+                        ownerLabel={isMine ? undefined : memberNames[tx.userId]}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ))}

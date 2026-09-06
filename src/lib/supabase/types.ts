@@ -167,6 +167,8 @@ export type Database = {
         Row: {
           created_at: string
           family_id: string
+          family_name: string
+          from_display_name: string
           from_user_id: string
           id: string
           status: Database["public"]["Enums"]["invitation_status"]
@@ -175,6 +177,8 @@ export type Database = {
         Insert: {
           created_at?: string
           family_id: string
+          family_name: string
+          from_display_name: string
           from_user_id: string
           id?: string
           status?: Database["public"]["Enums"]["invitation_status"]
@@ -183,6 +187,8 @@ export type Database = {
         Update: {
           created_at?: string
           family_id?: string
+          family_name?: string
+          from_display_name?: string
           from_user_id?: string
           id?: string
           status?: Database["public"]["Enums"]["invitation_status"]
@@ -439,6 +445,55 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "families"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_family: {
+        Args: { p_name: string }
+        Returns: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "families"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      generate_family_code: { Args: never; Returns: string }
+      join_family: {
+        Args: { p_code: string }
+        Returns: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "families"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       my_family_id: { Args: never; Returns: string }
     }
     Enums: {
