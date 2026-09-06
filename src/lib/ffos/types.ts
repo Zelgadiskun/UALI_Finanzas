@@ -21,7 +21,7 @@ export type Transaction = {
   amount: number;
   /** ISO yyyy-MM-dd */
   date: string;
-  note?: string;
+  note?: string | undefined;
 };
 
 export type BudgetItem = {

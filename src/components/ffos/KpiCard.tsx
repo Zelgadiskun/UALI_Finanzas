@@ -10,7 +10,7 @@ export function KpiCard({
 }: {
   label: string;
   value: number;
-  delta?: number;
+  delta?: number | undefined;
   tone: "accent" | "danger" | "warning";
 }) {
   const toneText = {

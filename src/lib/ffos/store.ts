@@ -120,9 +120,11 @@ export type GameEvent = { xp: number; levelUp: boolean; newAchievements: string[
 
 const gameListeners = new Set<(e: GameEvent) => void>();
 
-export function onGameEvent(fn: (e: GameEvent) => void) {
+export function onGameEvent(fn: (e: GameEvent) => void): () => void {
   gameListeners.add(fn);
-  return () => gameListeners.delete(fn);
+  return () => {
+    gameListeners.delete(fn);
+  };
 }
 
 function emitGameEvent(e: GameEvent) {
