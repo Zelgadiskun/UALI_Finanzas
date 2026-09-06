@@ -19,7 +19,10 @@ import { nitro } from "nitro/vite";
 // a server bundle in .output/server, but nothing deploys or runs it — it's
 // dead weight from the build, not a runtime dependency.
 export default defineConfig({
-  server: { port: 8080 },
+  // host: true expone el dev server en la red local (0.0.0.0), no solo
+  // localhost — así se puede abrir desde el celular (misma Wi-Fi) para
+  // probar la app mobile-first en un dispositivo real.
+  server: { port: 8080, host: true },
   plugins: [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
