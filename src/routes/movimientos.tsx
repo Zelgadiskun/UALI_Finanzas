@@ -42,9 +42,7 @@ function Movimientos() {
     const q = query.trim().toLowerCase();
     return state.transactions
       .filter((t) => (filter === "todos" ? true : t.type === filter))
-      .filter((t) =>
-        q ? `${t.category} ${t.note ?? ""}`.toLowerCase().includes(q) : true,
-      )
+      .filter((t) => (q ? `${t.category} ${t.note ?? ""}`.toLowerCase().includes(q) : true))
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [state.transactions, filter, query]);
 
@@ -68,13 +66,22 @@ function Movimientos() {
       <h1 className="text-xl font-bold">Movimientos</h1>
       <p className="mt-0.5 text-[13px] text-muted-foreground">
         Neto del mes:{" "}
-        <span className={cn("font-semibold tabular-nums", monthTotal < 0 ? "text-danger" : "text-accent")}>
+        <span
+          className={cn(
+            "font-semibold tabular-nums",
+            monthTotal < 0 ? "text-danger" : "text-accent",
+          )}
+        >
           {money(monthTotal)}
         </span>
       </p>
 
       <div className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-3">
-        <Search className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+        <Search
+          className="size-4 shrink-0 text-muted-foreground"
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -85,22 +92,22 @@ function Movimientos() {
       </div>
 
       <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-        {([{ value: "todos", label: "Todos" }, ...TX_TYPES] as { value: Filter; label: string }[]).map(
-          (f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={cn(
-                "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium",
-                filter === f.value
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground",
-              )}
-            >
-              {f.label}
-            </button>
-          ),
-        )}
+        {(
+          [{ value: "todos", label: "Todos" }, ...TX_TYPES] as { value: Filter; label: string }[]
+        ).map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={cn(
+              "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium",
+              filter === f.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {!hydrated ? (

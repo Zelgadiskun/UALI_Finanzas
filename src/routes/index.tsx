@@ -60,10 +60,7 @@ function Inicio() {
   }, [state]);
 
   const topBudget = useMemo(
-    () =>
-      [...state.budget]
-        .sort((a, b) => b.spent / b.planned - a.spent / a.planned)
-        .slice(0, 3),
+    () => [...state.budget].sort((a, b) => b.spent / b.planned - a.spent / a.planned).slice(0, 3),
     [state.budget],
   );
 
@@ -71,12 +68,21 @@ function Inicio() {
     const list: { tone: "warning" | "danger" | "info"; text: string }[] = [];
     for (const b of state.budget) {
       if (b.spent > b.planned)
-        list.push({ tone: "danger", text: `${b.name} superó el plan por ${money(b.spent - b.planned)}` });
+        list.push({
+          tone: "danger",
+          text: `${b.name} superó el plan por ${money(b.spent - b.planned)}`,
+        });
       else if (b.spent / b.planned >= 0.85)
-        list.push({ tone: "warning", text: `${b.name} está al ${Math.round((b.spent / b.planned) * 100)}% del plan` });
+        list.push({
+          tone: "warning",
+          text: `${b.name} está al ${Math.round((b.spent / b.planned) * 100)}% del plan`,
+        });
     }
     if (state.progress.streak >= 3)
-      list.push({ tone: "info", text: `Llevás ${state.progress.streak} días registrando. Seguí la racha.` });
+      list.push({
+        tone: "info",
+        text: `Llevás ${state.progress.streak} días registrando. Seguí la racha.`,
+      });
     return list;
   }, [state]);
 
@@ -95,7 +101,9 @@ function Inicio() {
           <h1 className="truncate text-xl font-bold">Familia</h1>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">Balance</p>
+          <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
+            Balance
+          </p>
           <p className="text-2xl font-bold tabular-nums text-primary">{money(stats.balance)}</p>
         </div>
       </header>
@@ -129,7 +137,11 @@ function Inicio() {
               {a.tone === "info" ? (
                 <Info className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
               ) : (
-                <AlertTriangle className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+                <AlertTriangle
+                  className="mt-0.5 size-4 shrink-0"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
               )}
               <span className="min-w-0">{a.text}</span>
             </div>

@@ -58,7 +58,9 @@ export function ProgressSheet({
                       <span
                         className={cn(
                           "grid size-9 shrink-0 place-items-center rounded-full",
-                          done ? "bg-accent-soft text-accent" : "bg-secondary text-muted-foreground",
+                          done
+                            ? "bg-accent-soft text-accent"
+                            : "bg-secondary text-muted-foreground",
                         )}
                       >
                         {locked ? (
@@ -72,7 +74,11 @@ export function ProgressSheet({
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{l.title}</span>
                         <span className="block text-[12px] text-muted-foreground">
-                          {locked ? `Se desbloquea en nivel ${l.minLevel}` : done ? "Completada" : "30 segundos · +25 XP"}
+                          {locked
+                            ? `Se desbloquea en nivel ${l.minLevel}`
+                            : done
+                              ? "Completada"
+                              : "30 segundos · +25 XP"}
                         </span>
                       </span>
                     </button>
@@ -93,10 +99,7 @@ export function ProgressSheet({
                 return (
                   <li
                     key={a.id}
-                    className={cn(
-                      "rounded-xl border border-border p-3",
-                      !done && "opacity-45",
-                    )}
+                    className={cn("rounded-xl border border-border p-3", !done && "opacity-45")}
                   >
                     <p className="text-[13px] font-semibold">{a.name}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">{a.description}</p>
@@ -173,7 +176,9 @@ function LessonSheet({
         {picked !== null && picked !== lesson.answer && (
           <p className="text-[12px] text-danger">No es esa. Volvé a leer y probá de nuevo.</p>
         )}
-        {done && <p className="text-[12px] text-muted-foreground">Ya sumaste el XP de esta lección.</p>}
+        {done && (
+          <p className="text-[12px] text-muted-foreground">Ya sumaste el XP de esta lección.</p>
+        )}
       </div>
     </BottomSheet>
   );

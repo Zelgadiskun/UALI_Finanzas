@@ -15,8 +15,22 @@ function seed(): FfosState {
   const day = (offset: number) => formatDate(addDays(monthStart, offset), "yyyy-MM-dd");
 
   const transactions: Transaction[] = [
-    { id: "seed-1", type: "ingreso", category: "Sueldo", amount: 850000, date: day(0), note: "Sueldo mensual" },
-    { id: "seed-2", type: "gasto", category: "Comida", amount: 45000, date: day(2), note: "Supermercado" },
+    {
+      id: "seed-1",
+      type: "ingreso",
+      category: "Sueldo",
+      amount: 850000,
+      date: day(0),
+      note: "Sueldo mensual",
+    },
+    {
+      id: "seed-2",
+      type: "gasto",
+      category: "Comida",
+      amount: 45000,
+      date: day(2),
+      note: "Supermercado",
+    },
     { id: "seed-3", type: "gasto", category: "Servicios", amount: 32000, date: day(4) },
     { id: "seed-4", type: "ahorro", category: "Fondo de emergencia", amount: 60000, date: day(5) },
     { id: "seed-5", type: "pago_deuda", category: "Tarjeta", amount: 40000, date: day(7) },
@@ -31,7 +45,13 @@ function seed(): FfosState {
     { id: "b5", name: "Ahorro", group: "Ahorro", planned: 80000, spent: 60000 },
   ];
 
-  const progress: Progress = { xp: 0, streak: 0, lastActive: null, lessonsDone: [], achievements: [] };
+  const progress: Progress = {
+    xp: 0,
+    streak: 0,
+    lastActive: null,
+    lessonsDone: [],
+    achievements: [],
+  };
 
   return { transactions, budget, debtTotal: 180000, monthlyIncomePlan: 850000, progress };
 }
@@ -133,7 +153,10 @@ function applyStreak(progress: Progress) {
 
 export function addTransaction(payload: Omit<Transaction, "id">): GameEvent {
   const isFirstTx = state.transactions.length === 0;
-  const tx: Transaction = { ...payload, id: `tx_${Date.now()}_${Math.floor(Math.random() * 1000)}` };
+  const tx: Transaction = {
+    ...payload,
+    id: `tx_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+  };
 
   const progress: Progress = {
     ...state.progress,

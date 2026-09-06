@@ -31,10 +31,16 @@ export function TransactionRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{tx.category}</p>
         <p className="truncate text-[12px] text-muted-foreground">
-          {[showDate ? shortDate(tx.date) : null, tx.note].filter(Boolean).join(" · ") || "Sin nota"}
+          {[showDate ? shortDate(tx.date) : null, tx.note].filter(Boolean).join(" · ") ||
+            "Sin nota"}
         </p>
       </div>
-      <p className={cn("shrink-0 text-sm font-semibold tabular-nums", amount < 0 ? "text-danger" : "text-accent")}>
+      <p
+        className={cn(
+          "shrink-0 text-sm font-semibold tabular-nums",
+          amount < 0 ? "text-danger" : "text-accent",
+        )}
+      >
         {amount < 0 ? "−" : "+"}
         {money(tx.amount)}
       </p>

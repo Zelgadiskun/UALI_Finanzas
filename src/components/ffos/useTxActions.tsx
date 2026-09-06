@@ -44,7 +44,11 @@ export function useTxActions() {
         </div>
       </BottomSheet>
 
-      <TransactionSheet open={editing !== null} editing={editing} onClose={() => setEditing(null)} />
+      <TransactionSheet
+        open={editing !== null}
+        editing={editing}
+        onClose={() => setEditing(null)}
+      />
 
       <ConfirmModal
         open={confirming !== null}

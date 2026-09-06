@@ -32,7 +32,9 @@ function Deudas() {
         <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
           Saldo pendiente
         </p>
-        <p className="mt-1 text-3xl font-bold tabular-nums text-warning">{money(state.debtTotal)}</p>
+        <p className="mt-1 text-3xl font-bold tabular-nums text-warning">
+          {money(state.debtTotal)}
+        </p>
         <p className="mt-1 text-[13px] text-muted-foreground">
           Pagado hasta hoy: <span className="font-semibold text-accent">{money(paid)}</span>
         </p>

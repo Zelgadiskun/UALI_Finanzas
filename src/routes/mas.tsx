@@ -51,7 +51,9 @@ function Mas() {
           <Target className="size-5" strokeWidth={1.75} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">Metas</span>
-            <span className="block text-[12px] text-muted-foreground">Disponible en la próxima fase</span>
+            <span className="block text-[12px] text-muted-foreground">
+              Disponible en la próxima fase
+            </span>
           </span>
         </div>
 

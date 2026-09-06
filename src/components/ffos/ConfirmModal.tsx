@@ -19,7 +19,11 @@ export function ConfirmModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center px-6">
-      <button aria-label="Cancelar" onClick={onCancel} className="absolute inset-0 bg-[rgb(0_0_0/0.4)]" />
+      <button
+        aria-label="Cancelar"
+        onClick={onCancel}
+        className="absolute inset-0 bg-[rgb(0_0_0/0.4)]"
+      />
       <div
         role="alertdialog"
         aria-modal="true"

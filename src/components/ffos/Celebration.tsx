@@ -22,7 +22,10 @@ export function Celebration() {
   if (!burst) return null;
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-24 z-70 flex justify-center">
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-x-0 top-24 z-70 flex justify-center"
+    >
       <div className="relative size-0">
         {Array.from({ length: 18 }).map((_, i) => (
           <span

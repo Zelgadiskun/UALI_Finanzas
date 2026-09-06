@@ -56,13 +56,18 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
       const event = addTransaction(payload);
       toast.success("Movimiento guardado", { description: `+${event.xp} XP` });
       if (event.levelUp) toast.success("¡Subiste de nivel!");
-      for (const a of event.newAchievements) toast.success("Logro desbloqueado", { description: a });
+      for (const a of event.newAchievements)
+        toast.success("Logro desbloqueado", { description: a });
     }
     onClose();
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={editing ? "Editar movimiento" : "Nueva transacción"}>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={editing ? "Editar movimiento" : "Nueva transacción"}
+    >
       <div className="space-y-4 pb-2">
         <Field label="Tipo">
           <div className="flex flex-wrap gap-2">

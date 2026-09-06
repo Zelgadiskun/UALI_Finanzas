@@ -60,7 +60,11 @@ export const LESSONS: Lesson[] = [
     title: "Presupuesto 0-base",
     body: "Asigná cada peso antes de gastarlo: todo ingreso tiene un destino definido de antemano.",
     question: "¿Cuál es la regla principal del presupuesto 0-base?",
-    options: ["Gastar lo menos posible", "Asignar cada peso antes de gastarlo", "Ahorrar el 50% del ingreso"],
+    options: [
+      "Gastar lo menos posible",
+      "Asignar cada peso antes de gastarlo",
+      "Ahorrar el 50% del ingreso",
+    ],
     answer: 1,
   },
   {
@@ -124,7 +128,11 @@ export const LESSONS: Lesson[] = [
     title: "Orden de ataque de deudas",
     body: "El método avalancha prioriza pagar primero la deuda con la tasa de interés más alta.",
     question: "¿En qué consiste el método avalancha?",
-    options: ["Pagar primero la deuda más chica", "Pagar primero la deuda con mayor tasa", "Pagar primero la deuda más antigua"],
+    options: [
+      "Pagar primero la deuda más chica",
+      "Pagar primero la deuda con mayor tasa",
+      "Pagar primero la deuda más antigua",
+    ],
     answer: 1,
   },
   {
@@ -144,7 +152,11 @@ export const LESSONS: Lesson[] = [
     title: "Inversión 101",
     body: "El orden correcto es: fondo de emergencia, luego deuda de alta tasa, recién después invertir.",
     question: "¿Qué va primero, antes de empezar a invertir?",
-    options: ["Invertir apenas se pueda", "Fondo de emergencia y deudas caras", "Comprar lo que se venía posponiendo"],
+    options: [
+      "Invertir apenas se pueda",
+      "Fondo de emergencia y deudas caras",
+      "Comprar lo que se venía posponiendo",
+    ],
     answer: 1,
   },
 ];
@@ -153,7 +165,11 @@ export type Achievement = { id: string; name: string; description: string };
 
 export const ACHIEVEMENTS: Achievement[] = [
   { id: "first_tx", name: "Primer registro", description: "Registraste tu primer movimiento." },
-  { id: "week_streak", name: "Racha semanal", description: "Registraste movimientos 7 días seguidos." },
+  {
+    id: "week_streak",
+    name: "Racha semanal",
+    description: "Registraste movimientos 7 días seguidos.",
+  },
   { id: "first_lesson", name: "Primera lección", description: "Completaste tu primera lección." },
   { id: "saver", name: "Ahorrista", description: "Registraste tu primer ahorro." },
   { id: "debt_slayer", name: "Cazadeudas", description: "Registraste tu primer pago de deuda." },

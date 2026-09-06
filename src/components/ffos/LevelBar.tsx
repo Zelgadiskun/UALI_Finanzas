@@ -31,7 +31,12 @@ export function LevelBar({
         </span>
       </div>
       <div className="mt-3">
-        <ProgressBar value={info.pct} state="ok" height={8} className="bg-[rgb(255_255_255/0.18)]" />
+        <ProgressBar
+          value={info.pct}
+          state="ok"
+          height={8}
+          className="bg-[rgb(255_255_255/0.18)]"
+        />
       </div>
       <p className="mt-2 flex items-center gap-1 text-[11px] opacity-80">
         <Sparkles className="size-3.5" strokeWidth={1.75} aria-hidden="true" />

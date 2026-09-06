@@ -37,7 +37,10 @@ function Presupuesto() {
           const pct = (b.spent / b.planned) * 100;
           const delta = b.planned - b.spent;
           return (
-            <article key={b.id} className="rounded-2xl border border-border bg-card p-4 shadow-card">
+            <article
+              key={b.id}
+              className="rounded-2xl border border-border bg-card p-4 shadow-card"
+            >
               <div className="flex items-baseline justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{b.name}</p>
