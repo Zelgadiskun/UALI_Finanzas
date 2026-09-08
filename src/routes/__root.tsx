@@ -17,6 +17,7 @@ import { Celebration } from "@/components/ffos/Celebration";
 import { AuthScreen } from "@/components/ffos/AuthScreen";
 import { useSession } from "@/lib/supabase/auth";
 import { queryPersister } from "@/lib/query-persister";
+import { getStoredTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -133,8 +134,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    const theme = window.localStorage.getItem("ffos-theme");
-    if (theme === "dark") document.documentElement.classList.add("dark");
+    if (getStoredTheme() === "dark") document.documentElement.classList.add("dark");
   }, []);
 
   useEffect(() => {

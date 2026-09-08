@@ -13,18 +13,23 @@ export function ProgressBar({
   state = "neutral",
   height = 8,
   className,
+  fillClassName,
 }: {
   value: number;
   state?: BarState;
   height?: number;
   className?: string;
+  /** Pisa el color de `state` — para cuando la barra vive sobre una superficie de color (ej. LevelBar sobre bg-primary), donde ok/warn/over no tiene sentido semántico y el verde/rojo desentona. */
+  fillClassName?: string;
 }) {
-  const fill = {
-    ok: "bg-accent",
-    warn: "bg-warning",
-    over: "bg-danger",
-    neutral: "bg-primary",
-  }[state];
+  const fill =
+    fillClassName ??
+    {
+      ok: "bg-accent",
+      warn: "bg-warning",
+      over: "bg-danger",
+      neutral: "bg-primary",
+    }[state];
 
   return (
     <div

@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Award, LogOut, Target, Trash2, Users } from "lucide-react";
+import { Award, LogOut, Moon, Target, Trash2, Users } from "lucide-react";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { FamilySheet } from "@/components/ffos/FamilySheet";
 import { GoalsSheet } from "@/components/ffos/GoalsSheet";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
+import { Switch } from "@/components/ui/switch";
 import { deleteAccount, signOut } from "@/lib/supabase/auth";
 import {
   useProgressQuery,
@@ -13,6 +14,7 @@ import {
   usePendingInvitationsQuery,
 } from "@/lib/supabase/queries";
 import { levelInfo } from "@/lib/ffos/gamification";
+import { applyTheme, getStoredTheme } from "@/lib/theme";
 
 const title = "Más — FFOS Wallet";
 const description = "Progreso, logros, metas y ajustes de la cuenta familiar de FFOS Wallet.";
@@ -42,7 +44,13 @@ function Mas() {
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => getStoredTheme() === "dark");
   const info = levelInfo(progress?.xp ?? 0);
+
+  function toggleDarkMode(checked: boolean) {
+    setDarkMode(checked);
+    applyTheme(checked ? "dark" : "light");
+  }
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -105,6 +113,17 @@ function Mas() {
             </span>
           </span>
         </button>
+
+        <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
+          <Moon className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">Modo oscuro</span>
+            <span className="block text-[12px] text-muted-foreground">
+              {darkMode ? "Activado" : "Desactivado"}
+            </span>
+          </span>
+          <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
+        </div>
 
         <button
           onClick={() => setConfirmingSignOut(true)}
