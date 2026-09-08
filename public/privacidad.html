@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Política de Privacidad — FFOS Wallet</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800&display=swap"
+/>
+<style>
+  :root {
+    --brand: #2c3fd1;
+    --paper: #f9faf9;
+    --card: #ffffff;
+    --border: #e6e8ea;
+    --ink: #191d24;
+    --ink-2: #5c6570;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --brand: #6478ff;
+      --paper: #12151b;
+      --card: #1b1f27;
+      --border: #2a2f39;
+      --ink: #f2f4f7;
+      --ink-2: #a4acb6;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Nunito", -apple-system, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { font-family: "Baloo 2", sans-serif; font-size: 28px; margin: 0 0 4px; }
+  .updated { color: var(--ink-2); font-size: 13px; margin: 0 0 32px; }
+  h2 {
+    font-family: "Baloo 2", sans-serif;
+    font-size: 18px;
+    margin: 32px 0 10px;
+    color: var(--brand);
+  }
+  p, li { font-size: 15px; color: var(--ink); }
+  ul { padding-left: 20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  a { color: var(--brand); font-weight: 700; }
+  .fill-me {
+    background: #faf0dc;
+    color: #9c6807;
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Política de Privacidad</h1>
+  <p class="updated">FFOS Wallet · Última actualización: 8 de septiembre de 2026</p>
+
+  <p>
+    FFOS Wallet es una app de finanzas personales y familiares. Esta página explica qué
+    información recopilamos, para qué la usamos y qué control tenés sobre ella.
+  </p>
+
+  <h2>Qué datos recopilamos</h2>
+  <ul>
+    <li><strong>Cuenta:</strong> tu email y el nombre que elegís mostrar.</li>
+    <li>
+      <strong>Movimientos financieros:</strong> los que vos cargás a mano — tipo, categoría,
+      monto, fecha y nota opcional. No nos conectamos a bancos ni leemos tus cuentas reales.
+    </li>
+    <li><strong>Presupuesto, deudas y metas:</strong> lo que vos y tu familia definen dentro de la app.</li>
+    <li><strong>Familia:</strong> el nombre del grupo familiar y quién pertenece a él.</li>
+    <li>
+      <strong>Progreso educativo:</strong> tu nivel, racha, logros y qué lecciones completaste.
+    </li>
+  </ul>
+
+  <h2>Para qué los usamos</h2>
+  <p>
+    Únicamente para mostrarte tu propio panel financiero y el de tu familia, calcular tu
+    progreso, y avisarte cuando vos (o alguien a quien administrás) se acerca a un límite de
+    presupuesto. No usamos tus datos para publicidad ni los analizamos con fines ajenos a la
+    app.
+  </p>
+
+  <h2>Con quién los compartimos</h2>
+  <div class="card">
+    <p style="margin:0">
+      <strong>Con nadie fuera de la app.</strong> Tus movimientos son privados por default —
+      solo se los muestra a tu familia si vos marcás explícitamente un movimiento como
+      "compartido". Usamos <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a>
+      como proveedor de base de datos y autenticación (no como un tercero al que le
+      "compartimos" tus datos, sino como la infraestructura donde vive la app). No vendemos
+      ni cedemos información a anunciantes ni a ningún otro tercero.
+    </p>
+  </div>
+
+  <h2>Cuánto tiempo los guardamos</h2>
+  <p>
+    Mientras tu cuenta exista. Podés eliminarla vos mismo en cualquier momento desde
+    <strong>Más → Eliminar cuenta</strong> — borra tu perfil, tus movimientos y tu progreso de
+    forma permanente e inmediata.
+  </p>
+
+  <h2>Tus derechos</h2>
+  <ul>
+    <li><strong>Acceder</strong> a tus datos: todos están visibles dentro de la app misma.</li>
+    <li><strong>Corregirlos:</strong> podés editar o borrar cualquier movimiento, presupuesto, deuda o meta vos mismo.</li>
+    <li><strong>Eliminarlos:</strong> desde Más → Eliminar cuenta, sin necesidad de contactarnos.</li>
+    <li>
+      <strong>Exportarlos:</strong> si querés una copia de tus datos antes de borrar tu cuenta,
+      escribinos a <span class="fill-me">[tu email de contacto]</span>.
+    </li>
+  </ul>
+
+  <h2>Menores de edad</h2>
+  <p>
+    FFOS Wallet está pensada para uso familiar administrado por adultos. Las invitaciones a un
+    grupo familiar están dirigidas a miembros adultos o supervisados por un adulto — no
+    recopilamos a sabiendas datos de menores de 13 años que se registren por su cuenta.
+  </p>
+
+  <h2>Seguridad</h2>
+  <p>
+    Toda la comunicación entre la app y nuestros servidores viaja cifrada (HTTPS/TLS). Las
+    contraseñas nunca se guardan en texto plano — las gestiona Supabase Auth con hashing
+    estándar de la industria. El acceso a tus datos está restringido a nivel de base de datos:
+    ni siquiera otro usuario de la app puede leer lo tuyo sin que vos lo compartas.
+  </p>
+
+  <h2>Cambios a esta política</h2>
+  <p>
+    Si actualizamos esta política de forma relevante, vamos a cambiar la fecha de arriba y,
+    si el cambio es significativo, avisarte dentro de la app.
+  </p>
+
+  <h2>Contacto</h2>
+  <p>
+    Preguntas sobre esta política o tus datos: <span class="fill-me">[tu email de contacto]</span>.
+  </p>
+
+  <p style="margin-top:32px">
+    Ver también nuestros <a href="/terminos.html">Términos de Servicio</a>.
+  </p>
+</div>
+</body>
+</html>

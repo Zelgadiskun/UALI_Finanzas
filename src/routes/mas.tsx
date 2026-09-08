@@ -147,6 +147,15 @@ function Mas() {
             </span>
           </span>
         </button>
+
+        <div className="flex justify-center gap-4 pt-2 text-[12px] text-muted-foreground">
+          <a href="/privacidad.html" className="underline underline-offset-2">
+            Privacidad
+          </a>
+          <a href="/terminos.html" className="underline underline-offset-2">
+            Términos
+          </a>
+        </div>
       </div>
 
       {progress && (
