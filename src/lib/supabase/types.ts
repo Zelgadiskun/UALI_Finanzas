@@ -565,6 +565,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_own_account: { Args: never; Returns: undefined }
       generate_family_code: { Args: never; Returns: string }
       join_family: {
         Args: { p_code: string }

@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Award, LogOut, Target, Users } from "lucide-react";
+import { Award, LogOut, Target, Trash2, Users } from "lucide-react";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { FamilySheet } from "@/components/ffos/FamilySheet";
 import { GoalsSheet } from "@/components/ffos/GoalsSheet";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
-import { signOut } from "@/lib/supabase/auth";
+import { deleteAccount, signOut } from "@/lib/supabase/auth";
 import {
   useProgressQuery,
   useProfileQuery,
@@ -40,7 +40,20 @@ function Mas() {
   const [familyOpen, setFamilyOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const info = levelInfo(progress?.xp ?? 0);
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+    } catch {
+      toast.error("No se pudo eliminar la cuenta. Probá de nuevo.");
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  }
 
   return (
     <main className="px-4 pt-4 pb-6">
@@ -102,6 +115,19 @@ function Mas() {
             <span className="block text-sm font-medium">Cerrar sesión</span>
           </span>
         </button>
+
+        <button
+          onClick={() => setConfirmingDelete(true)}
+          className="flex w-full items-center gap-3 rounded-2xl border border-danger/30 bg-danger-soft p-4 text-left text-danger shadow-card"
+        >
+          <Trash2 className="size-5" strokeWidth={1.75} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">Eliminar cuenta</span>
+            <span className="block text-[12px] opacity-80">
+              Borra tu cuenta y tus datos para siempre
+            </span>
+          </span>
+        </button>
       </div>
 
       {progress && (
@@ -122,6 +148,16 @@ function Mas() {
         onConfirm={() => {
           setConfirmingSignOut(false);
           void signOut().catch(() => toast.error("No se pudo cerrar sesión. Probá de nuevo."));
+        }}
+      />
+      <ConfirmModal
+        open={confirmingDelete}
+        title="¿Eliminar tu cuenta?"
+        description="Se borran tu perfil, tus movimientos y tu progreso — no se puede deshacer. Si administrás una familia con más gente, la administración pasa a otro miembro; si sos el único, la familia se borra con vos."
+        confirmLabel={deleting ? "Eliminando..." : "Eliminar cuenta"}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={() => {
+          if (!deleting) void handleDeleteAccount();
         }}
       />
     </main>

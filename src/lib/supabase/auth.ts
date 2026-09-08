@@ -69,3 +69,17 @@ export async function updatePassword(newPassword: string) {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
 }
+
+/**
+ * Borra la cuenta y todos sus datos (transacciones, perfil, sesión). Corre
+ * como una función de Postgres — ver delete_own_account() — porque no hay
+ * forma de invocar la API de administración de Auth desde el cliente sin
+ * exponer la service role key. signOut() al final es defensivo: el usuario
+ * ya no existe, pero el cliente igual puede tener el JWT cacheado en
+ * memoria/localStorage hasta el próximo refresh.
+ */
+export async function deleteAccount() {
+  const { error } = await supabase.rpc("delete_own_account");
+  if (error) throw error;
+  await supabase.auth.signOut();
+}
