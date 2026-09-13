@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BottomSheet } from "./BottomSheet";
+import { ConfirmModal } from "./ConfirmModal";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, TX_TYPES, type Transaction, type TxType } from "@/lib/ffos/types";
 import { todayISO } from "@/lib/ffos/format";
@@ -24,6 +25,17 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
   const [debtId, setDebtId] = useState("");
   const [goalId, setGoalId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [initial, setInitial] = useState<{
+    type: TxType;
+    category: string;
+    amount: string;
+    date: string;
+    note: string;
+    shared: boolean;
+    debtId: string;
+    goalId: string;
+  } | null>(null);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const addMutation = useAddTransactionMutation();
   const updateMutation = useUpdateTransactionMutation();
   const profile = useProfileQuery();
@@ -36,26 +48,55 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
   useEffect(() => {
     if (!open) return;
     setErrors({});
-    if (editing) {
-      setType(editing.type);
-      setCategory(editing.category);
-      setAmount(String(editing.amount));
-      setDate(editing.date);
-      setNote(editing.note ?? "");
-      setShared(editing.shared);
-      setDebtId(editing.debtId ?? "");
-      setGoalId(editing.goalId ?? "");
-    } else {
-      setType("gasto");
-      setCategory("");
-      setAmount("");
-      setDate(todayISO());
-      setNote("");
-      setShared(false);
-      setDebtId("");
-      setGoalId("");
-    }
+    const start = editing
+      ? {
+          type: editing.type,
+          category: editing.category,
+          amount: String(editing.amount),
+          date: editing.date,
+          note: editing.note ?? "",
+          shared: editing.shared,
+          debtId: editing.debtId ?? "",
+          goalId: editing.goalId ?? "",
+        }
+      : {
+          type: "gasto" as TxType,
+          category: "",
+          amount: "",
+          date: todayISO(),
+          note: "",
+          shared: false,
+          debtId: "",
+          goalId: "",
+        };
+    setType(start.type);
+    setCategory(start.category);
+    setAmount(start.amount);
+    setDate(start.date);
+    setNote(start.note);
+    setShared(start.shared);
+    setDebtId(start.debtId);
+    setGoalId(start.goalId);
+    setInitial(start);
   }, [open, editing]);
+
+  // Cerrar de cualquier forma (fondo, Escape, la X) sin este chequeo tira
+  // a la basura lo que alguien ya completó — silencioso, sin aviso.
+  const isDirty =
+    !!initial &&
+    (type !== initial.type ||
+      category !== initial.category ||
+      amount !== initial.amount ||
+      date !== initial.date ||
+      note !== initial.note ||
+      shared !== initial.shared ||
+      debtId !== initial.debtId ||
+      goalId !== initial.goalId);
+
+  function requestClose() {
+    if (isDirty) setConfirmingDiscard(true);
+    else onClose();
+  }
 
   async function submit() {
     const value = Number(amount.replace(",", "."));
@@ -95,150 +136,166 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
   }
 
   return (
-    <BottomSheet
-      open={open}
-      onClose={onClose}
-      title={editing ? "Editar movimiento" : "Nueva transacción"}
-    >
-      <div className="space-y-4 pb-2">
-        <Field label="Tipo">
-          <div className="flex flex-wrap gap-2">
-            {TX_TYPES.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => {
-                  setType(t.value);
-                  setCategory("");
-                }}
-                className={cn(
-                  "h-10 rounded-full border px-3.5 text-[13px] font-medium",
-                  type === t.value
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground",
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </Field>
+    <>
+      <BottomSheet
+        open={open}
+        onClose={requestClose}
+        title={editing ? "Editar movimiento" : "Nueva transacción"}
+      >
+        <div className="space-y-4 pb-2">
+          <Field label="Tipo">
+            <div className="flex flex-wrap gap-2">
+              {TX_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => {
+                    setType(t.value);
+                    setCategory("");
+                  }}
+                  className={cn(
+                    "h-10 rounded-full border px-3.5 text-[13px] font-medium",
+                    type === t.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground",
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </Field>
 
-        <Field label="Categoría" error={errors["category"]}>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={cn(
-              "h-12 w-full rounded-xl border bg-card px-3 text-sm",
-              errors["category"] ? "border-danger" : "border-border",
-            )}
-          >
-            <option value="">Seleccionar</option>
-            {CATEGORIES[type].map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </Field>
+          <Field label="Categoría" error={errors["category"]}>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={cn(
+                "h-12 w-full rounded-xl border bg-card px-3 text-sm",
+                errors["category"] ? "border-danger" : "border-border",
+              )}
+            >
+              <option value="">Seleccionar</option>
+              {CATEGORIES[type].map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </Field>
 
-        <Field label="Monto" error={errors["amount"]}>
-          <div
-            className={cn(
-              "flex h-12 items-center gap-1 rounded-xl border bg-card px-3",
-              errors["amount"] ? "border-danger" : "border-border",
-            )}
-          >
-            <span className="text-sm text-muted-foreground">$</span>
+          <Field label="Monto" error={errors["amount"]}>
+            <div
+              className={cn(
+                "flex h-12 items-center gap-1 rounded-xl border bg-card px-3",
+                errors["amount"] ? "border-danger" : "border-border",
+              )}
+            >
+              <span className="text-sm text-muted-foreground">$</span>
+              <input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
+                placeholder="0.00"
+                className="w-full bg-transparent text-sm tabular-nums outline-hidden"
+              />
+            </div>
+          </Field>
+
+          <Field label="Fecha" error={errors["date"]}>
             <input
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
-              placeholder="0.00"
-              className="w-full bg-transparent text-sm tabular-nums outline-hidden"
+              type="date"
+              value={date}
+              max={todayISO()}
+              onChange={(e) => setDate(e.target.value)}
+              className={cn(
+                "h-12 w-full rounded-xl border bg-card px-3 text-sm",
+                errors["date"] ? "border-danger" : "border-border",
+              )}
             />
-          </div>
-        </Field>
-
-        <Field label="Fecha" error={errors["date"]}>
-          <input
-            type="date"
-            value={date}
-            max={todayISO()}
-            onChange={(e) => setDate(e.target.value)}
-            className={cn(
-              "h-12 w-full rounded-xl border bg-card px-3 text-sm",
-              errors["date"] ? "border-danger" : "border-border",
-            )}
-          />
-        </Field>
-
-        {type === "pago_deuda" && debts.length > 0 && (
-          <Field label="¿Qué deuda estás pagando? (opcional)">
-            <select
-              value={debtId}
-              onChange={(e) => setDebtId(e.target.value)}
-              className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
-            >
-              <option value="">Sin especificar</option>
-              {debts.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
           </Field>
-        )}
 
-        {type === "ahorro" && goals.length > 0 && (
-          <Field label="¿Para qué meta? (opcional)">
-            <select
-              value={goalId}
-              onChange={(e) => setGoalId(e.target.value)}
+          {type === "pago_deuda" && debts.length > 0 && (
+            <Field label="¿Qué deuda estás pagando? (opcional)">
+              <select
+                value={debtId}
+                onChange={(e) => setDebtId(e.target.value)}
+                className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
+              >
+                <option value="">Sin especificar</option>
+                {debts.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
+          {type === "ahorro" && goals.length > 0 && (
+            <Field label="¿Para qué meta? (opcional)">
+              <select
+                value={goalId}
+                onChange={(e) => setGoalId(e.target.value)}
+                className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
+              >
+                <option value="">Sin especificar</option>
+                {goals.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
+          <Field label="Nota (opcional)">
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ej. compra semanal"
               className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
-            >
-              <option value="">Sin especificar</option>
-              {goals.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
-        )}
 
-        <Field label="Nota (opcional)">
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Ej. compra semanal"
-            className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
-          />
-        </Field>
-
-        {inFamily && (
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3.5 py-3">
-            <span className="min-w-0 pr-3">
-              <span className="block text-sm font-medium">Compartir con la familia</span>
-              <span className="block text-[12px] text-muted-foreground">
-                {shared ? "El resto de la familia lo va a ver" : "Solo vos lo vas a ver"}
+          {inFamily && (
+            <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3.5 py-3">
+              <span className="min-w-0 pr-3">
+                <span className="block text-sm font-medium">Compartir con la familia</span>
+                <span className="block text-[12px] text-muted-foreground">
+                  {shared ? "El resto de la familia lo va a ver" : "Solo vos lo vas a ver"}
+                </span>
               </span>
-            </span>
-            <Switch checked={shared} onCheckedChange={setShared} />
-          </div>
-        )}
+              <Switch checked={shared} onCheckedChange={setShared} />
+            </div>
+          )}
 
-        <button
-          onClick={() => void submit()}
-          disabled={addMutation.isPending || updateMutation.isPending}
-          className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
-        >
-          {addMutation.isPending || updateMutation.isPending ? "Guardando…" : "Guardar"}
-        </button>
-        <button onClick={onClose} className="h-11 w-full text-sm font-medium text-muted-foreground">
-          Cancelar
-        </button>
-      </div>
-    </BottomSheet>
+          <button
+            onClick={() => void submit()}
+            disabled={addMutation.isPending || updateMutation.isPending}
+            className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {addMutation.isPending || updateMutation.isPending ? "Guardando…" : "Guardar"}
+          </button>
+          <button
+            onClick={requestClose}
+            className="h-11 w-full text-sm font-medium text-muted-foreground"
+          >
+            Cancelar
+          </button>
+        </div>
+      </BottomSheet>
+      <ConfirmModal
+        open={confirmingDiscard}
+        title="¿Descartar cambios?"
+        description="Vas a perder lo que completaste en este formulario."
+        confirmLabel="Descartar"
+        onCancel={() => setConfirmingDiscard(false)}
+        onConfirm={() => {
+          setConfirmingDiscard(false);
+          onClose();
+        }}
+      />
+    </>
   );
 }
 

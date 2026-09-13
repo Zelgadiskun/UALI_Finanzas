@@ -186,6 +186,20 @@
       background-color 300ms ease,
       color 300ms ease;
   }
+
+  /* Botones/links propios del producto (TransactionRow, BudgetCard, Fab,
+     BottomNav, etc.) usan <button>/<a> nativos sin anillo de foco propio —
+     una regla global en vez de repetir focus-visible:ring-* en cada uno,
+     así ningún botón nuevo queda sin foco visible por olvido. Los
+     componentes de shadcn/ui ya traen el suyo y no se pisan (misma
+     variable, mismo resultado). */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 @utility safe-bottom {
