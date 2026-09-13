@@ -49,6 +49,8 @@ export type GoalRow = { id: string; name: string; target: number; dueDate: strin
 
 export type LessonRow = {
   id: string;
+  /** Identificador estable del catálogo (ej. "debt_order") — para vincular una pantalla a su lección sin depender del uuid. */
+  slug: string;
   minLevel: number;
   title: string;
   body: string;
@@ -131,6 +133,7 @@ export function useLessonsQuery() {
       if (error) throw error;
       return data.map((l) => ({
         id: l.id,
+        slug: l.slug,
         minLevel: l.min_level,
         title: l.title,
         body: l.body,

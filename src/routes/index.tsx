@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ChevronRight, Info, X } from "lucide-react";
+import { AlertTriangle, Award, ChevronRight, Info, X } from "lucide-react";
 import { KpiCard } from "@/components/ffos/KpiCard";
 import { LevelBar } from "@/components/ffos/LevelBar";
 import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
 import { TransactionRow } from "@/components/ffos/TransactionRow";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { TodayLessonCard } from "@/components/ffos/TodayLessonCard";
+import { InfoTip } from "@/components/ffos/InfoTip";
 import { LessonSheet } from "@/components/ffos/LessonSheet";
 import { DashboardSkeleton } from "@/components/ffos/Skeletons";
 import { EmptyState } from "@/components/ffos/EmptyState";
@@ -69,6 +70,11 @@ function Inicio() {
       (lessonsQuery.data ?? []).find((l) => l.minLevel <= level && !done.includes(l.id)) ?? null
     );
   }, [lessonsQuery.data, progressQuery.data]);
+
+  // El progreso de aprendizaje no puede ser menos visible que el balance en
+  // una app que se vende como educativa antes que financiera.
+  const lessonsTotal = lessonsQuery.data?.length ?? 0;
+  const lessonsCompleted = progressQuery.data?.lessonsDone.length ?? 0;
 
   const stats = useMemo(() => {
     const month = transactions.filter((t) => sameMonth(t.date));
@@ -194,10 +200,32 @@ function Inicio() {
         <LevelBar xp={progress.xp} streak={progress.streak} onOpen={() => setProgressOpen(true)} />
       </div>
 
-      {nextLesson && (
+      {nextLesson ? (
         <div className="mt-3">
-          <TodayLessonCard lesson={nextLesson} onOpen={() => setOpenLesson(nextLesson)} />
+          <TodayLessonCard
+            lesson={nextLesson}
+            completed={lessonsCompleted}
+            total={lessonsTotal}
+            onOpen={() => setOpenLesson(nextLesson)}
+          />
         </div>
+      ) : (
+        lessonsTotal > 0 &&
+        lessonsCompleted >= lessonsTotal && (
+          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
+              <Award className="size-5" strokeWidth={1.75} aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
+                Ruta de aprendizaje
+              </p>
+              <p className="font-display text-base font-bold">
+                Completaste las {lessonsTotal} lecciones
+              </p>
+            </div>
+          </div>
+        )
       )}
 
       <section aria-label="Indicadores del mes" className="mt-4 grid grid-cols-3 gap-2">
@@ -246,7 +274,9 @@ function Inicio() {
       )}
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Capacidad libre este mes:{" "}
+        Capacidad libre este mes{" "}
+        <InfoTip text="Lo que te queda del ingreso del mes después de restar todo lo planificado en el presupuesto. Si es negativo, planificaste más de lo que entra." />
+        :{" "}
         <span className={cn("font-semibold", stats.free < 0 ? "text-danger" : "text-foreground")}>
           {money(stats.free)}
         </span>

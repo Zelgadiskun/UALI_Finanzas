@@ -149,7 +149,17 @@ function RootComponent() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister: queryPersister, maxAge: 1000 * 60 * 60 * 24 }}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: 1000 * 60 * 60 * 24,
+        // Sube este número cuando cambie la forma de los datos que devuelve
+        // alguna query (un campo nuevo, un rename) — sin esto, un caché
+        // persistido de antes del cambio sigue sirviendo la forma vieja
+        // hasta que expire por staleTime, en vez de refrescar en el próximo
+        // load. Así fue como `lessons.slug` quedó invisible en producción
+        // después de agregarlo: el caché de 1 hora seguía vivo.
+        buster: "2",
+      }}
       // Un reload ya online no dispara el listener de reconexión de
       // TanStack Query (ese solo reacciona a la transición offline->online),
       // así que una mutación pausada y persistida antes de cerrar la PWA

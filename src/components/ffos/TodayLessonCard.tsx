@@ -1,4 +1,5 @@
 import { BookOpen, ChevronRight } from "lucide-react";
+import { ProgressBar } from "./ProgressBar";
 import type { LessonRow } from "@/lib/supabase/queries";
 
 /**
@@ -6,8 +7,23 @@ import type { LessonRow } from "@/lib/supabase/queries";
  * progreso -> scroll hasta "Ruta de aprendizaje" — tres pasos para algo que
  * se supone que enseña todos los días. Esto la pone al frente, en el mismo
  * lugar donde ya se mira el balance.
+ *
+ * El contador "X de Y" existe porque el progreso de aprendizaje era
+ * invisible fuera de la propia lección — en una app que se vende como
+ * educativa antes que financiera, eso no puede ser menos visible que el
+ * balance.
  */
-export function TodayLessonCard({ lesson, onOpen }: { lesson: LessonRow; onOpen: () => void }) {
+export function TodayLessonCard({
+  lesson,
+  completed,
+  total,
+  onOpen,
+}: {
+  lesson: LessonRow;
+  completed: number;
+  total: number;
+  onOpen: () => void;
+}) {
   return (
     <button
       onClick={onOpen}
@@ -21,6 +37,19 @@ export function TodayLessonCard({ lesson, onOpen }: { lesson: LessonRow; onOpen:
           Lección de hoy
         </p>
         <p className="truncate font-display text-base font-bold">{lesson.title}</p>
+        {total > 0 && (
+          <div className="mt-1.5 flex items-center gap-2">
+            <ProgressBar
+              value={(completed / total) * 100}
+              state="ok"
+              height={4}
+              className="max-w-24"
+            />
+            <span className="shrink-0 text-[11px] text-muted-foreground">
+              {completed} de {total}
+            </span>
+          </div>
+        )}
       </div>
       <ChevronRight
         className="size-5 shrink-0 text-muted-foreground"

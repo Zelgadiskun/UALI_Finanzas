@@ -5,6 +5,7 @@ import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
 import { CategorySpendChart } from "@/components/ffos/CategorySpendChart";
+import { LessonLink } from "@/components/ffos/LessonLink";
 import { money, sameMonth } from "@/lib/ffos/format";
 import {
   useAddBudgetMutation,
@@ -87,6 +88,17 @@ function Presupuesto() {
   const planned = budgets.reduce((a, b) => a + b.planned, 0);
   const spent = budgets.reduce((a, b) => a + b.spent, 0);
 
+  // La primera lección del sistema dice "asigná cada peso antes de
+  // gastarlo" — pero nada en esta pantalla mostraba si de verdad se estaba
+  // cumpliendo esa regla. Este es el indicador central del método 0-base,
+  // se deriva de lo mismo que ya calcula "Capacidad libre" en Inicio.
+  const monthIncome = useMemo(() => {
+    return (txQuery.data ?? [])
+      .filter((t) => t.type === "ingreso" && sameMonth(t.date))
+      .reduce((a, t) => a + t.amount, 0);
+  }, [txQuery.data]);
+  const unassigned = monthIncome - planned;
+
   if (!inFamily) {
     return (
       <main className="px-4 pt-4 pb-6">
@@ -116,6 +128,24 @@ function Presupuesto() {
       <p className="mt-0.5 text-[13px] text-muted-foreground">
         {money(spent)} gastados de {money(planned)} planificados
       </p>
+
+      {monthIncome > 0 && (
+        <div
+          className={cn(
+            "mt-3 rounded-xl px-3 py-2.5 text-[13px] font-medium",
+            unassigned > 0 && "bg-warning-soft text-[color:var(--foreground)]",
+            unassigned === 0 && "bg-accent-soft text-accent",
+            unassigned < 0 && "bg-danger-soft text-danger",
+          )}
+        >
+          {unassigned > 0 && <>Te quedan {money(unassigned)} sin asignar este mes.</>}
+          {unassigned === 0 && <>Presupuesto 0-base completo — asignaste cada peso.</>}
+          {unassigned < 0 && (
+            <>Planificaste {money(Math.abs(unassigned))} más de lo que entra este mes.</>
+          )}{" "}
+          <LessonLink slug="intro" label="¿Qué es 0-base?" />
+        </div>
+      )}
 
       {addOpen && <AddBudgetForm onDone={() => setAddOpen(false)} />}
 
@@ -158,12 +188,22 @@ function BudgetCard({
   members,
   spentByUser,
 }: {
-  budget: { id: string; name: string; group: string; planned: number; spent: number };
+  budget: {
+    id: string;
+    name: string;
+    group: string;
+    planned: number;
+    spent: number;
+    createdBy: string | null;
+  };
   isAdmin: boolean;
   allocations: BudgetAllocationRow[];
   members: { id: string; display_name: string }[];
   spentByUser: Map<string, number>;
 }) {
+  const adminName = !isAdmin
+    ? (members.find((m) => m.id === budget.createdBy)?.display_name ?? null)
+    : null;
   const [editing, setEditing] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -192,7 +232,10 @@ function BudgetCard({
       <div className="flex items-baseline justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{budget.name}</p>
-          <p className="text-[11px] text-muted-foreground">{budget.group}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {budget.group}
+            {adminName && ` · Administra: ${adminName}`}
+          </p>
         </div>
         {editing ? (
           <input

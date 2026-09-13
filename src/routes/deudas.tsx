@@ -5,6 +5,7 @@ import { MoreVertical, Snowflake, TrendingDown } from "lucide-react";
 import { ProgressBar } from "@/components/ffos/ProgressBar";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
+import { LessonLink } from "@/components/ffos/LessonLink";
 import { money } from "@/lib/ffos/format";
 import { useAddDebtMutation, useDeleteDebtMutation } from "@/lib/supabase/mutations";
 import { useDebtsQuery, useProfileQuery, useTransactionsQuery } from "@/lib/supabase/queries";
@@ -168,12 +169,14 @@ function Deudas() {
                 title="Avalancha"
                 description="Pagá primero la de mayor tasa: es la que más te cuesta esperar."
                 order={avalancha}
+                lessonSlug="debt_order"
               />
               <StrategyCard
                 icon={<Snowflake className="size-4" strokeWidth={1.75} aria-hidden="true" />}
                 title="Bola de nieve"
                 description="Pagá primero la más chica: liquidarla rápido da impulso para seguir."
                 order={bolaDeNieve}
+                lessonSlug="snowball"
               />
             </section>
           )}
@@ -203,18 +206,23 @@ function StrategyCard({
   title,
   description,
   order,
+  lessonSlug,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   order: { id: string; name: string; remaining: number }[];
+  lessonSlug: string;
 }) {
   return (
     <article className="rounded-2xl border border-border bg-card p-4 shadow-card">
-      <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-        {icon}
-        {title}
-      </h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+          {icon}
+          {title}
+        </h3>
+        <LessonLink slug={lessonSlug} />
+      </div>
       <p className="mt-0.5 text-[12px] text-muted-foreground">{description}</p>
       <ol className="mt-3 space-y-1.5">
         {order.map((d, i) => (
