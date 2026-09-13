@@ -232,7 +232,7 @@ export function TransactionSheet({ open, onClose, editing }: Props) {
           disabled={addMutation.isPending || updateMutation.isPending}
           className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {addMutation.isPending || updateMutation.isPending ? "Guardando..." : "Guardar"}
+          {addMutation.isPending || updateMutation.isPending ? "Guardando…" : "Guardar"}
         </button>
         <button onClick={onClose} className="h-11 w-full text-sm font-medium text-muted-foreground">
           Cancelar

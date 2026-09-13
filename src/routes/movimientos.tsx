@@ -98,23 +98,29 @@ function Movimientos() {
         />
       </div>
 
-      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-        {(
-          [{ value: "todos", label: "Todos" }, ...TX_TYPES] as { value: Filter; label: string }[]
-        ).map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={cn(
-              "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium",
-              filter === f.value
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground",
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="relative -mx-4 mt-3">
+        <div className="flex gap-2 overflow-x-auto px-4 pb-1">
+          {(
+            [{ value: "todos", label: "Todos" }, ...TX_TYPES] as { value: Filter; label: string }[]
+          ).map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={cn(
+                "h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium",
+                filter === f.value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        {/* Pista de que hay más chips fuera de la vista — sin esto "Ahorro"
+            quedaba cortado en el borde sin ninguna señal de que se podía
+            seguir scrolleando. */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
       </div>
 
       {!txQuery.isPending && transactions.length > 0 && (

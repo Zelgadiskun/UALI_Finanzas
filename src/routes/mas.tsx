@@ -182,7 +182,7 @@ function Mas() {
         open={confirmingDelete}
         title="¿Eliminar tu cuenta?"
         description="Se borran tu perfil, tus movimientos y tu progreso — no se puede deshacer. Si administrás una familia con más gente, la administración pasa a otro miembro; si sos el único, la familia se borra con vos."
-        confirmLabel={deleting ? "Eliminando..." : "Eliminar cuenta"}
+        confirmLabel={deleting ? "Eliminando…" : "Eliminar cuenta"}
         onCancel={() => setConfirmingDelete(false)}
         onConfirm={() => {
           if (!deleting) void handleDeleteAccount();

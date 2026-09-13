@@ -108,7 +108,7 @@ export function AuthScreen() {
             className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             {busy
-              ? "Un momento..."
+              ? "Un momento…"
               : mode === "login"
                 ? "Entrar"
                 : mode === "register"

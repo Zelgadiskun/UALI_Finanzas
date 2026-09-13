@@ -146,7 +146,7 @@ function NoFamilyYet() {
           disabled={createMutation.isPending}
           className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {createMutation.isPending ? "Creando..." : "Crear familia"}
+          {createMutation.isPending ? "Creando…" : "Crear familia"}
         </button>
         <button
           onClick={() => setMode("none")}
@@ -178,7 +178,7 @@ function NoFamilyYet() {
           disabled={joinMutation.isPending}
           className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {joinMutation.isPending ? "Uniéndote..." : "Unirme"}
+          {joinMutation.isPending ? "Uniéndote…" : "Unirme"}
         </button>
         <button
           onClick={() => setMode("none")}
@@ -305,6 +305,7 @@ function FamilyDetails({
             type="email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
+            autoComplete="email"
             placeholder="familiar@email.com"
             className="h-11 flex-1 rounded-xl border border-border bg-card px-3 text-sm"
           />

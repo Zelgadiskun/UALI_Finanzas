@@ -247,7 +247,9 @@ function Inicio() {
 
       <p className="mt-4 text-sm text-muted-foreground">
         Capacidad libre este mes:{" "}
-        <span className="font-semibold text-foreground">{money(stats.free)}</span>
+        <span className={cn("font-semibold", stats.free < 0 ? "text-danger" : "text-foreground")}>
+          {money(stats.free)}
+        </span>
       </p>
 
       <section className="mt-5">

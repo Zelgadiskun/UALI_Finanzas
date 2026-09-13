@@ -440,7 +440,7 @@ function AddBudgetForm({ onDone }: { onDone: () => void }) {
         disabled={addMutation.isPending}
         className="btn-3d h-11 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
-        {addMutation.isPending ? "Guardando..." : "Guardar rubro"}
+        {addMutation.isPending ? "Guardando…" : "Guardar rubro"}
       </button>
     </div>
   );
