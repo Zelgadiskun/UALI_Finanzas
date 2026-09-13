@@ -24,6 +24,7 @@ import {
   useLessonsQuery,
   useMemberDisplayNameMap,
   useNotificationsQuery,
+  useProfileQuery,
   useProgressQuery,
   useTransactionsQuery,
   type LessonRow,
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/")({
 
 function Inicio() {
   const txQuery = useTransactionsQuery();
+  const profile = useProfileQuery();
   const progressQuery = useProgressQuery();
   const budgetsQuery = useBudgetsQuery();
   const debtsQuery = useDebtsQuery();
@@ -88,15 +90,27 @@ function Inicio() {
     const saved = sumBy(month, "ahorro");
     const plannedTotal = (budgetsQuery.data ?? []).reduce((a, b) => a + b.planned, 0);
 
+    // "Balance" mezclaba mis movimientos con los compartidos por otros — ni
+    // era "mío" ni era "de la familia" (los privados de otros nunca se ven,
+    // así que tampoco es un total real). Se separan: lo propio siempre se
+    // puede calcular sin ambigüedad; lo familiar es "lo que se ve", con esa
+    // limitación explícita en la etiqueta, no escondida.
+    const mine = month.filter((t) => t.userId === currentUserId);
+    const sumMineBy = (type: string) =>
+      mine.filter((t) => t.type === type).reduce((a, t) => a + t.amount, 0);
+    const myBalance =
+      sumMineBy("ingreso") - sumMineBy("gasto") - sumMineBy("pago_deuda") - sumMineBy("ahorro");
+
     return {
       income,
       expense,
       incomeDelta: percentChange(income, sumBy(prevMonth, "ingreso")),
       expenseDelta: percentChange(expense, sumBy(prevMonth, "gasto")),
       balance: income - expense - debtPaid - saved,
+      myBalance,
       free: income - plannedTotal,
     };
-  }, [transactions, budgetsQuery.data]);
+  }, [transactions, budgetsQuery.data, currentUserId]);
 
   const budgets = useMemo(() => {
     const spentByCategory = new Map<string, number>();
@@ -184,17 +198,25 @@ function Inicio() {
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
           <p className="text-[12px] text-muted-foreground">{greeting()},</p>
-          <h1 className="truncate font-display text-xl font-bold">Familia</h1>
+          <h1 className="truncate font-display text-xl font-bold">
+            {profile.data?.display_name ?? "Familia"}
+          </h1>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
-            Balance
+            Mi balance
           </p>
           <p className="font-display text-2xl font-bold tabular-nums text-primary">
-            {money(stats.balance)}
+            {money(stats.myBalance)}
           </p>
         </div>
       </header>
+
+      {profile.data?.family_id && (
+        <p className="mt-1 text-right text-[11px] text-muted-foreground">
+          Balance familiar visible: <span className="font-medium">{money(stats.balance)}</span>
+        </p>
+      )}
 
       <div className="mt-4">
         <LevelBar xp={progress.xp} streak={progress.streak} onOpen={() => setProgressOpen(true)} />
