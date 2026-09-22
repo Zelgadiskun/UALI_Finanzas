@@ -1,4 +1,4 @@
-# FFOS Wallet
+# UALÍ Finanzas
 
 Finanzas familiares compartidas con educación financiera gamificada, estilo Duolingo.
 
