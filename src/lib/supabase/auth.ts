@@ -53,6 +53,28 @@ export async function signIn(email: string, password: string) {
   if (error) throw error;
 }
 
+/**
+ * Login con Google. A diferencia de signIn(), esta promesa NUNCA resuelve con
+ * una sesión: lo que hace es mandar al navegador a la pantalla de consentimien-
+ * to de Google. Por eso acá no hay nada que hacer con el resultado: la pantalla
+ * que ve el usuario es la de Google, no esta.
+ *
+ * Al volver, Google trae `?code=` en la URL; `detectSessionInUrl` de Supabase
+ * (activo por defecto, con flujo PKCE) cambia ese code por tokens y dispara
+ * onAuthStateChange, que es lo que hace que useSession pase de `loading` a
+ * sesión — por eso AppGate muestra la app sola, sin una ruta de callback propia.
+ *
+ * redirectTo apunta al origen actual (Vercel en producción, :8080 en local) y
+ * tiene que estar en Auth → URL Configuration → Redirect URLs del proyecto.
+ */
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${window.location.origin}/` },
+  });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
