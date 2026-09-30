@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { AlertTriangle, Award, ChevronRight, Info, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Award, ChevronRight, Info, Sparkles, X } from "lucide-react";
 import { KpiCard } from "@/components/ffos/KpiCard";
 import { LevelBar } from "@/components/ffos/LevelBar";
 import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
@@ -9,6 +9,8 @@ import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { TodayLessonCard } from "@/components/ffos/TodayLessonCard";
 import { InfoTip } from "@/components/ffos/InfoTip";
 import { LessonSheet } from "@/components/ffos/LessonSheet";
+import { LearningPathSection } from "@/components/ffos/LearningPathSection";
+import { TutorialModal, isTutorialCompleted } from "@/components/ffos/TutorialModal";
 import { DashboardSkeleton } from "@/components/ffos/Skeletons";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { useTxActions } from "@/components/ffos/useTxActions";
@@ -31,9 +33,9 @@ import {
 } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
-const title = "FFOS Wallet — Finanzas familiares claras";
+const title = "UALI Finanzas — Finanzas personales y en equipo claras";
 const description =
-  "Panel familiar de finanzas: balance, ingresos, gastos, deuda y presupuesto del mes en una sola pantalla, con niveles y rachas que enseñan a manejar la plata.";
+  "Panel de finanzas personales y en equipo: balance, ingresos, gastos, deudas y presupuestos en una sola pantalla, con niveles y rachas que enseñan a manejar la plata.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,8 +63,16 @@ function Inicio() {
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const [progressOpen, setProgressOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [openLesson, setOpenLesson] = useState<LessonRow | null>(null);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [openLesson, setOpenLesson] = useState<{ lesson: LessonRow; done: boolean } | null>(null);
   const actions = useTxActions();
+
+  useEffect(() => {
+    if (!isTutorialCompleted()) {
+      const timer = setTimeout(() => setTutorialOpen(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const nextLesson = useMemo(() => {
     const xp = progressQuery.data?.xp ?? 0;
@@ -197,7 +207,18 @@ function Inicio() {
     <main className="px-4 pt-4 pb-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
-          <p className="text-[12px] text-muted-foreground">{greeting()},</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[12px] text-muted-foreground">{greeting()},</p>
+            <button
+              onClick={() => setTutorialOpen(true)}
+              type="button"
+              className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary transition-colors hover:bg-primary/20 active:scale-95"
+              title="Guía y principios de UALI"
+            >
+              <Sparkles className="size-3" />
+              <span>Guía UALI</span>
+            </button>
+          </div>
           <h1 className="truncate font-display text-xl font-bold">
             {profile.data?.display_name ?? "Familia"}
           </h1>
@@ -222,33 +243,23 @@ function Inicio() {
         <LevelBar xp={progress.xp} streak={progress.streak} onOpen={() => setProgressOpen(true)} />
       </div>
 
-      {nextLesson ? (
+      {nextLesson && (
         <div className="mt-3">
           <TodayLessonCard
             lesson={nextLesson}
             completed={lessonsCompleted}
             total={lessonsTotal}
-            onOpen={() => setOpenLesson(nextLesson)}
+            onOpen={() => setOpenLesson({ lesson: nextLesson, done: false })}
           />
         </div>
-      ) : (
-        lessonsTotal > 0 &&
-        lessonsCompleted >= lessonsTotal && (
-          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
-            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
-              <Award className="size-5" strokeWidth={1.75} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
-                Ruta de aprendizaje
-              </p>
-              <p className="font-display text-base font-bold">
-                Completaste las {lessonsTotal} lecciones
-              </p>
-            </div>
-          </div>
-        )
       )}
+
+      <LearningPathSection
+        lessons={lessonsQuery.data ?? []}
+        lessonsDone={progress.lessonsDone}
+        userLevel={levelInfo(progress.xp).level}
+        onOpenLesson={(lesson, isDone) => setOpenLesson({ lesson, done: isDone })}
+      />
 
       <section aria-label="Indicadores del mes" className="mt-4 grid grid-cols-3 gap-2">
         <KpiCard label="Ingresos" value={stats.income} delta={stats.incomeDelta} tone="accent" />
@@ -377,8 +388,13 @@ function Inicio() {
       <Fab label="Nueva transacción" onClick={() => setSheetOpen(true)} />
       <TransactionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
       {openLesson && (
-        <LessonSheet lesson={openLesson} done={false} onClose={() => setOpenLesson(null)} />
+        <LessonSheet
+          lesson={openLesson.lesson}
+          done={openLesson.done}
+          onClose={() => setOpenLesson(null)}
+        />
       )}
+      <TutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
       {actions.element}
     </main>
   );

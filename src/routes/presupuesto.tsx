@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { MoreVertical, Users } from "lucide-react";
+import { Lock, MoreVertical, Sparkles, Users } from "lucide-react";
 import { ProgressBar, barState } from "@/components/ffos/ProgressBar";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
@@ -26,9 +26,9 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const title = "Presupuesto — FFOS Wallet";
+const title = "Presupuesto — UALI Finanzas";
 const description =
-  "Presupuesto familiar por grupos: fijos, variables, discreción, ahorro y deuda, con avance planificado contra gastado.";
+  "Presupuesto personal y de equipo: fijos, variables, discreción y ahorro, con avance planificado contra gastado.";
 
 export const Route = createFileRoute("/presupuesto")({
   head: () => ({
@@ -53,6 +53,7 @@ function Presupuesto() {
   const membersQuery = useFamilyMembersQuery();
   const currentUserId = useCurrentUserId();
   const [addOpen, setAddOpen] = useState(false);
+  const [filter, setFilter] = useState<"all" | "shared" | "personal">("all");
 
   // Lo gastado se deriva de los movimientos del mes por categoría — nunca
   // se guarda como columna, así no puede desincronizarse (el bug que se
@@ -88,6 +89,15 @@ function Presupuesto() {
   const planned = budgets.reduce((a, b) => a + b.planned, 0);
   const spent = budgets.reduce((a, b) => a + b.spent, 0);
 
+  const sharedCount = budgets.filter((b) => b.isShared).length;
+  const personalCount = budgets.filter((b) => !b.isShared).length;
+
+  const filteredBudgets = useMemo(() => {
+    if (filter === "shared") return budgets.filter((b) => b.isShared);
+    if (filter === "personal") return budgets.filter((b) => !b.isShared);
+    return budgets;
+  }, [budgets, filter]);
+
   // La primera lección del sistema dice "asigná cada peso antes de
   // gastarlo" — pero nada en esta pantalla mostraba si de verdad se estaba
   // cumpliendo esa regla. Este es el indicador central del método 0-base,
@@ -98,21 +108,6 @@ function Presupuesto() {
       .reduce((a, t) => a + t.amount, 0);
   }, [txQuery.data]);
   const unassigned = monthIncome - planned;
-
-  if (!inFamily) {
-    return (
-      <main className="px-4 pt-4 pb-6">
-        <h1 className="font-display text-xl font-bold">Presupuesto</h1>
-        <div className="mt-4 rounded-2xl border border-border bg-card">
-          <EmptyState
-            title="El presupuesto es de la familia"
-            description="Creá una familia o unite a una desde Más → Familia para empezar a planificar juntos."
-            illustration="presupuesto"
-          />
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="px-4 pt-4 pb-6">
@@ -128,6 +123,17 @@ function Presupuesto() {
       <p className="mt-0.5 text-[13px] text-muted-foreground">
         {money(spent)} gastados de {money(planned)} planificados
       </p>
+
+      {!inFamily && (
+        <div className="mt-3 flex items-center gap-2.5 rounded-2xl border border-primary/20 bg-primary-soft/40 p-3 text-xs">
+          <span className="grid size-7 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <Lock className="size-3.5" />
+          </span>
+          <p className="text-muted-foreground leading-relaxed">
+            Estás usando presupuestos individuales privados. Para compartir gastos con tu pareja o compas de piso, conéctate a un equipo en Más.
+          </p>
+        </div>
+      )}
 
       {monthIncome > 0 && (
         <div
@@ -147,7 +153,50 @@ function Presupuesto() {
         </div>
       )}
 
-      {addOpen && <AddBudgetForm onDone={() => setAddOpen(false)} />}
+      {addOpen && <AddBudgetForm inFamily={inFamily} onDone={() => setAddOpen(false)} />}
+
+      {inFamily && budgets.length > 0 && (
+        <div className="mt-3 flex gap-1.5">
+          <button
+            onClick={() => setFilter("all")}
+            type="button"
+            className={cn(
+              "rounded-xl px-3 py-1 text-xs font-bold transition-colors",
+              filter === "all"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Todos ({budgets.length})
+          </button>
+          <button
+            onClick={() => setFilter("shared")}
+            type="button"
+            className={cn(
+              "flex items-center gap-1.5 rounded-xl px-3 py-1 text-xs font-bold transition-colors",
+              filter === "shared"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Users className="size-3.5" />
+            <span>Equipo ({sharedCount})</span>
+          </button>
+          <button
+            onClick={() => setFilter("personal")}
+            type="button"
+            className={cn(
+              "flex items-center gap-1.5 rounded-xl px-3 py-1 text-xs font-bold transition-colors",
+              filter === "personal"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Lock className="size-3.5" />
+            <span>Personales ({personalCount})</span>
+          </button>
+        </div>
+      )}
 
       {budgets.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-border bg-card">
@@ -164,7 +213,7 @@ function Presupuesto() {
             <CategorySpendChart spentByCategory={spentByCategory} />
           </div>
           <div className="mt-4 space-y-3">
-            {budgets.map((b) => (
+            {filteredBudgets.map((b) => (
               <BudgetCard
                 key={b.id}
                 budget={b}

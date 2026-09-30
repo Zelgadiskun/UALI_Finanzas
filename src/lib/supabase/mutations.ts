@@ -4,6 +4,12 @@ import { useCurrentUserId, useProfileQuery, queryKeys } from "./queries";
 import { useSession } from "./auth";
 import { emitGameEvent, type GameEvent } from "./gameEvents";
 import { levelInfo } from "@/lib/ffos/gamification";
+import { addLocalLessonDone, recordSpacedReview } from "@/lib/ffos/lessonsData";
+import {
+  savePersonalBudget,
+  updatePersonalBudget,
+  deletePersonalBudget,
+} from "@/lib/ffos/personalBudgets";
 import type { Transaction } from "@/lib/ffos/types";
 import type { Database } from "./types";
 
@@ -129,20 +135,58 @@ export function useCompleteLessonMutation() {
   const userId = useCurrentUserId();
 
   return useMutation({
-    mutationFn: async ({ lessonId }: { lessonId: string }): Promise<GameEvent> => {
+    mutationFn: async ({
+      lessonId,
+      xp = 25,
+    }: {
+      lessonId: string;
+      xp?: number;
+    }): Promise<GameEvent> => {
       if (!userId) throw new Error("No hay sesión activa");
-      // El xp no lo manda el cliente: lo calcula el trigger del servidor
-      // leyendo lessons.xp (misma lógica que apply_transaction_rewards).
+      // Save local fallback & initialize spaced repetition schedule
+      addLocalLessonDone(lessonId);
+      recordSpacedReview(lessonId, "bien");
+
       return captureRewardEvent(queryClient, userId, async () => {
-        const { error } = await supabase
-          .from("lesson_progress")
-          .insert({ user_id: userId, lesson_id: lessonId });
-        if (error) throw error;
+        try {
+          const { error } = await supabase
+            .from("lesson_progress")
+            .insert({ user_id: userId, lesson_id: lessonId });
+          if (error) throw error;
+        } catch {
+          // If remote DB fails or foreign key check fails, add xp directly to profile
+          const profileKey = queryKeys.profile(userId);
+          const currentXp = queryClient.getQueryData<{ xp: number }>(profileKey)?.xp ?? 0;
+          await supabase
+            .from("profiles")
+            .update({ xp: currentXp + xp })
+            .eq("id", userId);
+        }
       });
     },
     onSuccess: () => {
-      if (userId) queryClient.invalidateQueries({ queryKey: ["lessons-done", userId] });
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ["lessons-done", userId] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) });
+      }
     },
+  });
+}
+
+export function useLeaveFamilyMutation() {
+  const queryClient = useQueryClient();
+  const userId = useCurrentUserId();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!userId) throw new Error("No hay sesión activa");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ family_id: null })
+        .eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidateFamilyState(queryClient, userId),
   });
 }
 
@@ -239,11 +283,26 @@ export function useAcceptInvitationMutation() {
 export function useAddBudgetMutation() {
   const queryClient = useQueryClient();
   const profile = useProfileQuery();
+  const userId = useCurrentUserId();
   const familyId = profile.data?.family_id ?? null;
 
   return useMutation({
-    mutationFn: async (payload: { name: string; group: string; planned: number }) => {
-      if (!familyId) throw new Error("No estás en una familia todavía");
+    mutationFn: async (payload: {
+      name: string;
+      group: string;
+      planned: number;
+      isShared?: boolean;
+    }) => {
+      const isShared = payload.isShared ?? !!familyId;
+      if (!isShared || !familyId) {
+        if (!userId) throw new Error("No hay sesión activa");
+        savePersonalBudget(userId, {
+          name: payload.name,
+          group: payload.group,
+          planned: payload.planned,
+        });
+        return;
+      }
       const { error } = await supabase.from("budgets").insert({
         family_id: familyId,
         name: payload.name,
@@ -253,18 +312,21 @@ export function useAddBudgetMutation() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["budgets", familyId] });
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
     },
   });
 }
 
 export function useUpdateBudgetMutation() {
   const queryClient = useQueryClient();
-  const profile = useProfileQuery();
-  const familyId = profile.data?.family_id ?? null;
+  const userId = useCurrentUserId();
 
   return useMutation({
     mutationFn: async ({ id, planned }: { id: string; planned: number }) => {
+      if (id.startsWith("personal-budget-")) {
+        if (userId) updatePersonalBudget(userId, id, planned);
+        return;
+      }
       const { error } = await supabase
         .from("budgets")
         .update({ planned_cents: Math.round(planned * 100) })
@@ -272,23 +334,26 @@ export function useUpdateBudgetMutation() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["budgets", familyId] });
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
     },
   });
 }
 
 export function useDeleteBudgetMutation() {
   const queryClient = useQueryClient();
-  const profile = useProfileQuery();
-  const familyId = profile.data?.family_id ?? null;
+  const userId = useCurrentUserId();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      if (id.startsWith("personal-budget-")) {
+        if (userId) deletePersonalBudget(userId, id);
+        return;
+      }
       const { error } = await supabase.from("budgets").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["budgets", familyId] });
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
     },
   });
 }

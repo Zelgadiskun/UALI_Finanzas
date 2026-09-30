@@ -1,23 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Award, LogOut, Moon, Target, Trash2, Users } from "lucide-react";
+import { Award, LogOut, Moon, Sparkles, Target, Trash2, UserMinus, Users } from "lucide-react";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { FamilySheet } from "@/components/ffos/FamilySheet";
 import { GoalsSheet } from "@/components/ffos/GoalsSheet";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
+import { TutorialModal } from "@/components/ffos/TutorialModal";
 import { Switch } from "@/components/ui/switch";
 import { deleteAccount, signOut } from "@/lib/supabase/auth";
 import {
   useProgressQuery,
   useProfileQuery,
+  useFamilyQuery,
   usePendingInvitationsQuery,
 } from "@/lib/supabase/queries";
+import { useLeaveFamilyMutation } from "@/lib/supabase/mutations";
 import { levelInfo } from "@/lib/ffos/gamification";
 import { applyTheme, getStoredTheme } from "@/lib/theme";
 
-const title = "Más — FFOS Wallet";
-const description = "Progreso, logros, metas y ajustes de la cuenta familiar de FFOS Wallet.";
+const title = "Más — UALI Finanzas";
+const description = "Progreso, logros, metas y ajustes de tu cuenta en UALI Finanzas.";
 
 export const Route = createFileRoute("/mas")({
   head: () => ({
@@ -35,12 +38,17 @@ function Mas() {
   const progressQuery = useProgressQuery();
   const progress = progressQuery.data;
   const profile = useProfileQuery();
+  const familyQuery = useFamilyQuery();
+  const leaveFamilyMutation = useLeaveFamilyMutation();
   const pendingQuery = usePendingInvitationsQuery();
   const pendingCount = pendingQuery.data?.length ?? 0;
   const inFamily = !!profile.data?.family_id;
   const [progressOpen, setProgressOpen] = useState(false);
   const [familyOpen, setFamilyOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [confirmingLeaveFamily, setConfirmingLeaveFamily] = useState(false);
+  const [leavingFamily, setLeavingFamily] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -88,9 +96,15 @@ function Mas() {
         >
           <Users className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">Familia</span>
+            <span className="block text-sm font-medium">
+              {familyQuery.data?.name
+                ? `Equipo: ${familyQuery.data.name}`
+                : "Equipo / Espacio Compartido"}
+            </span>
             <span className="block text-[12px] text-muted-foreground">
-              {profile.data?.family_id ? "Ver miembros e invitar" : "Crear o unirte a una familia"}
+              {inFamily
+                ? "Ver miembros, invitar y gestionar código"
+                : "Crear espacio (Pareja, Roommates, Amigos, etc.)"}
             </span>
           </span>
           {pendingCount > 0 && (
@@ -107,9 +121,39 @@ function Mas() {
         >
           <Target className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">Metas</span>
+            <span className="block text-sm font-medium">Metas de ahorro</span>
             <span className="block text-[12px] text-muted-foreground">
-              {inFamily ? "Ver y crear metas de ahorro" : "Unite a una familia primero"}
+              {inFamily
+                ? "Ver y crear metas conjuntas"
+                : "Conéctate a un espacio compartido primero"}
+            </span>
+          </span>
+        </button>
+
+        {inFamily && (
+          <button
+            onClick={() => setConfirmingLeaveFamily(true)}
+            className="flex w-full items-center gap-3 rounded-2xl border border-danger/30 bg-danger-soft/30 p-4 text-left text-danger shadow-card transition-colors hover:bg-danger-soft/60"
+          >
+            <UserMinus className="size-5 text-danger" strokeWidth={1.75} aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium">Abandonar espacio compartido</span>
+              <span className="block text-[12px] opacity-80">
+                Salir de {familyQuery.data?.name || "este equipo"} y volver a modo personal
+              </span>
+            </span>
+          </button>
+        )}
+
+        <button
+          onClick={() => setTutorialOpen(true)}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-card transition-colors hover:bg-secondary/40"
+        >
+          <Sparkles className="size-5 text-primary" strokeWidth={1.75} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">Guía y Principios de UALI</span>
+            <span className="block text-[12px] text-muted-foreground">
+              Regla 50/30/20, privacidad y finanzas en equipo
             </span>
           </span>
         </button>
@@ -167,6 +211,26 @@ function Mas() {
       )}
       <FamilySheet open={familyOpen} onClose={() => setFamilyOpen(false)} />
       <GoalsSheet open={goalsOpen} onClose={() => setGoalsOpen(false)} />
+      <TutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
+      <ConfirmModal
+        open={confirmingLeaveFamily}
+        title="¿Abandonar el espacio compartido?"
+        description="Dejarás de ver los presupuestos y gastos compartidos de este equipo. Tus movimientos y datos privados siguen estando a salvo en tu cuenta."
+        confirmLabel={leavingFamily ? "Saliendo…" : "Abandonar espacio"}
+        onCancel={() => setConfirmingLeaveFamily(false)}
+        onConfirm={async () => {
+          setLeavingFamily(true);
+          try {
+            await leaveFamilyMutation.mutateAsync();
+            toast.success("Has salido del espacio compartido.");
+            setConfirmingLeaveFamily(false);
+          } catch {
+            toast.error("No se pudo salir del espacio. Probá de nuevo.");
+          } finally {
+            setLeavingFamily(false);
+          }
+        }}
+      />
       <ConfirmModal
         open={confirmingSignOut}
         title="¿Cerrar sesión?"

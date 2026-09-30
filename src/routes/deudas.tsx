@@ -11,9 +11,9 @@ import { useAddDebtMutation, useDeleteDebtMutation } from "@/lib/supabase/mutati
 import { useDebtsQuery, useProfileQuery, useTransactionsQuery } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
-const title = "Deudas — FFOS Wallet";
+const title = "Deudas — UALI Finanzas";
 const description =
-  "Seguimiento de deudas familiares: saldo pendiente real por acreedor, con proyección avalancha vs. bola de nieve.";
+  "Seguimiento de deudas personales y en equipo: saldo pendiente real por acreedor, con proyección avalancha vs. bola de nieve.";
 
 export const Route = createFileRoute("/deudas")({
   head: () => ({

@@ -65,8 +65,8 @@ export function AuthScreen() {
     <div className="flex min-h-screen items-center justify-center bg-background px-5">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="font-display text-3xl font-bold text-primary">FFOS Wallet</h1>
-          <p className="text-sm text-muted-foreground">Finanzas familiares claras</p>
+          <h1 className="font-display text-3xl font-bold text-primary">UALI Finanzas</h1>
+          <p className="text-sm text-muted-foreground">Finanzas personales y en equipo claras</p>
         </div>
 
         <form

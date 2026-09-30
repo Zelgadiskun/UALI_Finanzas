@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/ffos/BottomNav";
 import { Celebration } from "@/components/ffos/Celebration";
 import { AuthScreen } from "@/components/ffos/AuthScreen";
+import { useSwipeNavigation } from "@/components/ffos/useSwipeNavigation";
 import { useSession } from "@/lib/supabase/auth";
 import { queryPersister } from "@/lib/query-persister";
 import { getStoredTheme } from "@/lib/theme";
@@ -85,13 +86,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
       { name: "theme-color", content: "#2c3fd1" },
-      { name: "author", content: "FFOS Wallet" },
+      { name: "author", content: "UALI Finanzas" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "FFOS Wallet" },
+      { name: "apple-mobile-web-app-title", content: "UALI Finanzas" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -118,11 +119,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var rawFetch=typeof window!=='undefined'&&window.fetch?window.fetch.bind(window):undefined;var currentFetch=rawFetch;var desc=typeof window!=='undefined'?(Object.getOwnPropertyDescriptor(window,'fetch')||(window.constructor&&Object.getOwnPropertyDescriptor(window.constructor.prototype,'fetch'))):null;if(!desc||!desc.writable||desc.set===undefined){try{Object.defineProperty(window,'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e){try{Object.defineProperty(Object.getPrototypeOf(window),'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e2){}}}}catch(err){}})();`,
+          }}
+        />
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -174,6 +180,7 @@ function RootComponent() {
 
 function AppGate() {
   const { session, loading } = useSession();
+  useSwipeNavigation();
 
   if (loading) {
     return <div className="min-h-screen bg-background" />;

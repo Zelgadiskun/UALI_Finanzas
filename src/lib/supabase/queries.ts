@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "./client";
 import { useSession } from "./auth";
+import { DEFAULT_LESSONS, getLocalLessonsDone } from "@/lib/ffos/lessonsData";
+import { getPersonalBudgets } from "@/lib/ffos/personalBudgets";
 import type { Progress, Transaction } from "@/lib/ffos/types";
 import type { Database } from "./types";
 
@@ -17,6 +19,7 @@ export type BudgetRow = {
   group: string;
   planned: number;
   createdBy: string | null;
+  isShared: boolean;
 };
 
 /** Cuánto le repartió el administrador de un presupuesto a cada miembro. */
@@ -126,22 +129,32 @@ export function useLessonsQuery() {
     queryKey: ["lessons"],
     staleTime: 1000 * 60 * 60,
     queryFn: async (): Promise<LessonRow[]> => {
-      const { data, error } = await supabase
-        .from("lessons")
-        .select("*")
-        .order("display_order", { ascending: true });
-      if (error) throw error;
-      return data.map((l) => ({
-        id: l.id,
-        slug: l.slug,
-        minLevel: l.min_level,
-        title: l.title,
-        body: l.body,
-        question: l.question,
-        options: l.options as string[],
-        answer: l.answer,
-        xp: l.xp,
-      }));
+      try {
+        const { data, error } = await supabase
+          .from("lessons")
+          .select("*")
+          .order("display_order", { ascending: true });
+        if (error || !data || data.length === 0) {
+          return DEFAULT_LESSONS;
+        }
+        const dbLessons = data.map((l) => ({
+          id: l.id,
+          slug: l.slug,
+          minLevel: l.min_level,
+          title: l.title,
+          body: l.body,
+          question: l.question,
+          options: l.options as string[],
+          answer: l.answer,
+          xp: l.xp,
+        }));
+        // Merge to make sure all rich content is available
+        const knownSlugs = new Set(dbLessons.map((l) => l.slug));
+        const additional = DEFAULT_LESSONS.filter((l) => !knownSlugs.has(l.slug));
+        return [...dbLessons, ...additional];
+      } catch {
+        return DEFAULT_LESSONS;
+      }
     },
   });
 }
@@ -152,12 +165,19 @@ export function useLessonsDoneQuery() {
     queryKey: userId ? ["lessons-done", userId] : ["lessons-done", "anon"],
     enabled: !!userId,
     queryFn: async (): Promise<string[]> => {
-      const { data, error } = await supabase
-        .from("lesson_progress")
-        .select("lesson_id")
-        .eq("user_id", userId!);
-      if (error) throw error;
-      return data.map((row) => row.lesson_id);
+      const local = getLocalLessonsDone();
+      try {
+        const { data, error } = await supabase
+          .from("lesson_progress")
+          .select("lesson_id")
+          .eq("user_id", userId!);
+        if (error || !data) return local;
+        const dbIds = data.map((row) => row.lesson_id);
+        const set = new Set([...dbIds, ...local]);
+        return Array.from(set);
+      } catch {
+        return local;
+      }
     },
   });
 }
@@ -259,21 +279,47 @@ export function usePendingInvitationsQuery() {
 
 export function useBudgetsQuery() {
   const profile = useProfileQuery();
+  const userId = useCurrentUserId();
   const familyId = profile.data?.family_id ?? null;
 
   return useQuery({
-    queryKey: ["budgets", familyId],
-    enabled: !!familyId,
+    queryKey: ["budgets", userId, familyId],
+    enabled: !!userId,
     queryFn: async (): Promise<BudgetRow[]> => {
-      const { data, error } = await supabase.from("budgets").select("*").eq("family_id", familyId!);
-      if (error) throw error;
-      return data.map((b) => ({
-        id: b.id,
-        name: b.name,
-        group: b.bucket,
-        planned: b.planned_cents / 100,
-        createdBy: b.created_by,
+      const personal = userId ? getPersonalBudgets(userId) : [];
+      const personalRows: BudgetRow[] = personal.map((p) => ({
+        id: p.id,
+        name: p.name,
+        group: p.group,
+        planned: p.planned,
+        createdBy: p.userId,
+        isShared: false,
       }));
+
+      if (!familyId) {
+        return personalRows;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("budgets")
+          .select("*")
+          .eq("family_id", familyId);
+        if (error || !data) return personalRows;
+
+        const sharedRows: BudgetRow[] = data.map((b) => ({
+          id: b.id,
+          name: b.name,
+          group: b.bucket,
+          planned: b.planned_cents / 100,
+          createdBy: b.created_by,
+          isShared: true,
+        }));
+
+        return [...sharedRows, ...personalRows];
+      } catch {
+        return personalRows;
+      }
     },
   });
 }

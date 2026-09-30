@@ -17,9 +17,9 @@ import {
 import { TX_TYPES, type TxType } from "@/lib/ffos/types";
 import { cn } from "@/lib/utils";
 
-const title = "Movimientos — FFOS Wallet";
+const title = "Movimientos — UALI Finanzas";
 const description =
-  "Registro completo de ingresos, gastos, pagos de deuda y ahorro de la familia, agrupado por día y con filtros rápidos por tipo.";
+  "Registro completo de ingresos, gastos, pagos de deuda y ahorro personales y de equipo, agrupado por día y con filtros rápidos por tipo.";
 
 export const Route = createFileRoute("/movimientos")({
   head: () => ({

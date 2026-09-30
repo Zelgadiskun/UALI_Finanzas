@@ -1,7 +1,7 @@
 {
-  "name": "FFOS Wallet",
-  "short_name": "FFOS Wallet",
-  "description": "Finanzas familiares compartidas con educación financiera gamificada.",
+  "name": "UALI Finanzas",
+  "short_name": "UALI",
+  "description": "Finanzas personales y en equipo con educación financiera gamificada.",
   "lang": "es",
   "start_url": "/",
   "scope": "/",

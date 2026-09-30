@@ -4,7 +4,7 @@ export function renderErrorPage(): string {
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>FFOS Wallet</title>
+    <title>UALI Finanzas</title>
     <style>
       body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

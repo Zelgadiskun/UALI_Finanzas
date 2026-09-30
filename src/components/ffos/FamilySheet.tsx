@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, Share2, UserPlus, X } from "lucide-react";
+import { Check, Copy, LogOut, Share2, UserMinus, UserPlus, X } from "lucide-react";
 import { BottomSheet } from "./BottomSheet";
 import {
   useFamilyMembersQuery,
@@ -13,6 +13,7 @@ import {
   useCreateFamilyMutation,
   useInviteToFamilyMutation,
   useJoinFamilyMutation,
+  useLeaveFamilyMutation,
   useRejectInvitationMutation,
 } from "@/lib/supabase/mutations";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,11 @@ export function FamilySheet({ open, onClose }: Props) {
   const inFamily = !!profile.data?.family_id;
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Familia">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={familyQuery.data?.name ? `Equipo: ${familyQuery.data.name}` : "Espacio Compartido"}
+    >
       <div className="space-y-5 pb-2">
         {pendingQuery.data && pendingQuery.data.length > 0 && (
           <PendingInvitations invitations={pendingQuery.data} />
@@ -127,26 +132,57 @@ function NoFamilyYet() {
     }
   }
 
+  const PRESETS = [
+    { label: "Pareja 💑", name: "Mi Pareja" },
+    { label: "Hogar / Roommates 🏠", name: "Casa / Roommates" },
+    { label: "Amigos / Viaje ✈️", name: "Viaje con Amigos" },
+    { label: "Familia 👨‍👩‍👧", name: "Nuestra Familia" },
+    { label: "Proyecto 💡", name: "Equipo Proyecto" },
+  ];
+
   if (mode === "create") {
     return (
       <section className="space-y-3">
+        <div>
+          <span className="mb-1.5 block text-[12px] font-medium text-muted-foreground">
+            Elige un tipo o escribe tu nombre:
+          </span>
+          <div className="flex flex-wrap gap-1.5 pb-2">
+            {PRESETS.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                onClick={() => setName(p.name)}
+                className={cn(
+                  "rounded-xl border px-2.5 py-1 text-xs font-semibold transition-colors",
+                  name === p.name
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-medium text-muted-foreground">
-            Nombre de la familia
+            Nombre del espacio
           </span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Familia García"
+            placeholder="Ej. Casa Palermo, Vacaciones, Pareja…"
             className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
           />
         </label>
         <button
           onClick={() => void submitCreate()}
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || !name.trim()}
           className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {createMutation.isPending ? "Creando…" : "Crear familia"}
+          {createMutation.isPending ? "Creando…" : "Crear espacio compartido"}
         </button>
         <button
           onClick={() => setMode("none")}
@@ -163,7 +199,7 @@ function NoFamilyYet() {
       <section className="space-y-3">
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-medium text-muted-foreground">
-            Código de la familia
+            Código de invitación del equipo
           </span>
           <input
             value={code}
@@ -178,7 +214,7 @@ function NoFamilyYet() {
           disabled={joinMutation.isPending}
           className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {joinMutation.isPending ? "Uniéndote…" : "Unirme"}
+          {joinMutation.isPending ? "Uniéndote…" : "Unirme al equipo"}
         </button>
         <button
           onClick={() => setMode("none")}
@@ -192,18 +228,21 @@ function NoFamilyYet() {
 
   return (
     <section className="space-y-2">
-      <p className="text-sm text-muted-foreground">Todavía no estás conectado a ninguna familia.</p>
+      <p className="text-sm text-muted-foreground">
+        Todavía no estás conectado a ningún espacio compartido. Puedes crear uno para tu pareja,
+        compas de piso, amigos o familia.
+      </p>
       <button
         onClick={() => setMode("create")}
         className="btn-3d h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground"
       >
-        Crear familia
+        Crear espacio compartido
       </button>
       <button
         onClick={() => setMode("join")}
         className="h-12 w-full rounded-xl border border-border text-sm font-medium"
       >
-        Unirme con código
+        Unirme con código de equipo
       </button>
     </section>
   );
@@ -218,6 +257,7 @@ function FamilyDetails({
 }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const inviteMutation = useInviteToFamilyMutation();
+  const leaveMutation = useLeaveFamilyMutation();
 
   async function copyCode() {
     try {
@@ -229,7 +269,7 @@ function FamilyDetails({
   }
 
   async function shareCode() {
-    const text = `Unite a "${family.name}" en FFOS Wallet con el código ${family.code}`;
+    const text = `Unite a "${family.name}" en UALI Finanzas con el código ${family.code}`;
     if (navigator.share) {
       try {
         await navigator.share({ text });
@@ -320,6 +360,25 @@ function FamilyDetails({
             Invitar
           </button>
         </div>
+      </section>
+
+      <section className="pt-2 border-t border-border/60">
+        <button
+          onClick={async () => {
+            try {
+              await leaveMutation.mutateAsync();
+              toast.success("Has salido del espacio compartido.");
+            } catch {
+              toast.error("No se pudo salir del espacio compartido.");
+            }
+          }}
+          disabled={leaveMutation.isPending}
+          type="button"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-danger/30 bg-danger-soft/30 text-xs font-semibold text-danger transition-colors hover:bg-danger-soft disabled:opacity-60"
+        >
+          <UserMinus className="size-4" />
+          <span>{leaveMutation.isPending ? "Saliendo…" : "Abandonar este espacio compartido"}</span>
+        </button>
       </section>
     </div>
   );
