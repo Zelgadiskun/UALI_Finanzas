@@ -22,7 +22,7 @@ export default defineConfig({
   // host: true expone el dev server en la red local (0.0.0.0), no solo
   // localhost — así se puede abrir desde el celular (misma Wi-Fi) para
   // probar la app mobile-first en un dispositivo real.
-  server: { port: 8080, host: true },
+  server: { port: 3000, host: "0.0.0.0" },
   plugins: [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),

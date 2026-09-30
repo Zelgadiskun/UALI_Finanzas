@@ -1,0 +1,6 @@
+{
+  "name": "UALI Finanzas",
+  "description": "Aplicación de finanzas personales y educación financiera familiar con seguimiento de presupuesto, deudas y gamificación.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
