@@ -1,13 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 
-const TABS = [
-  "/",
-  "/movimientos",
-  "/presupuesto",
-  "/deudas",
-  "/mas",
-] as const;
+const TABS = ["/", "/movimientos", "/presupuesto", "/deudas", "/mas"] as const;
 
 export function useSwipeNavigation() {
   const location = useLocation();
@@ -22,7 +16,7 @@ export function useSwipeNavigation() {
       if (!(target instanceof HTMLElement)) return false;
       // Do not swipe if interacting with forms, horizontal carousels, or bottom sheet
       return !!target.closest(
-        "input, select, textarea, button, role[slider], [data-no-swipe], .overflow-x-auto, [role='dialog']"
+        "input, select, textarea, button, role[slider], [data-no-swipe], .overflow-x-auto, [role='dialog']",
       );
     }
 

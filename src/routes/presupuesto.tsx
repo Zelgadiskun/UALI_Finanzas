@@ -130,7 +130,8 @@ function Presupuesto() {
             <Lock className="size-3.5" />
           </span>
           <p className="text-muted-foreground leading-relaxed">
-            Estás usando presupuestos individuales privados. Para compartir gastos con tu pareja o compas de piso, conéctate a un equipo en Más.
+            Estás usando presupuestos individuales privados. Para compartir gastos con tu pareja o
+            compas de piso, conéctate a un equipo en Más.
           </p>
         </div>
       )}
@@ -244,6 +245,7 @@ function BudgetCard({
     planned: number;
     spent: number;
     createdBy: string | null;
+    isShared: boolean;
   };
   isAdmin: boolean;
   allocations: BudgetAllocationRow[];
@@ -280,10 +282,23 @@ function BudgetCard({
     <article className="rounded-2xl border border-border bg-card p-4 shadow-card">
       <div className="flex items-baseline justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{budget.name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-medium">{budget.name}</p>
+            {budget.isShared ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                <Users className="size-3" />
+                <span>Equipo</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-md bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                <Lock className="size-3" />
+                <span>Solo tú</span>
+              </span>
+            )}
+          </div>
           <p className="text-[11px] text-muted-foreground">
             {budget.group}
-            {adminName && ` · Administra: ${adminName}`}
+            {budget.isShared && adminName && ` · Administra: ${adminName}`}
           </p>
         </div>
         {editing ? (
@@ -342,7 +357,7 @@ function BudgetCard({
         </div>
       )}
 
-      {allocations.length > 0 && (
+      {budget.isShared && allocations.length > 0 && (
         <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
           {allocations.map((a) => {
             const member = members.find((m) => m.id === a.userId);
@@ -368,7 +383,7 @@ function BudgetCard({
         </ul>
       )}
 
-      {isAdmin && (
+      {budget.isShared && isAdmin && (
         <button
           onClick={() => setSharing((v) => !v)}
           className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-primary"
@@ -378,7 +393,7 @@ function BudgetCard({
         </button>
       )}
 
-      {sharing && (
+      {budget.isShared && sharing && (
         <AllocationEditor budgetId={budget.id} members={members} allocations={allocations} />
       )}
 
@@ -463,10 +478,11 @@ function AllocationRow({
   );
 }
 
-function AddBudgetForm({ onDone }: { onDone: () => void }) {
+function AddBudgetForm({ inFamily, onDone }: { inFamily: boolean; onDone: () => void }) {
   const [name, setName] = useState("");
   const [group, setGroup] = useState(GROUPS[0]!);
   const [planned, setPlanned] = useState("");
+  const [isShared, setIsShared] = useState(inFamily);
   const addMutation = useAddBudgetMutation();
 
   async function submit() {
@@ -476,8 +492,13 @@ function AddBudgetForm({ onDone }: { onDone: () => void }) {
       return;
     }
     try {
-      await addMutation.mutateAsync({ name: name.trim(), group, planned: value });
-      toast.success("Rubro agregado");
+      await addMutation.mutateAsync({
+        name: name.trim(),
+        group,
+        planned: value,
+        isShared: inFamily ? isShared : false,
+      });
+      toast.success(isShared ? "Rubro compartido agregado" : "Presupuesto personal agregado");
       onDone();
     } catch {
       toast.error("No se pudo guardar. Probá de nuevo.");
@@ -486,6 +507,47 @@ function AddBudgetForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="mt-3 space-y-3 rounded-2xl border border-border bg-card p-4">
+      {inFamily && (
+        <div className="rounded-xl border border-border/80 bg-secondary/30 p-2.5">
+          <span className="mb-1.5 block text-[11px] font-bold text-foreground">
+            Visibilidad del presupuesto
+          </span>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsShared(true)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
+                isShared
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              <Users className="size-3.5" />
+              <span>Compartido (Equipo)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsShared(false)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
+                !isShared
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              <Lock className="size-3.5" />
+              <span>Privado (Solo tú)</span>
+            </button>
+          </div>
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
+            {isShared
+              ? "Los miembros de tu equipo verán este presupuesto y podrán repartirse cupos."
+              : "Solo tú verás este presupuesto y tus gastos en él. Totalmente privado."}
+          </p>
+        </div>
+      )}
+
       <div>
         <label className="mb-1.5 block text-[12px] font-medium text-muted-foreground">
           Nombre (igual a la categoría de tus gastos, ej. "Comida")

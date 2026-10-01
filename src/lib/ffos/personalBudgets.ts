@@ -21,7 +21,7 @@ export function getPersonalBudgets(userId: string): PersonalBudget[] {
 
 export function savePersonalBudget(
   userId: string,
-  budget: { name: string; group: string; planned: number }
+  budget: { name: string; group: string; planned: number },
 ): PersonalBudget {
   const list = getPersonalBudgets(userId);
   const newBudget: PersonalBudget = {
