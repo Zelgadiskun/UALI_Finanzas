@@ -23,7 +23,7 @@ function locationRadarApiPlugin(): Plugin {
             try {
               const data = JSON.parse(body || "{}");
               const { latitude = 8.9824, longitude = -79.5199, simulatePlace } = data;
-              const { detectNearbyPlaceWithMaps } = await import("./src/server/locationRadar");
+              const { detectNearbyPlaceWithMaps } = await import("./src/server/locationRadar.ts");
               const result = await detectNearbyPlaceWithMaps(
                 Number(latitude),
                 Number(longitude),
@@ -45,7 +45,7 @@ function locationRadarApiPlugin(): Plugin {
             const latitude = Number(url.searchParams.get("lat") || "8.9824");
             const longitude = Number(url.searchParams.get("lng") || "-79.5199");
             const simulatePlace = url.searchParams.get("simulate") || undefined;
-            const { detectNearbyPlaceWithMaps } = await import("./src/server/locationRadar");
+            const { detectNearbyPlaceWithMaps } = await import("./src/server/locationRadar.ts");
             const result = await detectNearbyPlaceWithMaps(latitude, longitude, simulatePlace);
             res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify(result));
