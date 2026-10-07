@@ -1,0 +1,101 @@
+import {
+  addMonths,
+  format,
+  isBefore,
+  isSameMonth,
+  isSameYear,
+  isToday,
+  isYesterday,
+  parseISO,
+  startOfMonth,
+  subMonths,
+} from "date-fns";
+import { es } from "date-fns/locale";
+
+/**
+ * Formats a currency amount. Values whose absolute magnitude reaches
+ * `compactAbove` render as "$12.3K" instead of the full figure — used in
+ * narrow KPI tiles where a five-digit number would overflow the card.
+ */
+export function money(value: number, compactAbove = Infinity): string {
+  const sign = value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+
+  if (abs >= compactAbove) {
+    const compact = new Intl.NumberFormat("es-AR", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(abs);
+    return `${sign}$${compact}`;
+  }
+
+  const formatted = abs.toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${sign}$${formatted}`;
+}
+
+export function todayISO(): string {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
+export function shortDate(iso: string): string {
+  return format(parseISO(iso), "d MMM", { locale: es });
+}
+
+export function groupLabel(iso: string): string {
+  const d = parseISO(iso);
+  if (isToday(d)) return "Hoy";
+  if (isYesterday(d)) return "Ayer";
+  if (isSameYear(d, new Date())) return format(d, "d 'de' MMMM", { locale: es });
+  return format(d, "d 'de' MMMM yyyy", { locale: es });
+}
+
+export function sameMonth(iso: string): boolean {
+  return isSameMonth(parseISO(iso), new Date());
+}
+
+/** True when `iso` is strictly before the first day of the current calendar month. */
+export function isBeforeCurrentMonth(iso: string): boolean {
+  return isBefore(parseISO(iso), startOfMonth(new Date()));
+}
+
+/** Nombre legible del mes actual ("Octubre", "Noviembre"). */
+export function currentMonthName(): string {
+  const str = format(new Date(), "MMMM", { locale: es });
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/** Nombre legible del mes anterior ("Septiembre", "Octubre"). */
+export function previousMonthName(): string {
+  const str = format(subMonths(new Date(), 1), "MMMM", { locale: es });
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/** True when `iso` falls in the calendar month `offset` months from now (negative = past). */
+export function inMonthOffset(iso: string, offset: number): boolean {
+  return isSameMonth(parseISO(iso), addMonths(new Date(), offset));
+}
+
+/** Etiqueta corta ("ene", "feb") del mes `offset` meses desde hoy — para ejes de gráfico. */
+export function monthLabelOffset(offset: number): string {
+  return format(addMonths(new Date(), offset), "MMM", { locale: es });
+}
+
+/**
+ * Percent change from `previous` to `current`, rounded to a whole number.
+ * Returns undefined when there's no prior-period baseline to compare against
+ * — showing "+100%" (or any number) off a zero baseline would be fabricated.
+ */
+export function percentChange(current: number, previous: number): number | undefined {
+  if (previous <= 0) return undefined;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+export function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Buenos días";
+  if (hour < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
