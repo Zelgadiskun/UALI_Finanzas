@@ -4,8 +4,8 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000 --host 0.0.0.0",
-    "build": "vite build && node scripts/postbuild-spa.mjs",
+    "dev": "vite",
+    "build": "NODE_ENV=production vite build && node scripts/postbuild-spa.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview --port 3000 --host 0.0.0.0",
     "test": "vitest run",

@@ -20,6 +20,7 @@ import {
   deletePersonalBudget,
   setPersonalBudgetsBulk,
 } from "@/lib/ffos/personalBudgets";
+import { savePendingTransaction, addLocalGoal, deleteLocalGoal } from "@/lib/offline-storage";
 import type { Transaction } from "@/lib/ffos/types";
 import type { Database } from "./types";
 
@@ -83,22 +84,47 @@ export function useAddTransactionMutation() {
         queryClient,
         userId,
         async () => {
-          const { error } = await supabase.from("transactions").insert({
-            user_id: userId,
-            // Se etiqueta con la familia aunque no se comparta: no cambia la
-            // visibilidad (tx_family_read exige shared=true igual), pero deja
-            // el dato listo para reportes familiares más adelante.
-            family_id: familyId,
-            type: payload.type,
-            category: payload.category,
-            amount_cents: Math.round(payload.amount * 100),
-            occurred_on: payload.date,
-            note: payload.note ?? null,
-            shared: payload.shared,
-            debt_id: payload.debtId ?? null,
-            goal_id: payload.goalId ?? null,
-          });
-          if (error) throw error;
+          let savedOnline = false;
+          if (typeof navigator === "undefined" || navigator.onLine) {
+            try {
+              const { error } = await supabase.from("transactions").insert({
+                user_id: userId,
+                family_id: familyId,
+                type: payload.type,
+                category: payload.category,
+                amount_cents: Math.round(payload.amount * 100),
+                occurred_on: payload.date,
+                note: payload.note ?? null,
+                shared: payload.shared,
+                debt_id: payload.debtId ?? null,
+                goal_id: payload.goalId ?? null,
+              });
+              if (!error) {
+                savedOnline = true;
+              }
+            } catch {
+              savedOnline = false;
+            }
+          }
+
+          if (!savedOnline) {
+            // Guardar localmente en la cola offline para persistencia
+            const pendingId = `tx-offline-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            savePendingTransaction({
+              id: pendingId,
+              userId,
+              familyId,
+              type: payload.type,
+              category: payload.category,
+              amount: payload.amount,
+              date: payload.date,
+              note: payload.note ?? null,
+              shared: payload.shared,
+              debtId: payload.debtId ?? null,
+              goalId: payload.goalId ?? null,
+              createdAt: new Date().toISOString(),
+            });
+          }
 
           // Recompensa real: +10 XP y +15 Puntos FFOS
           const profileKey = queryKeys.profile(userId);
@@ -788,14 +814,28 @@ export function useAddGoalMutation() {
 
   return useMutation({
     mutationFn: async (payload: { name: string; target: number; dueDate: string | null }) => {
-      if (!familyId) throw new Error("No estás en una familia todavía");
-      const { error } = await supabase.from("goals").insert({
-        family_id: familyId,
-        name: payload.name,
-        target_cents: Math.round(payload.target * 100),
-        due_date: payload.dueDate,
-      });
-      if (error) throw error;
+      let savedOnline = false;
+      if (familyId && (typeof navigator === "undefined" || navigator.onLine)) {
+        try {
+          const { error } = await supabase.from("goals").insert({
+            family_id: familyId,
+            name: payload.name,
+            target_cents: Math.round(payload.target * 100),
+            due_date: payload.dueDate,
+          });
+          if (!error) savedOnline = true;
+        } catch {
+          savedOnline = false;
+        }
+      }
+
+      if (!savedOnline) {
+        addLocalGoal({
+          name: payload.name,
+          target: payload.target,
+          dueDate: payload.dueDate,
+        });
+      }
 
       if (userId) {
         addLocalXp(userId, 20);
@@ -809,6 +849,8 @@ export function useAddGoalMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", familyId] });
+      queryClient.invalidateQueries({ queryKey: ["goals", "personal"] });
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
     },
   });
 }
@@ -820,11 +862,23 @@ export function useDeleteGoalMutation() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("goals").delete().eq("id", id);
-      if (error) throw error;
+      deleteLocalGoal(id);
+      if (
+        familyId &&
+        !id.startsWith("goal-") &&
+        (typeof navigator === "undefined" || navigator.onLine)
+      ) {
+        try {
+          await supabase.from("goals").delete().eq("id", id);
+        } catch {
+          // Ignorar si está offline
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", familyId] });
+      queryClient.invalidateQueries({ queryKey: ["goals", "personal"] });
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
     },
   });
 }

@@ -6,6 +6,13 @@ import { DEFAULT_LESSONS, getLocalLessonsDone } from "@/lib/ffos/lessonsData";
 import { getPersonalBudgets } from "@/lib/ffos/personalBudgets";
 import { getLocalXp, getLocalStreak } from "@/lib/ffos/points";
 import { getLocalDebts } from "@/lib/supabase/mutations";
+import {
+  saveCachedTransactions,
+  getCachedTransactions,
+  mergeWithPendingTransactions,
+  getLocalGoals,
+  saveLocalGoals,
+} from "@/lib/offline-storage";
 import type { Progress, Transaction } from "@/lib/ffos/types";
 import type { Database } from "./types";
 
@@ -244,14 +251,22 @@ export function useTransactionsQuery() {
     queryKey: userId ? queryKeys.transactions(userId) : ["transactions", "anon"],
     enabled: !!userId,
     queryFn: async (): Promise<Transaction[]> => {
-      // Sin filtro por user_id a propósito: RLS ya devuelve lo propio más lo
-      // que la familia compartió (tx_owner OR tx_family_read, fase 2).
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("occurred_on", { ascending: false });
-      if (error) throw error;
-      return data.map(fromRow);
+      if (!userId) return [];
+      try {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .order("occurred_on", { ascending: false });
+        if (!error && data) {
+          const list = data.map(fromRow);
+          saveCachedTransactions(userId, list);
+          return mergeWithPendingTransactions(userId, list);
+        }
+      } catch {
+        // Red no disponible o error temporal de conexión
+      }
+      const cached = getCachedTransactions(userId);
+      return mergeWithPendingTransactions(userId, cached);
     },
   });
 }
@@ -437,17 +452,30 @@ export function useGoalsQuery() {
   const familyId = profile.data?.family_id ?? null;
 
   return useQuery({
-    queryKey: ["goals", familyId],
-    enabled: !!familyId,
+    queryKey: ["goals", familyId ?? "personal"],
     queryFn: async (): Promise<GoalRow[]> => {
-      const { data, error } = await supabase.from("goals").select("*").eq("family_id", familyId!);
-      if (error) throw error;
-      return data.map((g) => ({
-        id: g.id,
-        name: g.name,
-        target: g.target_cents / 100,
-        dueDate: g.due_date,
-      }));
+      const local = getLocalGoals();
+      if (familyId) {
+        try {
+          const { data, error } = await supabase
+            .from("goals")
+            .select("*")
+            .eq("family_id", familyId);
+          if (!error && data) {
+            const dbGoals: GoalRow[] = data.map((g) => ({
+              id: g.id,
+              name: g.name,
+              target: g.target_cents / 100,
+              dueDate: g.due_date,
+            }));
+            saveLocalGoals(dbGoals);
+            return dbGoals;
+          }
+        } catch {
+          // Fallback a almacenamiento local si está offline
+        }
+      }
+      return local;
     },
   });
 }

@@ -159,11 +159,25 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Sin service worker la app sigue andando online, solo pierde el
-        // cache de shell — no hay nada que mostrarle al usuario acá.
-      });
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => {
+          // Detectar nuevas versiones del Service Worker con Workbox
+          registration.addEventListener("updatefound", () => {
+            const installingWorker = registration.installing;
+            if (installingWorker) {
+              installingWorker.addEventListener("statechange", () => {
+                if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+                  installingWorker.postMessage({ type: "SKIP_WAITING" });
+                }
+              });
+            }
+          });
+        })
+        .catch(() => {
+          // Sin service worker la app sigue funcionando online
+        });
     }
   }, []);
 

@@ -84,7 +84,33 @@ export default defineConfig({
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
     locationRadarApiPlugin(),
     tanstackStart({ spa: { enabled: true } }),
-    nitro({ preset: "node-server" }),
+    nitro({
+      preset: "node-server",
+      rollupConfig: {
+        onwarn(warning, warn) {
+          if (
+            warning.code === "MODULE_LEVEL_DIRECTIVE" ||
+            (typeof warning.message === "string" &&
+              warning.message.includes('module level directive "use client"'))
+          ) {
+            return;
+          }
+          warn(warning);
+        },
+      },
+      rolldownConfig: {
+        onwarn(warning, warn) {
+          if (
+            warning.code === "MODULE_LEVEL_DIRECTIVE" ||
+            (typeof warning.message === "string" &&
+              warning.message.includes('module level directive "use client"'))
+          ) {
+            return;
+          }
+          warn(warning);
+        },
+      },
+    }),
     viteReact(),
   ],
 });
