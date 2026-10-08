@@ -625,55 +625,59 @@ export const DEFAULT_LESSONS: LessonRow[] = [
     id: "lesson-snowball",
     slug: "snowball",
     minLevel: 3,
-    title: "Método Bola de Nieve",
-    body: "Si necesitas motivación psicológica rápida: ordena las deudas de menor a mayor monto y liquida la más chica primero. La sensación de victoria te da energía para liquidar las siguientes.",
-    question: "¿Cuál es el beneficio principal de la bola de nieve?",
-    options: ["Ahorro matemático de tasa", "Impulso psicológico y victorias rápidas", "Ninguno"],
+    title: "La Avalancha Inversa: Bola de Nieve y Efecto Multiplicador",
+    body: "Concentra toda tu fuerza en la deuda más pequeña para ganar inercia psicológica. Una vez demolida, esa misma cuota liberada se suma a la siguiente hasta aplastar todos los pasivos y convertirse en motor de interés compuesto.",
+    question: "¿Cuál es la regla de oro para activar la fuerza de la bola de nieve?",
+    options: [
+      "Distribuir el dinero en partes iguales entre todas las deudas",
+      "Concentrar todo el excedente en liquidar primero la deuda más pequeña",
+      "Pagar únicamente los intereses mínimos y posponer el capital",
+    ],
     answer: 1,
     xp: 35,
     subLessons: [
       {
         id: "snowball-sub-1",
-        title: "1. La psicología vence a la matemática",
-        subtitle: "Por qué las victorias rápidas importan",
+        title: "1. Concentración de masa en la menor",
+        subtitle: "Aplastamiento táctico paso a paso",
         concept:
-          "Salir de deudas es 20% números y 80% conducta. Si tienes 4 deudas y pasas meses pagando una gigante sin ver el final, es fácil desanimarse y abandonar.",
+          "Si divides tu flujo en cuotas simétricas, la bola se derrite antes del impacto. Concentrar todo el excedente en el bloque menor genera victorias rápidas que liberan flujo de caja de inmediato.",
         practicalExample:
-          "Liquidar una deuda pequeña de $150 en 2 meses te da una inyección de euforia y confianza para seguir adelante.",
+          "Tienes 3 deudas ($150, $800 y $2,500). Abonar el mínimo a las dos mayores y volcar $100 extras a la de $150 la liquida en semanas, liberando su cuota para la siguiente.",
         guardianTip: {
-          character: "Chispa",
-          tip: "Ver desaparecer una deuda de tu lista en pocas semanas te demuestra que sí eres capaz de ser libre financieramente.",
+          character: "Toto",
+          tip: "¡No disperses tu fuerza! Aplasta primero la deuda pequeña para ganar inercia, reducir estrés mental y liberar flujo operativo.",
         },
-        keyTakeaway: "El impulso psicológico de tachar deudas rápido evita que tires la toalla.",
+        keyTakeaway: "Paga mínimos en todas y vuelca el 100% del excedente al bloque más pequeño.",
       },
       {
         id: "snowball-sub-2",
-        title: "2. Orden de menor a mayor saldo",
-        subtitle: "El plan paso a paso",
+        title: "2. La inercia de la cuota liberada",
+        subtitle: "Cero fricción y aceleración geométrica",
         concept:
-          "Haz una lista de tus deudas ignorando la tasa de interés: ordénalas únicamente por el monto pendiente de saldo. Paga el mínimo en todas y vuelca todo el dinero a la más pequeña.",
+          "Al extinguir la primera deuda, su cuota no se gasta: se compacta con el excedente para atacar el segundo bloque con el doble de masa y velocidad destructiva.",
         practicalExample:
-          "Deuda A: $200. Deuda B: $800. Deuda C: $3,000. Atacas la de $200 con todo lo que tengas.",
+          "Comenzaste con $50 de empuje extra. Al eliminar dos deudas, ya cuentas con una bola de nieve de $300 mensuales que pulveriza el préstamo más grande en tiempo récord.",
         guardianTip: {
           character: "Toto",
-          tip: "Eliminar acreedores reduce el estrés mental de tener que acordarse de múltiples fechas de corte cada mes.",
+          tip: "Cada deuda que demueles transfiere su voltaje completo a la siguiente. La velocidad del desapalancamiento se acelera en cada ciclo.",
         },
-        keyTakeaway: "Tachar acreedores uno por uno simplifica tu vida y reduce el estrés.",
+        keyTakeaway: "El dinero liberado de cada deuda extinta potencia el ataque a la que sigue.",
       },
       {
         id: "snowball-sub-3",
-        title: "3. La bola se vuelve imparable",
-        subtitle: "El dinero liberado crece en cada paso",
+        title: "3. La avalancha inversa: Interés compuesto",
+        subtitle: "De triturar deudas a multiplicar patrimonio",
         concept:
-          "Al eliminar la deuda más chica, tomas su cuota y la sumas al ataque de la segunda. Igual que una bola de nieve que rueda colina abajo, el pago se vuelve gigantesco.",
+          "Cuando todas las deudas se pulverizan a cero, la misma inercia financiera entra al generador de inversión: el interés compuesto multiplica tu patrimonio de forma exponencial.",
         practicalExample:
-          "Comenzaste con $50 extras y al llegar a la última deuda ya cuentas con $400 mensuales para liquidarla en meses.",
+          "Esos mismos $350 mensuales que antes pagaban cuotas bancarias, ahora en un fondo de inversión al 9% anual se convierten en más de $150,000 con el tiempo.",
         guardianTip: {
-          character: "Nido",
-          tip: "Una vez que la bola de nieve elimina todas tus deudas, esa misma bola se convierte en tu máquina de ahorro en Nido.",
+          character: "Toto",
+          tip: "Esa misma fuerza geométrica que antes te ahogaba con intereses, ahora trabaja a tu favor multiplicando tu libertad financiera.",
         },
         keyTakeaway:
-          "Transforma los pagos que antes iban al banco en tus mayores ahorros de por vida.",
+          "La bola de nieve que aplastó tus deudas es la misma máquina que construye tu riqueza futura.",
       },
     ],
   },
