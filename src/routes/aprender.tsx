@@ -30,6 +30,7 @@ import {
   NidoCharacter,
   TotoCharacter,
 } from "@/components/ffos/characters/Characters";
+import { TotoFlashChallenge } from "@/components/ffos/TotoFlashChallenge";
 import { LessonSheet } from "@/components/ffos/LessonSheet";
 import { levelInfo } from "@/lib/ffos/gamification";
 import { useUserPoints } from "@/lib/ffos/points";
@@ -66,7 +67,6 @@ export function AprenderRoute() {
   const { completedSubSet, getSubProgress, stats } = useEducationProgress(profile.data?.id);
 
   const [openLesson, setOpenLesson] = useState<{ lesson: LessonRow; done: boolean } | null>(null);
-  const [triviaAnswered, setTriviaAnswered] = useState<number | null>(null);
 
   const lessons = useMemo(() => lessonsQuery.data ?? [], [lessonsQuery.data]);
   const progress = progressQuery.data;
@@ -120,21 +120,6 @@ export function AprenderRoute() {
       },
     ];
   }, [lessons]);
-
-  async function handleTriviaSelect(optionIndex: number) {
-    if (triviaAnswered !== null) return;
-    setTriviaAnswered(optionIndex);
-    if (optionIndex === 0) {
-      await awardPoints({ xpToAdd: 25, tokensToAdd: 50, reason: "Trivia diaria UALÍ" });
-      toast.success("¡Respuesta Correcta! 🎉", {
-        description: "+50 FFOS y +25 XP añadidos a tu saldo.",
-      });
-    } else {
-      toast.error("¡Casi! La regla de oro es pagarte a ti primero.", {
-        description: "Separar el ahorro al inicio garantiza que no se gaste en impulsos.",
-      });
-    }
-  }
 
   // Helper para asignar iconos por lección
   function getLessonIcon(slug: string, index: number) {
@@ -272,61 +257,7 @@ export function AprenderRoute() {
       </section>
 
       {/* 3. Reto Diario / Desafío Flash de Toto */}
-      <section className="rounded-2xl bg-card border border-border/80 p-4.5 shadow-sm mb-4">
-        <div className="flex items-center justify-between pb-3 border-b border-border/60">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-4.5 text-amber-400" />
-            <h3 className="text-xs font-black text-foreground uppercase tracking-wider">
-              Desafío Flash de Toto
-            </h3>
-          </div>
-          <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
-            +50 FFOS • +25 XP
-          </span>
-        </div>
-
-        <div className="pt-3">
-          <p className="text-sm font-extrabold text-foreground mb-3 leading-snug">
-            ¿Cuál es la primera regla para construir estabilidad financiera en compañía o equipo?
-          </p>
-
-          <div className="space-y-2.5">
-            <button
-              type="button"
-              onClick={() => handleTriviaSelect(0)}
-              disabled={triviaAnswered !== null}
-              className={cn(
-                "w-full p-3 rounded-xl border text-sm text-left font-bold flex items-center gap-3 transition active:scale-[0.99] min-h-[48px]",
-                triviaAnswered === 0
-                  ? "bg-emerald-500/15 border-emerald-500/60 text-emerald-300"
-                  : "bg-secondary/50 border-border/80 hover:bg-secondary/70 text-foreground",
-              )}
-            >
-              <span className="size-6 rounded-full border border-border text-muted-foreground flex items-center justify-center text-xs font-black shrink-0">
-                A
-              </span>
-              <span>Pagarte a ti primero separando tu fondo antes de gastar</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleTriviaSelect(1)}
-              disabled={triviaAnswered !== null}
-              className={cn(
-                "w-full p-3 rounded-xl border text-sm text-left font-bold flex items-center gap-3 transition active:scale-[0.99] min-h-[48px]",
-                triviaAnswered === 1
-                  ? "bg-red-500/15 border-red-500/60 text-red-300"
-                  : "bg-secondary/50 border-border/80 hover:bg-secondary/70 text-foreground",
-              )}
-            >
-              <span className="size-6 rounded-full border border-border text-muted-foreground flex items-center justify-center text-xs font-black shrink-0">
-                B
-              </span>
-              <span>Gastar libremente y guardar solo lo que sobre a fin de mes</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      <TotoFlashChallenge />
 
       {/* 4. RUTA DE HABILIDADES DINÁMICA (12 LECCIONES CON SUB-LECCIONES) */}
       <section className="rounded-2xl bg-card border border-border/80 p-4.5 shadow-sm mb-4">
