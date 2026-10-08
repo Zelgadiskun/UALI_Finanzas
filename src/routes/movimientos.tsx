@@ -202,7 +202,12 @@ function Movimientos() {
 
     const calcNet = (list: typeof transactions) =>
       list.reduce(
-        (a, t) => (t.type === "ingreso" ? a + t.amount : t.type === "gasto" ? a - t.amount : a),
+        (a, t) =>
+          t.type === "ingreso"
+            ? a + t.amount
+            : t.type === "gasto" || t.type === "pago_deuda" || t.type === "ahorro"
+              ? a - t.amount
+              : a,
         0,
       );
 

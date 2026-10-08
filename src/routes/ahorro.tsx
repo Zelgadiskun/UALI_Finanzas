@@ -53,6 +53,11 @@ export function AhorroRoute() {
   const deleteGoalMutation = useDeleteGoalMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetDefaultValues, setSheetDefaultValues] = useState<{
+    type?: "gasto" | "ingreso" | "ahorro" | "pago_deuda";
+    category?: string;
+    note?: string;
+  } | null>(null);
   const [newGoalModal, setNewGoalModal] = useState(false);
   const [newGoalName, setNewGoalName] = useState("");
   const [newGoalTarget, setNewGoalTarget] = useState("");
@@ -280,7 +285,14 @@ export function AhorroRoute() {
             {/* Botón CTA Aportar */}
             <button
               type="button"
-              onClick={() => setSheetOpen(true)}
+              onClick={() => {
+                setSheetDefaultValues({
+                  type: "ahorro",
+                  category: "Fondo de emergencia",
+                  note: `Aporte a meta: ${primaryGoal?.name ?? "Ahorro Nido"}`,
+                });
+                setSheetOpen(true);
+              }}
               className="mt-4 w-full py-2.5 px-4 bg-[#2EC4B6] hover:bg-[#20A39E] active:scale-[0.99] text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-[#2EC4B6]/20"
             >
               <Plus className="size-4 stroke-[3]" />
@@ -321,7 +333,14 @@ export function AhorroRoute() {
               </p>
               <button
                 type="button"
-                onClick={() => setSheetOpen(true)}
+                onClick={() => {
+                  setSheetDefaultValues({
+                    type: "ahorro",
+                    category: "Fondo de emergencia",
+                    note: `Aporte a meta: ${secondaryGoal.name}`,
+                  });
+                  setSheetOpen(true);
+                }}
                 className="text-[10px] text-teal-400 hover:underline font-semibold"
               >
                 + Sumar
@@ -487,7 +506,11 @@ export function AhorroRoute() {
       )}
 
       {/* Hoja para Aportar fondos / Registrar Ahorro */}
-      <TransactionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <TransactionSheet
+        open={sheetOpen}
+        defaultValues={sheetDefaultValues}
+        onClose={() => setSheetOpen(false)}
+      />
     </main>
   );
 }

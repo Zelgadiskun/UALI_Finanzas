@@ -67,27 +67,6 @@ export function BottomNav() {
       activeGlowClass: "drop-shadow-[0_2px_10px_rgba(46,196,182,0.45)]",
     },
     {
-      id: "movimientos",
-      label: "Movimientos",
-      to: "/movimientos",
-      icon: ArrowLeftRight,
-      activeColor: "#3B82F6",
-      activeColorClass: "text-[#3B82F6]",
-      activeGlowClass: "drop-shadow-[0_2px_10px_rgba(59,130,246,0.45)]",
-    },
-    {
-      id: "aprendizaje",
-      label: "Aprendizaje",
-      to: "/aprender",
-      icon: Sparkles,
-      activeColor: "#A855F7",
-      activeColorClass: "text-[#A855F7]",
-      activeGlowClass: "drop-shadow-[0_2px_10px_rgba(168,85,247,0.45)]",
-    },
-  ];
-
-  const RIGHT_ITEMS: NavItemConfig[] = [
-    {
       id: "presupuesto",
       label: "Presupuesto",
       to: "/presupuesto",
@@ -97,14 +76,17 @@ export function BottomNav() {
       activeGlowClass: "drop-shadow-[0_2px_10px_rgba(245,158,11,0.45)]",
       badge: hasBudgetAlert ? { type: "dot", colorClass: "bg-rose-500 animate-pulse" } : undefined,
     },
+  ];
+
+  const RIGHT_ITEMS: NavItemConfig[] = [
     {
-      id: "deudas",
-      label: "Deudas",
-      to: "/deudas",
-      icon: CreditCard,
-      activeColor: "#F43F5E",
-      activeColorClass: "text-[#F43F5E]",
-      activeGlowClass: "drop-shadow-[0_2px_10px_rgba(244,63,94,0.45)]",
+      id: "aprendizaje",
+      label: "Aprender",
+      to: "/aprender",
+      icon: Sparkles,
+      activeColor: "#A855F7",
+      activeColorClass: "text-[#A855F7]",
+      activeGlowClass: "drop-shadow-[0_2px_10px_rgba(168,85,247,0.45)]",
     },
     {
       id: "mas",
@@ -132,38 +114,42 @@ export function BottomNav() {
       <Link
         key={item.id}
         to={item.to}
-        className="group relative flex flex-1 flex-col items-center justify-center py-1 outline-none transition-transform duration-200 active:scale-90 select-none"
+        className="group relative flex flex-1 flex-col items-center justify-center py-1.5 px-1 outline-none transition-transform duration-200 active:scale-95 select-none min-h-[48px]"
         aria-selected={isActive}
         role="tab"
       >
-        {/* Contenedor del ícono con animación al activarse */}
-        <div className="relative flex items-center justify-center size-6 mb-0.5">
+        {/* Contenedor del ícono con mayor tamaño para accesibilidad visual */}
+        <div className="relative flex items-center justify-center size-7 mb-0.5">
           <Icon
             className={cn(
-              "size-5 transition-all duration-300 ease-out",
+              "size-5.5 transition-all duration-300 ease-out",
               isActive
-                ? cn(item.activeColorClass, item.activeGlowClass, "scale-115 -translate-y-0.5")
-                : "text-muted-foreground group-hover:text-foreground group-hover:scale-105",
+                ? cn(
+                    item.activeColorClass,
+                    item.activeGlowClass,
+                    "scale-110 -translate-y-0.5 stroke-[2.4]",
+                  )
+                : "text-slate-400 dark:text-slate-300 group-hover:text-foreground group-hover:scale-105 stroke-[1.8]",
             )}
           />
 
           {item.badge && (
             <span
               className={cn(
-                "absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2 ring-card dark:ring-[#0B1323]",
+                "absolute -top-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-card dark:ring-[#0B1323]",
                 item.badge.colorClass,
               )}
             />
           )}
         </div>
 
-        {/* Etiqueta de texto */}
+        {/* Etiqueta de texto agrandada para alta legibilidad WCAG */}
         <span
           className={cn(
-            "text-[9.5px] leading-tight tracking-tight transition-all duration-200 truncate max-w-full px-0.5",
+            "text-xs leading-tight tracking-tight transition-all duration-200 truncate max-w-full font-bold",
             isActive
               ? cn(item.activeColorClass, "font-black scale-105")
-              : "font-medium text-muted-foreground group-hover:text-foreground",
+              : "text-slate-500 dark:text-slate-300 group-hover:text-foreground",
           )}
         >
           {item.label}
@@ -172,8 +158,8 @@ export function BottomNav() {
         {/* Indicador de píldora activa inferior animada */}
         <div
           className={cn(
-            "h-0.5 rounded-full mt-1 transition-all duration-300",
-            isActive ? "w-3.5 opacity-100 scale-100" : "w-0 opacity-0 scale-50",
+            "h-1 rounded-full mt-1 transition-all duration-300",
+            isActive ? "w-5 opacity-100 scale-100" : "w-0 opacity-0 scale-50",
             item.activeColorClass,
           )}
           style={{ backgroundColor: isActive ? item.activeColor : "transparent" }}
@@ -186,40 +172,38 @@ export function BottomNav() {
     <nav
       aria-label="Navegación principal de la aplicación"
       className="fixed bottom-0 left-0 right-0 z-40 w-full max-w-md mx-auto
-                 bg-card/90 dark:bg-[#0B1323]/95 backdrop-blur-xl
-                 border-t border-border/40 dark:border-[#1E293B]/80
+                 bg-card/95 dark:bg-[#0B1323]/98 backdrop-blur-xl
+                 border-t border-border/60 dark:border-[#1E293B]
                  shadow-lg shadow-black/20
                  transition-all duration-200"
     >
-      <div className="flex items-center justify-between px-1.5 pt-2 pb-0.5">
-        {/* 3 pestañas izquierdas: Inicio, Movimientos, Aprendizaje */}
+      <div className="flex items-center justify-between px-2 pt-2 pb-1">
+        {/* 2 pestañas izquierdas: Inicio, Presupuesto */}
         <div className="flex flex-1 items-center justify-around">
           {LEFT_ITEMS.map(renderNavItem)}
         </div>
 
-        {/* BOTÓN CENTRAL HERO "+": Nuevo Movimiento (Ubicación central ergonómica) */}
-        <div className="-mt-5 flex flex-col items-center px-1 shrink-0">
+        {/* BOTÓN CENTRAL HERO "+": Nuevo Movimiento (Ubicación central ergonómica y accesible) */}
+        <div className="-mt-5 flex flex-col items-center px-2 shrink-0">
           <button
             type="button"
             onClick={openGlobalTransactionSheet}
             aria-label="Nuevo movimiento"
-            className="group relative flex flex-col items-center outline-none select-none active:scale-90 transition-transform duration-200"
+            className="group relative flex flex-col items-center outline-none select-none active:scale-95 transition-transform duration-200 min-h-[48px] justify-center"
           >
             <div
-              className="size-11.5 rounded-full bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5]
+              className="size-13 rounded-full bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5]
                          flex items-center justify-center text-slate-950 font-black
-                         shadow-lg shadow-[#2EC4B6]/35 border-2 border-background dark:border-[#0B1323]
+                         shadow-lg shadow-[#2EC4B6]/40 border-2 border-background dark:border-[#0B1323]
                          group-hover:scale-105 transition-all duration-200"
             >
-              <Plus className="size-6 stroke-[2.6] transition-transform duration-300 group-hover:rotate-90 text-slate-950" />
+              <Plus className="size-7 stroke-[2.8] transition-transform duration-300 group-hover:rotate-90 text-slate-950" />
             </div>
-            <span className="text-[9.5px] font-black text-[#2EC4B6] mt-0.5 tracking-tight">
-              Nuevo
-            </span>
+            <span className="text-xs font-black text-[#2EC4B6] mt-1 tracking-tight">Nuevo</span>
           </button>
         </div>
 
-        {/* 3 pestañas derechas: Presupuesto, Deudas, Más */}
+        {/* 2 pestañas derechas: Aprender, Más */}
         <div className="flex flex-1 items-center justify-around">
           {RIGHT_ITEMS.map(renderNavItem)}
         </div>

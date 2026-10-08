@@ -215,7 +215,7 @@ function Deudas() {
             Pagado hasta hoy: <strong className="text-accent">{money(totalPaid)}</strong>
           </span>
           <span className="text-[11px] text-teal-400 font-bold">
-            {inFamily ? "En equipo familiar" : "Registro personal"}
+            {inFamily ? "En compañía o equipo" : "Registro personal"}
           </span>
         </div>
       </section>

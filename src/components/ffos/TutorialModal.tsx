@@ -269,7 +269,7 @@ export function TutorialModal({
     },
     {
       id: "privacy",
-      badge: "Cifrado Ualí & Modo Pareja",
+      badge: "Cifrado Ualí & Modo Compañía",
       badgeColor: "bg-teal-500/15 text-teal-300 border-teal-500/30",
       title: "Lo tuyo es tuyo: Privacidad sin dramas",
       subtitle: "Privado por defecto, compartido por elección",
@@ -279,22 +279,26 @@ export function TutorialModal({
             <div className="bg-card border border-teal-500/40 rounded-xl p-2.5 text-center">
               <ShieldCheck className="size-5 text-teal-400 mx-auto mb-1" />
               <span className="text-xs font-black text-foreground block">Solo míos</span>
-              <span className="text-[9px] text-muted-foreground">100% Cifrado personal</span>
+              <span className="text-[10px] text-muted-foreground font-semibold">
+                100% Cifrado personal
+              </span>
             </div>
             <div className="bg-card border border-blue-500/40 rounded-xl p-2.5 text-center">
               <Users className="size-5 text-blue-400 mx-auto mb-1" />
               <span className="text-xs font-black text-foreground block">Compartido</span>
-              <span className="text-[9px] text-muted-foreground">Cupos en pareja / equipo</span>
+              <span className="text-[10px] text-muted-foreground font-semibold">
+                Cupos en compañía / equipo
+              </span>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center">
+          <p className="text-xs text-muted-foreground text-center">
             Tú decides qué entra al pozo común y qué se mantiene en tu bolsillo privado.
           </p>
         </div>
       ),
       body: [
         "Todo lo que anotas en Ualí está protegido por nuestro Cifrado Ualí y es privado salvo que decidas sincronizarlo.",
-        "Si armas un espacio compartido con tu pareja o familia, fijan presupuestos conjuntos y reparten cuotas sin discusiones incómodas a fin de mes.",
+        "Si armas un espacio compartido con tu compañero o equipo, fijan presupuestos conjuntos y reparten cuotas sin discusiones incómodas a fin de mes.",
       ],
       principle: "Cuentas súper claras para conservar la paz mental y los buenos momentos.",
     },

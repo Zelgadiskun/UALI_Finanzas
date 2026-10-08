@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+  ArrowLeftRight,
   Award,
   Bell,
+  CreditCard,
   Crown,
   FileSpreadsheet,
   LogOut,
@@ -157,19 +159,19 @@ function Mas() {
           }`}
         >
           <div
-            className={`grid size-9 place-items-center rounded-xl shrink-0 ${
+            className={`grid size-10 place-items-center rounded-xl shrink-0 ${
               isPro ? "bg-amber-500/20 text-amber-400" : "bg-teal-500/20 text-teal-400"
             }`}
           >
-            <Crown className="size-5" />
+            <Crown className="size-5.5" />
           </div>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
-              <span className="block text-sm font-extrabold text-foreground">
+              <span className="block text-sm sm:text-base font-extrabold text-foreground">
                 {isPro ? "UALÍ Dúo Pro Activo" : "Desbloquear UALÍ Dúo Pro"}
               </span>
               <span
-                className={`text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full ${
+                className={`text-xs font-black uppercase px-2.5 py-0.5 rounded-full ${
                   isPro
                     ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                     : "bg-teal-500/20 text-teal-300 border border-teal-500/30"
@@ -178,13 +180,48 @@ function Mas() {
                 {isPro ? "Prémium" : "Prueba 7 Días"}
               </span>
             </span>
-            <span className="block text-[12px] text-muted-foreground">
+            <span className="block text-xs text-slate-400 font-medium mt-0.5">
               {isPro
-                ? "Sincronización en pareja y reportes ejecutivos habilitados"
-                : "Sincronización familiar sin límites, reportes en PDF y radar con IA"}
+                ? "Sincronización en compañía/equipo y reportes ejecutivos habilitados"
+                : "Sincronización de equipo sin límites, reportes en PDF y radar con IA"}
             </span>
           </span>
         </button>
+
+        {/* Accesos directos a Movimientos y Deudas */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Link
+            to="/movimientos"
+            className="flex items-center gap-3 rounded-2xl border border-border/80 bg-card p-3.5 shadow-card hover:bg-secondary/60 transition active:scale-95"
+          >
+            <div className="grid size-9 place-items-center rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
+              <ArrowLeftRight className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-sm font-extrabold text-foreground truncate">
+                Movimientos
+              </span>
+              <span className="block text-xs text-slate-400 font-semibold truncate">
+                Historial completo
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            to="/deudas"
+            className="flex items-center gap-3 rounded-2xl border border-border/80 bg-card p-3.5 shadow-card hover:bg-secondary/60 transition active:scale-95"
+          >
+            <div className="grid size-9 place-items-center rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 shrink-0">
+              <CreditCard className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-sm font-extrabold text-foreground truncate">Deudas</span>
+              <span className="block text-xs text-slate-400 font-semibold truncate">
+                Tarjetas y pasivos
+              </span>
+            </div>
+          </Link>
+        </div>
 
         {/* Instalación PWA en pantalla de inicio */}
         <PWAInstallButton variant="banner" />
@@ -264,7 +301,7 @@ function Mas() {
               </span>
             </span>
             <span className="block text-[12px] text-muted-foreground">
-              Guiones virales: "Cómo dividimos gastos en pareja con UALÍ"
+              Guiones virales: "Cómo dividimos gastos en equipo con UALÍ"
             </span>
           </span>
         </button>
@@ -321,7 +358,7 @@ function Mas() {
             <span className="block text-[12px] text-muted-foreground">
               {inFamily
                 ? "Ver miembros, invitar y gestionar código"
-                : "Crear espacio (Pareja, Roommates, Amigos, etc.)"}
+                : "Crear espacio (En compañía, Equipo de piso, Amigos, etc.)"}
             </span>
           </span>
           {pendingCount > 0 && (

@@ -52,3 +52,25 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "saver", name: "Ahorrista", description: "Registraste tu primer ahorro." },
   { id: "debt_slayer", name: "Cazadeudas", description: "Registraste tu primer pago de deuda." },
 ];
+
+/**
+ * Criterios Mandatorios de Equilibrio Económico (Game Balancing Spec)
+ */
+export const GAMIFICATION_BALANCING = {
+  VICTORIA_LIMPIA: {
+    XP_MIN: 25,
+    XP_MAX: 35,
+    XP_DEFAULT: 30,
+    FFOS_MAX: 50,
+  },
+  APRENDIZAJE_POR_ERROR: {
+    XP_PERCENT: 0.3,
+    XP_CONSOLATION: 10,
+    FFOS_CONSOLATION: 15,
+  },
+  POWERUPS: {
+    INDIVIDUAL_MIN_FFOS: 40,
+    TEAM_MAX_FFOS: 600,
+  },
+} as const;
+

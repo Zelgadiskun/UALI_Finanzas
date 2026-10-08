@@ -169,41 +169,41 @@ export function AprenderRoute() {
   }
 
   return (
-    <main className="px-4 pt-3 pb-24">
+    <main className="px-4 pt-3 pb-28 max-w-md mx-auto w-full">
       {/* 1. Header de Usuario & Gamificación */}
       <section className="mb-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative shrink-0">
-              <div className="grid size-10 place-items-center rounded-full overflow-hidden border-2 border-amber-400 bg-slate-800 ring-2 ring-amber-400/20 shadow-md">
-                <span className="font-extrabold text-sm text-amber-300">
+              <div className="grid size-11 place-items-center rounded-full overflow-hidden border-2 border-amber-400 bg-slate-800 ring-2 ring-amber-400/20 shadow-md">
+                <span className="font-black text-base text-amber-300">
                   {profile.data?.display_name?.charAt(0).toUpperCase() || "U"}
                 </span>
               </div>
-              <span className="absolute bottom-0 right-0 size-2.5 bg-emerald-500 rounded-full ring-2 ring-background" />
+              <span className="absolute bottom-0 right-0 size-3 bg-emerald-500 rounded-full ring-2 ring-background" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 truncate">
-                <h1 className="text-sm font-bold text-foreground tracking-tight">
+                <h1 className="text-base sm:text-lg font-black text-foreground tracking-tight">
                   ¡Aprende, {profile.data?.display_name || "Explorador"}!
                 </h1>
-                <span className="inline-block text-amber-300 text-xs">✨</span>
+                <span className="inline-block text-amber-300 text-sm">✨</span>
               </div>
-              <p className="text-[11px] font-medium text-purple-400 flex items-center gap-1">
+              <p className="text-xs font-bold text-teal-400 flex items-center gap-1 mt-0.5">
                 <span>Nivel {levelData.level}</span> •{" "}
-                <span className="text-muted-foreground">{levelData.title}</span>
+                <span className="text-slate-300">{levelData.title}</span>
               </p>
             </div>
           </div>
 
           {/* Badges Racha & Monedas FFOS */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-card border border-border/80 text-amber-300 font-bold text-xs shadow-xs">
-              <Flame className="size-3.5 fill-amber-400 text-amber-400" />
+            <div className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-card border border-border/80 text-amber-300 font-black text-xs shadow-xs">
+              <Flame className="size-4 fill-amber-400 text-amber-400" />
               <span>{streak}d</span>
             </div>
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-card border border-border/80 text-amber-300 font-bold text-xs shadow-xs">
-              <span className="size-3.5 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-[9px] font-black">
+            <div className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-card border border-border/80 text-amber-300 font-black text-xs shadow-xs">
+              <span className="size-4 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-[10px] font-black">
                 F
               </span>
               <span>{ffosTokens}</span>
@@ -213,34 +213,34 @@ export function AprenderRoute() {
       </section>
 
       {/* 2. Banner Hero: Nivel Actual & XP */}
-      <section className="relative overflow-hidden rounded-2xl bg-card border border-border/80 p-4 shadow-sm mb-4">
+      <section className="relative overflow-hidden rounded-2xl bg-card border border-border/80 p-4.5 shadow-sm mb-4">
         <div className="flex items-center justify-between relative z-10">
           <div className="w-7/12 pr-2">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-extrabold text-[10px] border border-border uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground font-black text-xs border border-border uppercase tracking-wider">
                 {stats.completedSubLessons} de {stats.totalSubLessons} submódulos (
                 {stats.overallPercentage}%)
               </span>
             </div>
-            <h2 className="text-base font-bold text-foreground leading-tight">
+            <h2 className="text-base sm:text-lg font-black text-foreground leading-tight">
               {activeLesson ? activeLesson.title : "¡Todas las lecciones dominadas!"}
             </h2>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-              Chispa impulsa tu progreso hacia el Nivel {levelData.level + 1}. {completedCount} de
-              12 lecciones principales listas.
+            <p className="text-xs text-slate-400 mt-1 leading-snug font-medium">
+              Chispa impulsa tu progreso hacia el Nivel {levelData.level + 1}. {completedCount} de{" "}
+              {lessons.length || 12} lecciones listas.
             </p>
 
             {/* Barra de progreso de XP */}
-            <div className="mt-2.5">
-              <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden p-0.5 border border-border/60">
+            <div className="mt-3">
+              <div className="w-full bg-secondary h-3 rounded-full overflow-hidden p-0.5 border border-border/60">
                 <div
                   className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200 h-full rounded-full transition-all duration-500 shadow-sm"
                   style={{ width: `${xpProgressPct}%` }}
                 />
               </div>
-              <div className="flex justify-between items-center mt-1 text-[11px]">
-                <span className="font-extrabold text-amber-300">+25 XP por lección</span>
-                <span className="font-semibold text-muted-foreground">
+              <div className="flex justify-between items-center mt-1.5 text-xs font-bold">
+                <span className="font-black text-amber-300">+25 XP por lección</span>
+                <span className="text-slate-400">
                   {xpCurrent} / {xpNextThreshold} XP
                 </span>
               </div>
@@ -250,7 +250,7 @@ export function AprenderRoute() {
               <button
                 type="button"
                 onClick={() => setOpenLesson({ lesson: activeLesson, done: false })}
-                className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground font-extrabold text-xs shadow-sm transition active:scale-95 rounded-xl hover:bg-primary/90"
+                className="mt-3.5 inline-flex items-center gap-1.5 min-h-[44px] px-4 bg-primary text-primary-foreground font-black text-xs sm:text-sm shadow-sm transition active:scale-95 rounded-xl hover:bg-primary/90"
               >
                 <span>
                   {(() => {
@@ -260,7 +260,7 @@ export function AprenderRoute() {
                       : "Aprender lección";
                   })()}
                 </span>
-                <ChevronRight className="size-3.5" />
+                <ChevronRight className="size-4" />
               </button>
             )}
           </div>
@@ -271,38 +271,38 @@ export function AprenderRoute() {
         </div>
       </section>
 
-      {/* 3. Reto Diario / Decisión de Toto */}
-      <section className="rounded-2xl bg-card border border-border/80 p-4 shadow-sm mb-4">
+      {/* 3. Reto Diario / Desafío Flash de Toto */}
+      <section className="rounded-2xl bg-card border border-border/80 p-4.5 shadow-sm mb-4">
         <div className="flex items-center justify-between pb-3 border-b border-border/60">
           <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-amber-400" />
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <Sparkles className="size-4.5 text-amber-400" />
+            <h3 className="text-xs font-black text-foreground uppercase tracking-wider">
               Desafío Flash de Toto
             </h3>
           </div>
-          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+          <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
             +50 FFOS • +25 XP
           </span>
         </div>
 
         <div className="pt-3">
-          <p className="text-xs font-bold text-foreground mb-3 leading-snug">
-            ¿Cuál es la primera regla para construir estabilidad financiera familiar?
+          <p className="text-sm font-extrabold text-foreground mb-3 leading-snug">
+            ¿Cuál es la primera regla para construir estabilidad financiera en compañía o equipo?
           </p>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <button
               type="button"
               onClick={() => handleTriviaSelect(0)}
               disabled={triviaAnswered !== null}
               className={cn(
-                "w-full p-2.5 rounded-xl border text-xs text-left font-medium flex items-center gap-2.5 transition active:scale-[0.99]",
+                "w-full p-3 rounded-xl border text-sm text-left font-bold flex items-center gap-3 transition active:scale-[0.99] min-h-[48px]",
                 triviaAnswered === 0
-                  ? "bg-emerald-500/15 border-emerald-500/60 text-emerald-300 font-bold"
-                  : "bg-secondary/40 border-border/80 hover:bg-secondary/70 text-foreground",
+                  ? "bg-emerald-500/15 border-emerald-500/60 text-emerald-300"
+                  : "bg-secondary/50 border-border/80 hover:bg-secondary/70 text-foreground",
               )}
             >
-              <span className="size-5 rounded-full border border-border text-muted-foreground flex items-center justify-center text-[10px] font-bold shrink-0">
+              <span className="size-6 rounded-full border border-border text-muted-foreground flex items-center justify-center text-xs font-black shrink-0">
                 A
               </span>
               <span>Pagarte a ti primero separando tu fondo antes de gastar</span>
@@ -313,13 +313,13 @@ export function AprenderRoute() {
               onClick={() => handleTriviaSelect(1)}
               disabled={triviaAnswered !== null}
               className={cn(
-                "w-full p-2.5 rounded-xl border text-xs text-left font-medium flex items-center gap-2.5 transition active:scale-[0.99]",
+                "w-full p-3 rounded-xl border text-sm text-left font-bold flex items-center gap-3 transition active:scale-[0.99] min-h-[48px]",
                 triviaAnswered === 1
                   ? "bg-red-500/15 border-red-500/60 text-red-300"
-                  : "bg-secondary/40 border-border/80 hover:bg-secondary/70 text-foreground",
+                  : "bg-secondary/50 border-border/80 hover:bg-secondary/70 text-foreground",
               )}
             >
-              <span className="size-5 rounded-full border border-border text-muted-foreground flex items-center justify-center text-[10px] font-bold shrink-0">
+              <span className="size-6 rounded-full border border-border text-muted-foreground flex items-center justify-center text-xs font-black shrink-0">
                 B
               </span>
               <span>Gastar libremente y guardar solo lo que sobre a fin de mes</span>
@@ -329,13 +329,13 @@ export function AprenderRoute() {
       </section>
 
       {/* 4. RUTA DE HABILIDADES DINÁMICA (12 LECCIONES CON SUB-LECCIONES) */}
-      <section className="rounded-2xl bg-card border border-border/80 p-4 shadow-sm mb-4">
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/60">
+      <section className="rounded-2xl bg-card border border-border/80 p-4.5 shadow-sm mb-4">
+        <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-border/60">
           <div className="flex items-center gap-2">
-            <Trophy className="size-4 text-amber-400" />
-            <h3 className="text-sm font-bold text-foreground">Ruta de Habilidades</h3>
+            <Trophy className="size-5 text-amber-400" />
+            <h3 className="text-sm font-black text-foreground">Ruta de Habilidades</h3>
           </div>
-          <span className="text-[11px] font-bold text-secondary-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-full">
+          <span className="text-xs font-extrabold text-secondary-foreground bg-secondary border border-border px-3 py-1 rounded-full">
             {completedCount} de {lessons.length || 12} Completadas
           </span>
         </div>
@@ -350,12 +350,12 @@ export function AprenderRoute() {
             return (
               <div key={phase.id} className="relative flex flex-col items-center">
                 {/* Cabecera de Fase */}
-                <div className="px-3.5 py-1.5 rounded-full bg-secondary/80 border border-border text-foreground text-xs font-extrabold flex items-center gap-2 mb-6 shadow-sm">
-                  <span className="size-2 rounded-full bg-amber-400" />
+                <div className="px-4 py-2 rounded-full bg-secondary/90 border border-border text-foreground text-xs font-black flex items-center gap-2 mb-6 shadow-sm">
+                  <span className="size-2.5 rounded-full bg-amber-400" />
                   <span>
                     Fase {phase.number}: {phase.title}
                   </span>
-                  <span className="px-1.5 py-0.2 bg-card text-muted-foreground text-[10px] rounded-full border border-border">
+                  <span className="px-2 py-0.5 bg-card text-muted-foreground text-xs font-bold rounded-full border border-border">
                     {phaseCompleted}/{phase.lessons.length}
                   </span>
                 </div>
@@ -383,7 +383,7 @@ export function AprenderRoute() {
                         )}
                       >
                         {isActive && (
-                          <div className="animate-bounce bg-amber-400 text-slate-950 font-black px-3 py-1 rounded-full shadow-md text-center mb-2 flex items-center gap-1 text-[11px] tracking-wide">
+                          <div className="animate-bounce bg-amber-400 text-slate-950 font-black px-3.5 py-1 rounded-full shadow-md text-center mb-2 flex items-center gap-1.5 text-xs tracking-wide">
                             <span>¡CONTINÚA AQUÍ!</span>
                             <span className="text-xs">↓</span>
                           </div>
@@ -422,23 +422,21 @@ export function AprenderRoute() {
 
                           {/* Estrellas o Indicador Granular de Sub-lecciones */}
                           {isDone ? (
-                            <div className="flex items-center gap-1 mt-1.5 bg-card px-2 py-0.5 rounded-full border border-teal-500/30 shadow-xs">
-                              <span className="text-amber-400 text-[10px]">★</span>
-                              <span className="text-amber-400 text-[10px]">★</span>
-                              <span className="text-amber-400 text-[10px]">★</span>
-                              <span className="text-[9px] font-black text-teal-400 ml-0.5">
-                                3/3
-                              </span>
+                            <div className="flex items-center gap-1 mt-2 bg-card px-2.5 py-0.5 rounded-full border border-teal-500/30 shadow-xs">
+                              <span className="text-amber-400 text-xs">★</span>
+                              <span className="text-amber-400 text-xs">★</span>
+                              <span className="text-amber-400 text-xs">★</span>
+                              <span className="text-xs font-black text-teal-400 ml-0.5">3/3</span>
                             </div>
                           ) : (
-                            <div className="mt-1.5 flex items-center gap-1 bg-secondary/80 px-2 py-0.5 rounded-full border border-border">
+                            <div className="mt-2 flex items-center gap-1.5 bg-secondary/80 px-2.5 py-0.5 rounded-full border border-border">
                               {lesson.subLessons?.map((sub, sIdx) => {
                                 const isSubDone = completedSubSet.has(sub.id);
                                 return (
                                   <span
                                     key={sub.id}
                                     className={cn(
-                                      "size-2 rounded-full transition-all",
+                                      "size-2.5 rounded-full transition-all",
                                       isSubDone
                                         ? "bg-emerald-500"
                                         : isActive && sIdx === subProg.completedCount
@@ -449,7 +447,7 @@ export function AprenderRoute() {
                                   />
                                 );
                               })}
-                              <span className="text-[9px] font-extrabold text-muted-foreground ml-1">
+                              <span className="text-xs font-black text-muted-foreground ml-1">
                                 {subProg.completedCount}/3
                               </span>
                             </div>
@@ -458,7 +456,7 @@ export function AprenderRoute() {
                           {/* Título de la Lección */}
                           <span
                             className={cn(
-                              "text-xs font-extrabold mt-1 text-center max-w-[170px] leading-tight",
+                              "text-xs sm:text-sm font-extrabold mt-1.5 text-center max-w-[180px] leading-tight",
                               isActive
                                 ? "text-foreground"
                                 : isDone
@@ -472,7 +470,7 @@ export function AprenderRoute() {
                           {/* Botón de acción rápido si es el activo */}
                           {isActive && (
                             <div className="mt-2 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground font-black text-xs flex items-center gap-1.5 shadow-md active:translate-y-0.5 transition">
-                              <Play className="size-3 fill-current" />
+                              <Play className="size-3.5 fill-current" />
                               <span>Empezar Lección</span>
                             </div>
                           )}
@@ -488,37 +486,41 @@ export function AprenderRoute() {
       </section>
 
       {/* 5. MEDALLAS Y LOGROS CONSEGUIDOS */}
-      <section className="rounded-2xl bg-card border border-border/80 p-4 shadow-sm mb-4">
+      <section className="rounded-2xl bg-card border border-border/80 p-4.5 shadow-sm mb-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Award className="size-4 text-amber-400" />
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <Award className="size-5 text-amber-400" />
+            <h3 className="text-xs font-black text-foreground uppercase tracking-wider">
               Tus Insignias Financieras
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-secondary-foreground bg-secondary px-2.5 py-0.5 rounded-full border border-border">
+          <span className="text-xs font-black text-secondary-foreground bg-secondary px-3 py-1 rounded-full border border-border">
             {completedCount >= 1 ? "Activas" : "En progreso"}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="p-2.5 rounded-2xl bg-secondary/60 border border-border/60 flex items-center gap-2.5">
-            <div className="size-8 rounded-xl bg-secondary text-amber-400 border border-border flex items-center justify-center shrink-0">
-              <Flame className="size-4 fill-amber-400" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-2xl bg-secondary/60 border border-border/60 flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-secondary text-amber-400 border border-border flex items-center justify-center shrink-0">
+              <Flame className="size-5 fill-amber-400" />
             </div>
             <div>
-              <p className="text-xs font-bold text-foreground leading-tight">Racha Activa</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{streak} días seguidos</p>
+              <p className="text-xs sm:text-sm font-black text-foreground leading-tight">
+                Racha Activa
+              </p>
+              <p className="text-xs text-slate-400 font-semibold mt-0.5">{streak} días seguidos</p>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-secondary/60 border border-border/60 flex items-center gap-2.5">
-            <div className="size-8 rounded-xl bg-secondary text-primary border border-border flex items-center justify-center shrink-0">
-              <Sparkles className="size-4 fill-primary" />
+          <div className="p-3 rounded-2xl bg-secondary/60 border border-border/60 flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-secondary text-primary border border-border flex items-center justify-center shrink-0">
+              <Sparkles className="size-5 fill-primary" />
             </div>
             <div>
-              <p className="text-xs font-bold text-foreground leading-tight">Maestría Ualí</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs sm:text-sm font-black text-foreground leading-tight">
+                Maestría Ualí
+              </p>
+              <p className="text-xs text-slate-400 font-semibold mt-0.5">
                 {completedCount} de {lessons.length || 12} 100%
               </p>
             </div>

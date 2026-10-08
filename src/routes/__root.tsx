@@ -88,13 +88,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Aplicación de finanzas personales y educación financiera familiar con seguimiento de presupuesto, deudas y gamificación.",
+          "Aplicación de finanzas personales y educación financiera en compañía o equipo con seguimiento de presupuesto, deudas y gamificación.",
       },
       { property: "og:title", content: "UALI Finanzas" },
       {
         property: "og:description",
         content:
-          "Aplicación de finanzas personales y educación financiera familiar con seguimiento de presupuesto, deudas y gamificación.",
+          "Aplicación de finanzas personales y educación financiera en compañía o equipo con seguimiento de presupuesto, deudas y gamificación.",
       },
       {
         name: "viewport",

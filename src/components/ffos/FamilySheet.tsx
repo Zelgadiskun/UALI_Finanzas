@@ -114,10 +114,10 @@ function NoFamilyYet() {
     if (!name.trim()) return;
     try {
       await createMutation.mutateAsync(name.trim());
-      toast.success("Familia creada");
+      toast.success("Espacio de equipo creado");
       setMode("none");
     } catch {
-      toast.error("No se pudo crear la familia.");
+      toast.error("No se pudo crear el espacio de equipo.");
     }
   }
 
@@ -125,7 +125,7 @@ function NoFamilyYet() {
     if (!code.trim()) return;
     try {
       await joinMutation.mutateAsync(code.trim());
-      toast.success("Te uniste a la familia");
+      toast.success("Te uniste al equipo");
       setMode("none");
     } catch {
       toast.error("Código inválido o algo salió mal.");
@@ -133,11 +133,11 @@ function NoFamilyYet() {
   }
 
   const PRESETS = [
-    { label: "Pareja 💑", name: "Mi Pareja" },
-    { label: "Hogar / Roommates 🏠", name: "Casa / Roommates" },
-    { label: "Amigos / Viaje ✈️", name: "Viaje con Amigos" },
-    { label: "Familia 👨‍👩‍👧", name: "Nuestra Familia" },
-    { label: "Proyecto 💡", name: "Equipo Proyecto" },
+    { label: "En Compañía 🤝", name: "En Compañía" },
+    { label: "Compañero / Dúo 👥", name: "Dúo con Compañero" },
+    { label: "Equipo de Piso 🏠", name: "Equipo de Piso" },
+    { label: "Equipo de Viaje ✈️", name: "Equipo de Viaje" },
+    { label: "Equipo Proyecto 💡", name: "Equipo Proyecto" },
   ];
 
   if (mode === "create") {
@@ -173,7 +173,7 @@ function NoFamilyYet() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Casa Palermo, Vacaciones, Pareja…"
+            placeholder="Ej. Casa Palermo, Vacaciones, Compañero…"
             className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
           />
         </label>
@@ -203,7 +203,7 @@ function NoFamilyYet() {
           </span>
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onChange={(e) => setCode(e.target.value)}
             placeholder="Ej. AB12CD"
             className="h-12 w-full rounded-xl border border-border bg-card px-3 text-center font-mono text-lg tracking-widest"
             maxLength={6}
@@ -229,8 +229,8 @@ function NoFamilyYet() {
   return (
     <section className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        Todavía no estás conectado a ningún espacio compartido. Puedes crear uno para tu pareja,
-        compas de piso, amigos o familia.
+        Todavía no estás conectado a ningún espacio compartido. Puedes crear uno para tu compañero,
+        equipo de piso o amigos.
       </p>
       <button
         onClick={() => setMode("create")}
@@ -346,7 +346,7 @@ function FamilyDetails({
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
             autoComplete="email"
-            placeholder="familiar@email.com"
+            placeholder="companero@email.com"
             className="h-11 flex-1 rounded-xl border border-border bg-card px-3 text-sm"
           />
           <button

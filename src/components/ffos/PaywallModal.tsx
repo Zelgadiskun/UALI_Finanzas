@@ -107,14 +107,14 @@ export function PaywallModal({ open, onClose, triggerFeature = "general" }: Payw
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider">
-                <Crown className="size-3" /> UALÍ Dúo & Familia
+                <Crown className="size-3" /> UALÍ Dúo & Equipo
               </span>
               <span className="text-[11px] text-muted-foreground">Plan Prémium</span>
             </div>
 
             <h2 className="text-xl font-display font-extrabold leading-tight text-foreground">
               {triggerFeature === "family"
-                ? "Sincronizá gastos en pareja sin discusiones ni fricción"
+                ? "Sincronizá gastos en compañía y equipo sin discusiones ni fricción"
                 : triggerFeature === "reports"
                   ? "Exportá reportes ejecutivos en PDF y Excel para tu contador"
                   : "El sistema operativo completo para las finanzas de tu hogar"}
@@ -133,7 +133,7 @@ export function PaywallModal({ open, onClose, triggerFeature = "general" }: Payw
                 </div>
                 <div>
                   <span className="font-extrabold text-foreground">
-                    Sincronización en Pareja & Equipo:
+                    Sincronización en Compañía & Equipo:
                   </span>
                   <span className="text-muted-foreground">
                     {" "}

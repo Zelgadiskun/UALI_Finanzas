@@ -314,33 +314,33 @@ export function PresupuestoRoute() {
           <div>
             <span
               className={cn(
-                "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5",
-                isOverdrawn ? "text-red-400/90" : "text-muted-foreground",
+                "text-xs font-bold uppercase tracking-wider flex items-center gap-1.5",
+                isOverdrawn ? "text-red-400" : "text-slate-400",
               )}
             >
               <span>Ualí Finanzas</span>
-              {isOverdrawn && <span className="size-1.5 rounded-full bg-red-400 animate-ping" />}
+              {isOverdrawn && <span className="size-2 rounded-full bg-red-400 animate-ping" />}
             </span>
-            <h1 className="text-lg font-black text-foreground tracking-tight">Presupuesto</h1>
+            <h1 className="text-xl font-black text-foreground tracking-tight">Presupuesto</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2">
           {/* Asistente 0-Base Button */}
           <button
             type="button"
             onClick={() => setAssistantOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 hover:bg-teal-500/25 active:scale-95 transition font-extrabold text-xs shadow-xs"
+            className="flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 hover:bg-teal-500/25 active:scale-95 transition font-black text-xs shadow-xs"
             title="Asistente de reparto 0-Base y 50/30/20"
           >
-            <Sparkles className="size-3.5" />
-            <span className="text-[11px]">0-Base</span>
+            <Sparkles className="size-4" />
+            <span>0-Base</span>
           </button>
 
           {/* Streak Pill */}
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-card border border-border/80 text-amber-300 font-bold text-xs shadow-xs">
-            <Flame className="size-3.5 fill-amber-400 text-amber-400" />
-            <span className="text-[11px]">{streak}d</span>
+          <div className="flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-xl bg-card border border-border/80 text-amber-300 font-black text-xs shadow-xs">
+            <Flame className="size-4 fill-amber-400 text-amber-400" />
+            <span>{streak}d</span>
           </div>
 
           {/* New Budget Action Button */}
@@ -348,47 +348,47 @@ export function PresupuestoRoute() {
             type="button"
             onClick={() => setModalOpen(true)}
             aria-label="Nuevo presupuesto"
-            className="size-8 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 flex items-center justify-center font-black active:scale-95 transition-all shadow-md shadow-[#2EC4B6]/20"
+            className="size-10 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 flex items-center justify-center font-black active:scale-95 transition-all shadow-md shadow-[#2EC4B6]/25"
           >
-            <Plus className="size-4.5 stroke-[2.5]" />
+            <Plus className="size-5 stroke-[2.8]" />
           </button>
         </div>
       </section>
 
       {/* Banner de Inicio de Ciclo: Reparto 0-Base & 50/30/20 */}
-      <section className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-r from-teal-500/15 via-[#141F36] to-amber-500/15 border border-teal-500/30 shadow-md">
+      <section className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-teal-500/15 via-[#141F36] to-amber-500/15 border border-teal-500/30 shadow-md">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-9 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-10 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 shrink-0">
               <Sparkles className="size-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-teal-400 flex items-center gap-1">
+              <span className="text-xs font-black uppercase tracking-wider text-teal-400 flex items-center gap-1">
                 <span>Inicio de Ciclo · {currentMonthName}</span>
               </span>
-              <h2 className="text-xs font-black text-foreground truncate mt-0.5">
+              <h2 className="text-sm font-black text-foreground truncate mt-0.5">
                 Divide tus ingresos con el método 0-Base
               </h2>
-              <p className="text-[10.5px] text-muted-foreground truncate">
+              <p className="text-xs text-slate-400 truncate mt-0.5 font-medium">
                 Asigna cada dólar antes de gastarlo según la regla 50/30/20 o personalizada.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setTutorialOpen(true)}
-              className="py-1.5 px-2.5 rounded-xl bg-secondary/80 hover:bg-secondary text-teal-400 font-bold text-[10.5px] border border-teal-500/30 active:scale-95 transition flex items-center gap-1"
+              className="min-h-[40px] px-3 rounded-xl bg-secondary/80 hover:bg-secondary text-teal-400 font-bold text-xs border border-teal-500/30 active:scale-95 transition flex items-center gap-1.5"
               title="Ver explicación y micro-tutorial 0-Base"
             >
-              <HelpCircle className="size-3" />
+              <HelpCircle className="size-3.5" />
               <span>Manual</span>
             </button>
             <button
               type="button"
               onClick={() => setAssistantOpen(true)}
-              className="py-1.5 px-3 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 font-black text-[11px] uppercase tracking-wider shrink-0 shadow-md active:scale-95 transition"
+              className="min-h-[40px] px-3.5 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-md active:scale-95 transition"
             >
               Repartir
             </button>
@@ -621,14 +621,14 @@ export function PresupuestoRoute() {
           type="button"
           onClick={() => setFilter("all")}
           className={cn(
-            "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+            "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[42px]",
             filter === "all"
-              ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+              ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
           <span>Todos</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 font-black">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-black/20 font-black">
             {budgets.length}
           </span>
         </button>
@@ -637,15 +637,15 @@ export function PresupuestoRoute() {
           type="button"
           onClick={() => setFilter("personal")}
           className={cn(
-            "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+            "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[42px]",
             filter === "personal"
-              ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+              ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Lock className="size-3.5" />
+          <Lock className="size-4" />
           <span>Solo míos</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary text-muted-foreground font-bold">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-black">
             {personalCount}
           </span>
         </button>
@@ -654,33 +654,33 @@ export function PresupuestoRoute() {
           type="button"
           onClick={() => setFilter("shared")}
           className={cn(
-            "flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+            "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[42px]",
             filter === "shared"
-              ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+              ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Users className="size-3.5" />
-          <span>Pareja</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary text-muted-foreground font-bold">
+          <Users className="size-4" />
+          <span>En Equipo</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-black">
             {sharedCount}
           </span>
         </button>
       </div>
 
-      {/* 6. 50 / 30 / 20 Mini Breakdown Pills (with updated tension) */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-card text-card-foreground border border-border/60 rounded-2xl p-2.5 flex flex-col shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground mb-1">
+      {/* 6. 50 / 30 / 20 Mini Breakdown Pills con barras legibles */}
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="bg-card text-card-foreground border border-border/80 rounded-2xl p-3 flex flex-col shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1">
             <span>Necesidades</span>
-            <span className={cn("font-bold", isOverdrawn ? "text-red-400" : "text-primary")}>
+            <span className={cn("font-black", isOverdrawn ? "text-red-400" : "text-primary")}>
               {breakdown503020.necesidadesPct}%
             </span>
           </div>
-          <span className="text-sm font-extrabold text-foreground font-sans">
+          <span className="text-sm sm:text-base font-black text-foreground font-sans">
             {money(breakdown503020.necesidades)}
           </span>
-          <div className="w-full bg-secondary/60 h-1.5 rounded-full overflow-hidden mt-1.5">
+          <div className="w-full bg-secondary/80 h-2 rounded-full overflow-hidden mt-2">
             <div
               className={cn("h-full rounded-full", isOverdrawn ? "bg-red-500" : "bg-primary")}
               style={{ width: `${breakdown503020.necesidadesBar}%` }}
@@ -688,15 +688,15 @@ export function PresupuestoRoute() {
           </div>
         </div>
 
-        <div className="bg-card text-card-foreground border border-border/60 rounded-2xl p-2.5 flex flex-col shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground mb-1">
+        <div className="bg-card text-card-foreground border border-border/80 rounded-2xl p-3 flex flex-col shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1">
             <span>Deseos</span>
-            <span className="text-amber-400 font-bold">{breakdown503020.deseosPct}%</span>
+            <span className="text-amber-400 font-black">{breakdown503020.deseosPct}%</span>
           </div>
-          <span className="text-sm font-extrabold text-foreground font-sans">
+          <span className="text-sm sm:text-base font-black text-foreground font-sans">
             {money(breakdown503020.deseos)}
           </span>
-          <div className="w-full bg-secondary/60 h-1.5 rounded-full overflow-hidden mt-1.5">
+          <div className="w-full bg-secondary/80 h-2 rounded-full overflow-hidden mt-2">
             <div
               className="bg-amber-400 h-full rounded-full"
               style={{ width: `${breakdown503020.deseosBar}%` }}
@@ -704,15 +704,15 @@ export function PresupuestoRoute() {
           </div>
         </div>
 
-        <div className="bg-card text-card-foreground border border-border/60 rounded-2xl p-2.5 flex flex-col shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground mb-1">
+        <div className="bg-card text-card-foreground border border-border/80 rounded-2xl p-3 flex flex-col shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1">
             <span>Ahorro Nido</span>
-            <span className="text-teal-400 font-bold">{breakdown503020.ahorroPct}%</span>
+            <span className="text-teal-400 font-black">{breakdown503020.ahorroPct}%</span>
           </div>
-          <span className="text-sm font-extrabold text-foreground font-sans">
+          <span className="text-sm sm:text-base font-black text-foreground font-sans">
             {money(breakdown503020.ahorroNido)}
           </span>
-          <div className="w-full bg-secondary/60 h-1.5 rounded-full overflow-hidden mt-1.5">
+          <div className="w-full bg-secondary/80 h-2 rounded-full overflow-hidden mt-2">
             <div
               className="bg-teal-400 h-full rounded-full"
               style={{ width: `${breakdown503020.ahorroBar}%` }}
@@ -942,7 +942,7 @@ export function PresupuestoRoute() {
                     ) : (
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <Users className="size-3.5 text-teal-400" />
-                        <span>Compartido familiar</span>
+                        <span>Compartido en equipo</span>
                       </div>
                     )}
                   </div>
@@ -1084,7 +1084,7 @@ export function PresupuestoRoute() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <Users className="size-3.5" /> Notificar pareja
+                  <Users className="size-3.5" /> Notificar compañero
                 </button>
               </div>
 
@@ -1096,8 +1096,8 @@ export function PresupuestoRoute() {
                   </>
                 ) : (
                   <>
-                    👥 <strong className="text-foreground">Notificar pareja:</strong> Tu contraparte
-                    recibirá la confirmación del nuevo cupo rebalanceado.
+                    👥 <strong className="text-foreground">Notificar compañero:</strong> Tu
+                    compañero recibirá la confirmación del nuevo cupo rebalanceado.
                   </>
                 )}
               </p>
