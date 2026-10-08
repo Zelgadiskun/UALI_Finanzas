@@ -817,7 +817,7 @@ export function Inicio() {
           {/* VISTA 1: PUENTE DE FLUJO CONTINUO CON TIPOGRAFÍA ACCESIBLE */}
           {flowViewMode === "bridge" ? (
             <div className="space-y-2 pt-1">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                 {/* 1. Remanente Mes Anterior */}
                 <div className="p-3 rounded-xl bg-secondary/60 border border-teal-500/30 flex flex-col justify-between">
                   <span className="text-xs font-bold text-teal-400 block truncate">
@@ -850,18 +850,8 @@ export function Inicio() {
                   </span>
                 </div>
 
-                {/* 4. Ahorro Nido (Transferencia a reserva) */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-teal-500/30 flex flex-col justify-between">
-                  <span className="text-xs font-bold text-teal-300 block truncate">
-                    Ahorro Nido
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-teal-300 mt-1">
-                    {hideBalance ? "••••••" : `-${money(stats.currentSaved)}`}
-                  </span>
-                </div>
-
-                {/* 5. Saldo en Mano */}
-                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/40 flex flex-col justify-between col-span-2 sm:col-span-1">
+                {/* 4. Saldo en Caja */}
+                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/40 flex flex-col justify-between">
                   <span className="text-xs font-black text-teal-300 block truncate">
                     Saldo en Caja
                   </span>

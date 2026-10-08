@@ -155,7 +155,7 @@ export function TransactionSheet({ open, onClose, editing, defaultValues }: Prop
   // Consejos dinámicos de Nido según tipo
   const nidoAdvice =
     type === "ahorro"
-      ? "¡Excelente hábito! Todo monto que apartas a tu ahorro con Nido fortalece tus metas y tu colchón de seguridad."
+      ? "¡Excelente hábito! Todo monto que apartas a tu ahorro se resta de tu saldo disponible y se reserva en Nido para proteger tus metas."
       : type === "ingreso"
         ? "¡Buen ingreso! Recordá la regla de oro: asigná cada peso a su rubro antes de empezar a gastar."
         : type === "pago_deuda"
