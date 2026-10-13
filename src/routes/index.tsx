@@ -396,8 +396,10 @@ export function Inicio() {
   const progress = progressQuery.data;
   const levelData = levelInfo(progress.xp);
   const xpCurrent = progress.xp;
-  const xpNextThreshold = (levelData.level + 1) * 250;
-  const xpInLevel = xpCurrent % 250;
+  // Fórmula indexada proporcional: Nivel 1 = 250 XP, Nivel 2 = Máximo 500 XP acumulados, Nivel 3 = 750 XP, etc.
+  const xpLevelCap = levelData.level * 250;
+  const xpLevelFloor = (levelData.level - 1) * 250;
+  const xpInLevel = Math.max(0, xpCurrent - xpLevelFloor);
   const xpProgressPct = Math.min(100, Math.round((xpInLevel / 250) * 100));
 
   // Calculo de ahorro meta
@@ -465,28 +467,23 @@ export function Inicio() {
               <span>Tour</span>
             </button>
 
-            {/* Racha de Días */}
+            {/* Badge Unificado: Racha & Puntos FFOS */}
             <button
               type="button"
               onClick={() => setProgressOpen(true)}
-              className="flex items-center gap-1 h-9 px-2.5 rounded-xl bg-card border border-amber-500/40 text-amber-300 font-black text-xs shadow-xs transition active:scale-95"
-              title="Tu racha diaria de registro"
+              className="flex items-center h-9 px-2.5 rounded-xl bg-card border border-amber-500/40 text-amber-300 font-black text-xs shadow-xs transition active:scale-95 divide-x divide-amber-500/30"
+              title="Tu racha diaria y puntos FFOS"
             >
-              <Flame className="size-4 fill-amber-400 text-amber-400" />
-              <span>{progress.streak}d</span>
-            </button>
-
-            {/* Puntos FFOS */}
-            <button
-              type="button"
-              onClick={() => setProgressOpen(true)}
-              className="flex items-center gap-1 h-9 px-2.5 rounded-xl bg-card border border-[#F6BE22]/40 text-amber-300 font-black text-xs shadow-xs transition active:scale-95"
-              title="Puntos FFOS ganados"
-            >
-              <span className="size-4 rounded-full bg-[#F6BE22] flex items-center justify-center text-[10px] text-slate-900 font-black">
-                F
+              <span className="flex items-center gap-1 pr-2">
+                <Flame className="size-4 fill-amber-400 text-amber-400" />
+                <span>{progress.streak}d</span>
               </span>
-              <span>{ffosTokens}</span>
+              <span className="flex items-center gap-1.5 pl-2">
+                <span className="size-4 rounded-full bg-[#F6BE22] flex items-center justify-center text-[10px] text-slate-900 font-black">
+                  F
+                </span>
+                <span>{ffosTokens}</span>
+              </span>
             </button>
           </div>
         </div>
@@ -999,7 +996,7 @@ export function Inicio() {
               <div className="flex justify-between items-center mt-2 font-sans">
                 <span className="text-xs font-black text-amber-300">+{xpInLevel} XP</span>
                 <span className="text-xs font-bold text-purple-200">
-                  {xpCurrent} / {xpNextThreshold} XP
+                  {xpCurrent} / {xpLevelCap} XP
                 </span>
               </div>
             </div>

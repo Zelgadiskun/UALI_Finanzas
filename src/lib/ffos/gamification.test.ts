@@ -10,18 +10,26 @@ describe("levelInfo", () => {
   });
 
   it("stays on the current level right up to the xp boundary", () => {
-    expect(levelInfo(149).level).toBe(1);
-    expect(levelInfo(150).level).toBe(2);
+    expect(levelInfo(249).level).toBe(1);
+    expect(levelInfo(250).level).toBe(2);
+    expect(levelInfo(499).level).toBe(2);
+    expect(levelInfo(500).level).toBe(3);
   });
 
   it("computes progress within the current level against the next threshold", () => {
-    const info = levelInfo(75); // halfway from 0 to 150
+    const info = levelInfo(125); // halfway from 0 to 250
     expect(info.level).toBe(1);
-    expect(info.xpIntoLevel).toBe(75);
-    expect(info.xpForLevel).toBe(150);
+    expect(info.xpIntoLevel).toBe(125);
+    expect(info.xpForLevel).toBe(250);
     expect(info.pct).toBe(50);
-    expect(info.xpToNext).toBe(75);
+    expect(info.xpToNext).toBe(125);
+    expect(info.levelCap).toBe(250);
     expect(info.next?.name).toBe("Organizador");
+
+    const infoLvl2 = levelInfo(375); // halfway from 250 to 500
+    expect(infoLvl2.level).toBe(2);
+    expect(infoLvl2.xpIntoLevel).toBe(125);
+    expect(infoLvl2.levelCap).toBe(500); // Nivel 2 = Máximo 500 XP acumulados
   });
 
   it("reports the max level with no next level and 100% — never over 100", () => {

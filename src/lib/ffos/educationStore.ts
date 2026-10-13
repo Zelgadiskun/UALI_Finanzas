@@ -295,6 +295,77 @@ function subscribeEducationProgress(callback: () => void): () => void {
   };
 }
 
+export const RITUAL_EVENT_NAME = "uali-phase-ritual-completed";
+
+/**
+ * Comprueba si el ritual de evolución de la fase especificada ha sido consagrado por el usuario.
+ */
+export function isPhaseRitualCompleted(
+  userId: string | null | undefined,
+  phaseNumber: number,
+): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const userKey = userId || "local-user";
+    const storageKey = `uali_phase_ritual_p${phaseNumber}_${userKey}`;
+    const directVal = localStorage.getItem(storageKey);
+    if (directVal === "true") return true;
+
+    // Chequear fallback en lessons done
+    const done = getLocalLessonsDone();
+    const ritualSlug =
+      phaseNumber === 1 ? "phase1_to_2" : phaseNumber === 2 ? "phase2_to_3" : "phase3_mastery";
+    if (
+      done.includes(`ritual-${ritualSlug}`) ||
+      done.includes(ritualSlug) ||
+      done.includes(`phase-${phaseNumber}-ritual`)
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Registra el evento de ejecución del Ritual de Evolución para el User_ID en base de datos/almacenamiento resiliente.
+ */
+export function recordPhaseRitualCompleted(
+  userId: string | null | undefined,
+  phaseNumber: number,
+  ritualType?: string,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const userKey = userId || "local-user";
+    const storageKey = `uali_phase_ritual_p${phaseNumber}_${userKey}`;
+    localStorage.setItem(storageKey, "true");
+
+    const ritualSlug =
+      ritualType ||
+      (phaseNumber === 1 ? "phase1_to_2" : phaseNumber === 2 ? "phase2_to_3" : "phase3_mastery");
+    addLocalLessonDone(`ritual-${ritualSlug}`, ritualSlug);
+
+    // Otorga recompensas de Ritual de Evolución (+50 XP, +100 FFOS)
+    addLocalXp(userKey, 50);
+    addExtraTokens(userKey, 100);
+    recordPointEvent(userKey, {
+      xp: 50,
+      tokens: 100,
+      reason: `Ritual de Evolución Fase ${phaseNumber} consagrado`,
+    });
+
+    window.dispatchEvent(
+      new CustomEvent(RITUAL_EVENT_NAME, {
+        detail: { userId: userKey, phaseNumber, ritualType: ritualSlug },
+      }),
+    );
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Hook reactivo para todo el sistema de estado de educación.
  * Se actualiza instantáneamente en todos los componentes al completar cualquier submódulo.
@@ -337,6 +408,20 @@ export function useEducationProgress(userId?: string | null) {
 
   const stats = useMemo(() => getEducationStats(DEFAULT_LESSONS, state), [state]);
 
+  const isRitualDone = useCallback(
+    (phaseNumber: number) => {
+      return isPhaseRitualCompleted(userId, phaseNumber);
+    },
+    [userId],
+  );
+
+  const recordRitual = useCallback(
+    (phaseNumber: number, ritualType?: string) => {
+      recordPhaseRitualCompleted(userId, phaseNumber, ritualType);
+    },
+    [userId],
+  );
+
   return {
     state,
     completedSubLessonIds: state.completedSubLessonIds,
@@ -345,5 +430,7 @@ export function useEducationProgress(userId?: string | null) {
     setResumeStep,
     getSubProgress,
     stats,
+    isRitualDone,
+    recordRitual,
   };
 }

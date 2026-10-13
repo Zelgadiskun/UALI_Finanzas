@@ -207,7 +207,13 @@ const DAILY_CHALLENGE_STORAGE_KEY = "uali_toto_daily_challenge_state_v2";
 
 export interface DailyChallengeState {
   date: string; // YYYY-MM-DD
-  status: "not_started" | "in_progress" | "completed_clean" | "completed_error" | "completed_timeout" | "abandoned";
+  status:
+    | "not_started"
+    | "in_progress"
+    | "completed_clean"
+    | "completed_error"
+    | "completed_timeout"
+    | "abandoned";
   selectedOption: "A" | "B" | null;
   startedAt: number | null;
   finishedAt: number | null;

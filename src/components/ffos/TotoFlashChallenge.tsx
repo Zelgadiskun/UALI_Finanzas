@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -39,7 +39,8 @@ export function TotoFlashChallenge() {
     return debtsQuery.data.reduce((acc, d) => acc + (d.principal || 0), 0);
   }, [debtsQuery.data]);
 
-  const hasFinancialStress = totalDebtBalance > 0 || (debtsQuery.data && debtsQuery.data.length > 0);
+  const hasFinancialStress =
+    totalDebtBalance > 0 || (debtsQuery.data && debtsQuery.data.length > 0);
 
   // Tiempo límite: 20s si hay estrés por deudas, 30s en condición normal
   const maxSeconds = hasFinancialStress ? 20 : 30;
@@ -53,61 +54,8 @@ export function TotoFlashChallenge() {
   const dilemma = useMemo(() => getDilemmaForDate(state.date), [state.date]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Detección Anti-Exploit al montar:
-  // Si el usuario arrancó el reto ("in_progress") y recargó o cerró la app para salvarse
-  useEffect(() => {
-    const saved = loadDailyChallengeState();
-    if (saved.status === "in_progress") {
-      // Registrar fallo por abandono
-      const abandonedState: DailyChallengeState = {
-        ...saved,
-        status: "abandoned",
-        finishedAt: Date.now(),
-        xpEarned: 10,
-        tokensEarned: 15,
-      };
-      saveDailyChallengeState(abandonedState);
-      setState(abandonedState);
-      setAbandonWarning(true);
-
-      // Otorgar consolación de error
-      awardPoints({
-        xpToAdd: 10,
-        tokensToAdd: 15,
-        reason: "Desafío de Toto (Fallo por abandono involuntario)",
-      });
-
-      toast.error("⚡ ¡Chispazo de Toto por abandono!", {
-        description:
-          "Cerrar la prueba a mitad de camino cuenta como fallo táctico. Recibes compensación básica.",
-      });
-    }
-  }, []);
-
-  // Lógica del Temporizador cuando está activo
-  useEffect(() => {
-    if (state.status === "in_progress") {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            handleTimeout();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [state.status]);
-
   // Manejar expiración de tiempo (indecisión)
-  async function handleTimeout() {
+  const handleTimeout = useCallback(async () => {
     setIsFrozen(true);
     const timeoutState: DailyChallengeState = {
       ...state,
@@ -127,9 +75,78 @@ export function TotoFlashChallenge() {
     });
 
     toast.error("❄️ ¡Tiempo agotado! Pantalla congelada", {
-      description: "En finanzas, la indecisión prolongada cuesta dinero real. +15 FFOS consolación.",
+      description:
+        "En finanzas, la indecisión prolongada cuesta dinero real. +15 FFOS consolación.",
     });
-  }
+  }, [state, hasFinancialStress, awardPoints]);
+
+  // Detección Anti-Exploit al montar:
+  // Si el usuario arrancó el reto ("in_progress") y recargó o cerró la app para salvarse
+  useEffect(() => {
+    const saved = loadDailyChallengeState();
+    if (saved.status === "in_progress") {
+      // Registrar fallo por abandono
+      const abandonedState: DailyChallengeState = {
+        ...saved,
+        status: "abandoned",
+        finishedAt: Date.now(),
+        xpEarned: 10,
+        tokensEarned: 15,
+      };
+      saveDailyChallengeState(abandonedState);
+      setState(abandonedState);
+      setAbandonWarning(true);
+
+      // Otorgar consolación de error tras montar de forma asíncrona para no interferir con la reconciliación inicial
+      const timeoutId = setTimeout(() => {
+        awardPoints({
+          xpToAdd: 10,
+          tokensToAdd: 15,
+          reason: "Desafío de Toto (Fallo por abandono involuntario)",
+        });
+      }, 50);
+
+      toast.error("⚡ ¡Chispazo de Toto por abandono!", {
+        description:
+          "Cerrar la prueba a mitad de camino cuenta como fallo táctico. Recibes compensación básica.",
+      });
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [awardPoints]);
+
+  // Lógica del Temporizador cuando está activo
+  useEffect(() => {
+    if (state.status !== "in_progress") {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [state.status]);
+
+  // Manejar expiración de tiempo cuando el temporizador llega a cero (fuera de la fase de render)
+  useEffect(() => {
+    if (state.status === "in_progress" && timeLeft === 0) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      handleTimeout();
+    }
+  }, [state.status, timeLeft, handleTimeout]);
 
   // Iniciar el desafío
   function handleStartChallenge() {

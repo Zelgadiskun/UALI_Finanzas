@@ -21,6 +21,13 @@ import {
   NidoCharacter,
   TotoCharacter,
 } from "@/components/ffos/characters/Characters";
+import { NidoMechanicalClassifierModal } from "./NidoMechanicalClassifierModal";
+import { ChispaEquityCompassModal } from "./ChispaEquityCompassModal";
+import { TotoPerpetualCogsModal } from "./TotoPerpetualCogsModal";
+import { ZeroBaseBudgetMissionModal } from "./ZeroBaseBudgetMissionModal";
+import { Rule503020MissionModal } from "./Rule503020MissionModal";
+import { EmergencyShieldMissionModal } from "./EmergencyShieldMissionModal";
+import { PhaseTransitionRitualModal, type PhaseTransitionType } from "./PhaseTransitionRitualModal";
 import { useEducationProgress, getLessonResumeStep } from "@/lib/ffos/educationStore";
 import type { LessonRow } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
@@ -66,6 +73,14 @@ export function LessonSheet({
 
   const [picked, setPicked] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mission01ModalOpen, setMission01ModalOpen] = useState(false);
+  const [mission02ModalOpen, setMission02ModalOpen] = useState(false);
+  const [mission03ModalOpen, setMission03ModalOpen] = useState(false);
+  const [mission04ModalOpen, setMission04ModalOpen] = useState(false);
+  const [mission05ModalOpen, setMission05ModalOpen] = useState(false);
+  const [mission06ModalOpen, setMission06ModalOpen] = useState(false);
+  const [ritualModalOpen, setRitualModalOpen] = useState(false);
+  const [ritualType, setRitualType] = useState<PhaseTransitionType>("phase1_to_2");
   const completeMutation = useCompleteLessonMutation();
   const spacedInfo =
     getSpacedReview(lesson.id) || (lesson.slug ? getSpacedReview(lesson.slug) : null);
@@ -120,6 +135,30 @@ export function LessonSheet({
         }
       }
       setTimeout(() => {
+        const isNode4 = lesson.slug === "savings_basics" || lesson.id === "lesson-savings-basics";
+        const isNode8 = lesson.slug === "debt_order" || lesson.id === "lesson-debt-order";
+        const isNode12 =
+          lesson.slug === "inflation_shield" || lesson.id === "lesson-inflation-shield";
+
+        if (isNode4) {
+          setRitualType("phase1_to_2");
+          setRitualModalOpen(true);
+          setIsSubmitting(false);
+          return;
+        }
+        if (isNode8) {
+          setRitualType("phase2_to_3");
+          setRitualModalOpen(true);
+          setIsSubmitting(false);
+          return;
+        }
+        if (isNode12) {
+          setRitualType("phase3_mastery");
+          setRitualModalOpen(true);
+          setIsSubmitting(false);
+          return;
+        }
+
         changeStep(subLessons.length + 1); // Confidence screen
         setIsSubmitting(false);
       }, 700);
@@ -275,6 +314,162 @@ export function LessonSheet({
               <Star className="size-3.5 text-amber-400 fill-amber-400 shrink-0" />
               <span>{currentSub.keyTakeaway}</span>
             </div>
+
+            {/* Lanzador Misión 01 si es lección de presupuesto 0-base */}
+            {lesson.slug === "intro" && (
+              <button
+                type="button"
+                onClick={() => setMission01ModalOpen(true)}
+                className="w-full p-3 rounded-2xl bg-gradient-to-r from-teal-950/60 via-slate-900 to-teal-950/60 border border-teal-500/40 text-left flex items-center justify-between gap-3 shadow-sm hover:border-teal-400 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-teal-300 block">
+                      🎮 Misión 01 de Nido (Cerdito Alcancía)
+                    </span>
+                    <span className="text-xs font-bold text-foreground block truncate">
+                      Presupuesto Base Cero (Asignación Perfecta)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-xl shrink-0">
+                  +25 XP • +35 F
+                </span>
+              </button>
+            )}
+
+            {/* Lanzador Misión 02 si es lección de necesidades y deseos (50/30/20) */}
+            {lesson.slug === "needs_wants" && (
+              <button
+                type="button"
+                onClick={() => setMission02ModalOpen(true)}
+                className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-amber-950/60 border border-amber-500/40 text-left flex items-center justify-between gap-3 shadow-sm hover:border-amber-400 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-amber-300 block">
+                      🎮 Misión 02 de Nido
+                    </span>
+                    <span className="text-xs font-bold text-foreground block truncate">
+                      La Regla 50 / 30 / 20 (Calibración de Canastas)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-xl shrink-0">
+                  +25 XP • +40 F
+                </span>
+              </button>
+            )}
+
+            {/* Lanzador Misión 03 si es lección de fondo de emergencia */}
+            {lesson.slug === "emergency" && (
+              <button
+                type="button"
+                onClick={() => setMission03ModalOpen(true)}
+                className="w-full p-3 rounded-2xl bg-gradient-to-r from-teal-950/60 via-slate-900 to-teal-950/60 border border-teal-500/40 text-left flex items-center justify-between gap-3 shadow-sm hover:border-teal-400 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-teal-300 block">
+                      🎮 Misión 03 de Nido
+                    </span>
+                    <span className="text-xs font-bold text-foreground block truncate">
+                      El Escudo de Emergencia (3-6 Meses Líquidos)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-xl shrink-0">
+                  +30 XP • +45 F
+                </span>
+              </button>
+            )}
+
+            {/* Lanzador Misión 04 si es lección de necesidades y deseos */}
+            {lesson.slug === "needs_wants" && (
+              <button
+                type="button"
+                onClick={() => setMission04ModalOpen(true)}
+                className="w-full p-3 rounded-2xl bg-gradient-to-r from-teal-950/60 via-slate-900 to-teal-950/60 border border-teal-500/40 text-left flex items-center justify-between gap-3 shadow-sm hover:border-teal-400 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-teal-300 block">
+                      🎮 Misión 04 de Nido
+                    </span>
+                    <span className="text-xs font-bold text-foreground block truncate">
+                      El Clasificador Mecánico (Tolva de Gravedad)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-xl shrink-0">
+                  +50 XP • +75 F
+                </span>
+              </button>
+            )}
+
+            {/* Lanzador Misión 05 si es lección de finanzas en pareja/equipo */}
+            {(lesson.slug === "team_finances" || lesson.slug === "roommates_split") && (
+              <button
+                type="button"
+                onClick={() => setMission05ModalOpen(true)}
+                className="w-full p-3 rounded-2xl bg-gradient-to-r from-purple-950/60 via-slate-900 to-purple-950/60 border border-purple-500/40 text-left flex items-center justify-between gap-3 shadow-sm hover:border-purple-400 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-purple-300 block">
+                      🎮 Misión 05 de Chispa
+                    </span>
+                    <span className="text-xs font-bold text-foreground block truncate">
+                      El Trazo de la Equidad (Compás Proporcional)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-xl shrink-0">
+                  +30 XP • +45 F
+                </span>
+              </button>
+            )}
+
+            {/* Lanzador Misión 06 si es lección de inflación o activos */}
+            {(lesson.slug === "inflation_shield" || lesson.slug === "investing_101") && (
+              <button
+                type="button"
+                onClick={() => setMission06ModalOpen(true)}
+                className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-amber-950/60 border border-amber-500/40 text-left flex items-center justify-between gap-3 shadow-sm hover:border-amber-400 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase text-amber-300 block">
+                      🎮 Misión 06 de Toto
+                    </span>
+                    <span className="text-xs font-bold text-foreground block truncate">
+                      El Engranaje Perpetuo (Activos vs Inflación)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-xl shrink-0">
+                  +35 XP • +50 F
+                </span>
+              </button>
+            )}
 
             {/* Action Navigation Buttons */}
             <div className="flex gap-2 pt-2">
@@ -432,6 +627,49 @@ export function LessonSheet({
           </div>
         )}
       </div>
+
+      <ZeroBaseBudgetMissionModal
+        open={mission01ModalOpen}
+        onClose={() => setMission01ModalOpen(false)}
+      />
+
+      <Rule503020MissionModal
+        open={mission02ModalOpen}
+        onClose={() => setMission02ModalOpen(false)}
+      />
+
+      <EmergencyShieldMissionModal
+        open={mission03ModalOpen}
+        onClose={() => setMission03ModalOpen(false)}
+      />
+
+      <NidoMechanicalClassifierModal
+        open={mission04ModalOpen}
+        onClose={() => setMission04ModalOpen(false)}
+      />
+
+      <ChispaEquityCompassModal
+        open={mission05ModalOpen}
+        onClose={() => setMission05ModalOpen(false)}
+      />
+
+      <TotoPerpetualCogsModal
+        open={mission06ModalOpen}
+        onClose={() => setMission06ModalOpen(false)}
+      />
+
+      <PhaseTransitionRitualModal
+        open={ritualModalOpen}
+        type={ritualType}
+        onClose={() => {
+          setRitualModalOpen(false);
+          changeStep(subLessons.length + 1);
+        }}
+        onComplete={() => {
+          setRitualModalOpen(false);
+          changeStep(subLessons.length + 1);
+        }}
+      />
     </BottomSheet>
   );
 }

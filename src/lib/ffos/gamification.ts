@@ -2,10 +2,12 @@ export type Level = { level: number; name: string; xpRequired: number };
 
 export const LEVELS: Level[] = [
   { level: 1, name: "Aprendiz", xpRequired: 0 },
-  { level: 2, name: "Organizador", xpRequired: 150 },
-  { level: 3, name: "Estratega", xpRequired: 350 },
-  { level: 4, name: "Planificador", xpRequired: 600 },
-  { level: 5, name: "Maestro", xpRequired: 900 },
+  { level: 2, name: "Organizador", xpRequired: 250 },
+  { level: 3, name: "Estratega", xpRequired: 500 },
+  { level: 4, name: "Planificador", xpRequired: 750 },
+  { level: 5, name: "Maestro", xpRequired: 1000 },
+  { level: 6, name: "Gran Maestro", xpRequired: 1250 },
+  { level: 7, name: "Soberano", xpRequired: 1500 },
 ];
 
 export type LevelInfo = {
@@ -17,6 +19,8 @@ export type LevelInfo = {
   xpIntoLevel: number;
   xpForLevel: number;
   xpToNext: number;
+  /** Denominador acumulado indexado del nivel (Nivel 1 = 250, Nivel 2 = 500, etc.) */
+  levelCap: number;
 };
 
 export function levelInfo(xp: number): LevelInfo {
@@ -31,12 +35,22 @@ export function levelInfo(xp: number): LevelInfo {
     }
   }
 
-  const xpForLevel = next ? next.xpRequired - current.xpRequired : 0;
-  const xpIntoLevel = next ? xp - current.xpRequired : 0;
+  const xpForLevel = next ? next.xpRequired - current.xpRequired : 250;
+  const xpIntoLevel = next ? xp - current.xpRequired : 250;
   const pct = next ? Math.min(100, Math.max(0, (xpIntoLevel / xpForLevel) * 100)) : 100;
   const xpToNext = next ? next.xpRequired - xp : 0;
+  const levelCap = current.level * 250;
 
-  return { level: current.level, name: current.name, next, pct, xpIntoLevel, xpForLevel, xpToNext };
+  return {
+    level: current.level,
+    name: current.name,
+    next,
+    pct,
+    xpIntoLevel,
+    xpForLevel,
+    xpToNext,
+    levelCap,
+  };
 }
 
 export type Achievement = { id: string; name: string; description: string };
@@ -73,4 +87,3 @@ export const GAMIFICATION_BALANCING = {
     TEAM_MAX_FFOS: 600,
   },
 } as const;
-

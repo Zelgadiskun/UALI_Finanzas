@@ -179,7 +179,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si cobras $1,200 y solo presupuestas $1,000, esos $200 restantes se van a esfumar en deliveries, cafés y compras por impulso sin que te des cuenta.",
         guardianTip: {
-          character: "Toto",
+          character: "Nido",
           tip: "Ponle etiqueta a cada dólar antes de que empiece el mes. Lo que no planificas tú, te lo gasta la inercia diaria.",
         },
         keyTakeaway: "Ingreso total - Gastos fijos - Deseos - Ahorro = $0.00 asignados.",
@@ -207,8 +207,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si surgió una cena imprevista con amigos, ajustas tu presupuesto de compras de ropa de esa semana para mantener el balance a cero.",
         guardianTip: {
-          character: "Chispa",
-          tip: "¡Equilibrar partidas en 10 segundos es el verdadero superpoder de los maestros financieros!",
+          character: "Nido",
+          tip: "¡Equilibrar partidas en 10 segundos es el verdadero superpoder de la alcancía guardiana!",
         },
         keyTakeaway: "Si una categoría sube, otra baja. El balance final se conserva intacto.",
       },
@@ -234,7 +234,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "El arroz, huevos y verduras del supermercado son necesidades. Los snacks importados y el sushi por delivery entran en deseos.",
         guardianTip: {
-          character: "Toto",
+          character: "Nido",
           tip: "Mantén tus gastos fijos por debajo del 50-60% para que cualquier baja de ingresos no ponga en jaque tu techo.",
         },
         keyTakeaway: "50% para lo esencial: techo, comida básica, transporte y salud.",
@@ -248,7 +248,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si tienes $300 para diversión este mes, puedes ir a ese recital o pedir esa comida favorita con total tranquilidad.",
         guardianTip: {
-          character: "Chispa",
+          character: "Nido",
           tip: "¡Gastar en lo que te hace sonreír está perfecto siempre que esté dentro de tu cupo del 30%!",
         },
         keyTakeaway: "El 30% para gustos te da permiso de disfrutar el presente sin culpa.",
@@ -303,8 +303,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si eres asalariado con contrato fijo, 3 meses suelen bastar. Si eres freelancer o emprendedor, apunta a 6 meses de respaldo.",
         guardianTip: {
-          character: "Toto",
-          tip: "No intentes juntar todo el fondo en un mes: empieza con una meta chica de $500 y acelera paso a paso.",
+          character: "Nido",
+          tip: "No intentes juntar todo el fondo en un mes: empieza con una meta chica de $500 y acelera paso a paso con Nido.",
         },
         keyTakeaway: "Multiplica tus gastos vitales por 3 o 6 meses según tu estabilidad laboral.",
       },
@@ -348,7 +348,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si cobras el día 1 y dejas el dinero en la cuenta, para el día 25 ya encontraste salidas, compras y suscripciones que consumieron todo.",
         guardianTip: {
-          character: "Toto",
+          character: "Nido",
           tip: "Si no apartas el ahorro de entrada, te conviertes en el último de la fila para cobrar tu propio esfuerzo.",
         },
         keyTakeaway: "Ahorrar al final es una ilusión; el dinero disponible siempre se gasta.",
@@ -377,7 +377,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "En 6 meses verás $900 ahorrados que antes se habrían evaporado en consumos irrelevantes.",
         guardianTip: {
-          character: "Chispa",
+          character: "Nido",
           tip: "¡Cada aporte a Nido suma Puntos FFOS y te acerca al siguiente nivel de maestría!",
         },
         keyTakeaway: "Trabajas duro para ti: quédate con una parte de tu esfuerzo desde el inicio.",
@@ -408,8 +408,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si no tienen un acuerdo, la compra de un videojuego o unos zapatos puede desatar una discusión sobre el pago de la luz.",
         guardianTip: {
-          character: "Toto",
-          tip: "Cuentas claras conservan el amor y la armonía en casa. Hablar de números debe ser tan normal como planear las vacaciones.",
+          character: "Chispa",
+          tip: "Cuentas claras conservan el amor y la armonía en casa. El compás de Chispa traza límites sanos para el equipo.",
         },
         keyTakeaway: "La falta de acuerdos genera fricción; el sistema conjunto trae paz.",
       },
@@ -422,7 +422,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Para un alquiler y despensa de $1,000, una persona aporta $600 y la otra $400. Ambas conservan la misma proporción para sus metas personales.",
         guardianTip: {
-          character: "Toto",
+          character: "Chispa",
           tip: "Aportes proporcionales evitan que quien gana menos viva asfixiado financieramente.",
         },
         keyTakeaway: "Aportar según ingresos relativos equilibra el esfuerzo de ambos.",
@@ -436,7 +436,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Tu pareja puede comprarse ropa o tú puedes gastar en tu hobby favorito sin tener que pedir permiso ni dar explicaciones.",
         guardianTip: {
-          character: "Nido",
+          character: "Chispa",
           tip: "El espacio compartido protege el hogar; tu billetera privada protege tu autonomía personal.",
         },
         keyTakeaway: "Un pozo común para el hogar y cupos individuales para gastar con libertad.",
@@ -467,7 +467,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Alguien compra el papel higiénico tres veces seguidas y piensa que los demás se están aprovechando, dañando el ambiente del hogar.",
         guardianTip: {
-          character: "Toto",
+          character: "Chispa",
           tip: "Armen una lista fija de ítems comunitarios con un fondo mensual donde todos ponen lo mismo al inicio.",
         },
         keyTakeaway: "Definir qué es común y qué es personal desde el primer día.",
@@ -495,8 +495,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Ualí te muestra: 'Ana pagó $140, Carlos pagó $90'. Carlos transfiere $25 y ambos quedan en paz y listos para el nuevo mes.",
         guardianTip: {
-          character: "Toto",
-          tip: "Cuentas saldadas mensualmente aseguran amistades y convivencia duradera.",
+          character: "Chispa",
+          tip: "Cuentas saldadas mensualmente con el compás de Chispa aseguran amistades y convivencia duradera.",
         },
         keyTakeaway: "Cerrar números cada 30 días mantiene la casa limpia y la amistad sana.",
       },
@@ -526,7 +526,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si ganas $1,000 y gastas $1,800 con la tarjeta porque el límite te lo permite, el mes que viene estarás atrapado en una bola de nieve.",
         guardianTip: {
-          character: "Toto",
+          character: "Chispa",
           tip: "Solo pasa la tarjeta si ya tienes ese dinero en tu cuenta bancaria para pagarlo hoy.",
         },
         keyTakeaway: "La tarjeta financia tus compras por 30 días, no tu estilo de vida.",
@@ -540,7 +540,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Pagar el mínimo en una deuda de $1,000 puede tomarte 12 años y terminarás pagando más de $3,500 al banco.",
         guardianTip: {
-          character: "Toto",
+          character: "Chispa",
           tip: "Sé un cliente 'totalero': paga el 100% de tu resumen antes de la fecha límite y paga cero intereses.",
         },
         keyTakeaway: "Pagar el mínimo enriquece al banco y te mantiene endeudado de por vida.",
@@ -585,7 +585,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Tienes una tarjeta al 65% anual y un crédito personal al 18%. La avalancha ordena poner todo el dinero extra a liquidar la tarjeta primero.",
         guardianTip: {
-          character: "Toto",
+          character: "Chispa",
           tip: "Matemáticamente, la avalancha es el camino que menos dinero total le deja en el bolsillo al banco.",
         },
         keyTakeaway:
@@ -600,7 +600,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si tienes $300 para pagar deudas: pagas el mínimo en dos deudas ($50 c/u) y los $200 restantes van directos a capital de la más cara.",
         guardianTip: {
-          character: "Toto",
+          character: "Chispa",
           tip: "Nunca descuides los pagos mínimos de las demás; la meta es atacar sin generar penalidades en otros lados.",
         },
         keyTakeaway: "Mínimos en todas para protegerte; excedente concentrado en la más cara.",
@@ -705,8 +705,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Ves unas zapatillas con 30% de descuento y sientes una urgencia física de comprarlas antes de que 'se acaben', aunque tienes 4 pares en casa.",
         guardianTip: {
-          character: "Chispa",
-          tip: "El comercio electrónico está diseñado para que compres en 1 clic antes de que alcances a pensar. ¡Ponle pausa!",
+          character: "Toto",
+          tip: "El comercio electrónico está diseñado para que compres en 1 clic antes de que alcances a pensar. ¡Ponle pausa con Toto!",
         },
         keyTakeaway:
           "Las compras impulsivas son disparadas por dopamina temporal, no por necesidad.",
@@ -734,7 +734,7 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si ganas $10 la hora y ves una campera de $150, pregúntate: '¿Vale la pena trabajar 15 horas de mi vida para tener esto?'.",
         guardianTip: {
-          character: "Nido",
+          character: "Toto",
           tip: "Tu tiempo y tu energía son tu recurso más valioso. No los regales en objetos que terminarán juntando polvo.",
         },
         keyTakeaway:
@@ -780,8 +780,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si una empresa quiebra, las otras 499 siguen generando ganancias y tu capital sigue protegido.",
         guardianTip: {
-          character: "Nido",
-          tip: "Nunca inviertas en bolsa dinero que vayas a necesitar en los próximos 3 años.",
+          character: "Toto",
+          tip: "Nunca inviertas en bolsa dinero que vayas a necesitar en los próximos 3 años. La moneda de Toto gira a largo plazo.",
         },
         keyTakeaway:
           "Diversifica en cientos de empresas y piensa en horizontes de años, no de semanas.",
@@ -795,8 +795,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Invertir $100 al mes al 8% anual genera más de $150,000 en 30 años, habiendo puesto de tu bolsillo solo $36,000.",
         guardianTip: {
-          character: "Chispa",
-          tip: "¡El mejor momento para empezar fue hace 10 años, el segundo mejor momento es hoy!",
+          character: "Toto",
+          tip: "¡El mejor momento para empezar a girar el engranaje fue hace 10 años, el segundo mejor momento es hoy!",
         },
         keyTakeaway: "La constancia y el tiempo son los mejores amigos de tu libertad financiera.",
       },
@@ -840,8 +840,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Si tu fondo de emergencia de $3,000 está en una cuenta al 5% o 8% anual, genera entre $150 y $240 al año sin hacer nada.",
         guardianTip: {
-          character: "Nido",
-          tip: "Pon a trabajar cada peso de tu reserva de Nido en instrumentos seguros que amortigüen la subida de precios.",
+          character: "Toto",
+          tip: "Pon a trabajar cada peso con el engranaje de Toto en instrumentos seguros que amortigüen la subida de precios.",
         },
         keyTakeaway:
           "Tu fondo de reserva debe estar en instrumentos seguros que generen rendimientos diarios.",
@@ -855,8 +855,8 @@ export const DEFAULT_LESSONS: LessonRow[] = [
         practicalExample:
           "Al combinar presupuesto 0-base, reserva protegida e inversiones constantes, creas un escudo financiero a prueba de cualquier crisis.",
         guardianTip: {
-          character: "Chispa",
-          tip: "¡Dominar estas 12 lecciones te convierte en un estratega financiero con el control absoluto de su futuro!",
+          character: "Toto",
+          tip: "¡Dominar estas 12 lecciones con la Trinidad de Guardianes te da la libertad absoluta de tu futuro!",
         },
         keyTakeaway:
           "El conocimiento aplicado es tu mejor protección y tu mayor multiplicador de riqueza.",

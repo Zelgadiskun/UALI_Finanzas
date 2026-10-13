@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {
+  AlertTriangle,
+  Award,
   Bell,
   BellOff,
   CheckCheck,
@@ -14,11 +16,19 @@ import {
   ShoppingCart,
   Sparkles,
   Target,
+  Users,
   X,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { useNotificationCenter, type SmartNotification } from "@/lib/ffos/notificationsStore";
+import {
+  useFinancialStress,
+  dispatchGuardianPushNotification,
+  STRESS_THRESHOLD_SOS,
+  MAX_PUSH_STRING_LENGTH,
+} from "@/lib/ffos/guardianPushEngine";
 import {
   ChispaCharacter,
   NidoCharacter,
@@ -49,6 +59,52 @@ export function NotificationCenterModal({
   } = useNotificationCenter();
 
   const [activeFilter, setActiveFilter] = useState<"all" | "goals" | "location">("all");
+  const { stressLevel, isSOSMode, setStressLevel } = useFinancialStress();
+
+  function triggerGuardianTest(guardian: "nido" | "chispa" | "toto") {
+    if (guardian === "nido") {
+      const res = dispatchGuardianPushNotification({
+        guardian: "nido",
+        triggerCategory: "individual_ahorro",
+        title: isSOSMode ? "🚨 S.O.S. NIDO: Freno de Emergencia" : "🐷 NIDO: Meta de Ahorro",
+        body: isSOSMode
+          ? `Estrés al ${stressLevel}%. Congela compras opcionales y protege tu reserva.`
+          : "Aportaste a tu reserva blindada. Tu colchón de tranquilidad sigue creciendo.",
+        stressLevelOverride: stressLevel,
+      });
+      if (res.dispatched) {
+        toast.success(res.title);
+      }
+    } else if (guardian === "chispa") {
+      const res = dispatchGuardianPushNotification({
+        guardian: "chispa",
+        triggerCategory: "team_sync",
+        title: "📐 CHISPA: Sincronización Clan",
+        body: "Nuevo gasto compartido en Clan. El compás recalculó el balance equitativo.",
+        teamId: "TIBURONES-01",
+        stressLevelOverride: stressLevel,
+      });
+      if (res.dispatched) {
+        toast.success(res.title);
+      }
+    } else if (guardian === "toto") {
+      const res = dispatchGuardianPushNotification({
+        guardian: "toto",
+        triggerCategory: "liga_global",
+        title: "🪙 TOTO: Desafío Flash de la Liga",
+        body: "Micro-dilema de 30s disponible en la Liga. Acepta el reto y gana +50 FFOS hoy.",
+        isPromo: true,
+        stressLevelOverride: stressLevel,
+      });
+      if (res.blocked) {
+        toast.warning("Silenciado por Estrés > 75%", {
+          description: res.reason,
+        });
+      } else if (res.dispatched) {
+        toast.success(res.title);
+      }
+    }
+  }
 
   if (!open) return null;
 
@@ -244,7 +300,202 @@ export function NotificationCenterModal({
             )}
           </div>
 
-          {/* 2. PROBAR RADAR GPS DE COMERCIOS CERCANOS */}
+          {/* 2. CADENCIA DE RETENCIÓN POR GUARDIANES & BARRA DE ESTRÉS */}
+          <div className="p-3.5 rounded-2xl bg-card border border-border/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="size-6 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center">
+                  <Zap className="size-3.5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-foreground">
+                    Cadencia de Retención por Guardianes
+                  </h4>
+                  <p className="text-[10px] text-muted-foreground">
+                    Alertas push personalizadas y blindaje por nivel de estrés
+                  </p>
+                </div>
+              </div>
+              <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-secondary border border-border text-slate-300">
+                ≤ 90 caracteres
+              </span>
+            </div>
+
+            {/* Barra interactiva de Estrés Financiero */}
+            <div className="p-3 rounded-xl bg-secondary/50 border border-border/60 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold flex items-center gap-1.5 text-foreground">
+                  <AlertTriangle
+                    className={cn(
+                      "size-3.5",
+                      isSOSMode ? "text-danger animate-pulse" : "text-amber-400",
+                    )}
+                  />
+                  <span>Barra de Estrés Financiero:</span>
+                </span>
+                <span
+                  className={cn(
+                    "font-black text-xs px-2 py-0.5 rounded-md",
+                    isSOSMode
+                      ? "bg-danger/20 text-danger border border-danger/40"
+                      : "bg-emerald-500/15 text-emerald-400",
+                  )}
+                >
+                  {stressLevel}% {isSOSMode ? "• ¡S.O.S. Crítico!" : "• En Control"}
+                </span>
+              </div>
+
+              {/* Barra visual con umbral del 75% */}
+              <div className="relative w-full h-3 bg-secondary rounded-full overflow-hidden border border-border/80">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-300 rounded-full",
+                    isSOSMode
+                      ? "bg-gradient-to-r from-amber-500 to-rose-500"
+                      : "bg-gradient-to-r from-teal-400 to-emerald-400",
+                  )}
+                  style={{ width: `${stressLevel}%` }}
+                />
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-rose-400/90 z-10"
+                  style={{ left: "75%" }}
+                  title="Umbral de Estrés S.O.S. (75%)"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5">
+                <span>0% Tranquilidad</span>
+                <span className="text-rose-400 font-bold">Umbral S.O.S. (75%)</span>
+                <span>100% Crítico</span>
+              </div>
+
+              {/* Controles para probar el conmutador de estrés */}
+              <div className="flex items-center justify-between pt-1 border-t border-border/50 text-[11px]">
+                <span className="text-muted-foreground font-medium">Simular estrés:</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setStressLevel(35)}
+                    className={cn(
+                      "px-2 py-0.5 rounded-lg text-[10px] font-bold border transition",
+                      stressLevel <= 75
+                        ? "bg-teal-500/20 text-teal-300 border-teal-500/40"
+                        : "bg-card text-muted-foreground border-border/60 hover:text-foreground",
+                    )}
+                  >
+                    Normal (35%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStressLevel(85)}
+                    className={cn(
+                      "px-2 py-0.5 rounded-lg text-[10px] font-bold border transition",
+                      stressLevel > 75
+                        ? "bg-danger/20 text-danger border-danger/40"
+                        : "bg-card text-muted-foreground border-border/60 hover:text-foreground",
+                    )}
+                  >
+                    Crítico (85%)
+                  </button>
+                </div>
+              </div>
+
+              {/* Mensaje de estado dinámico */}
+              {isSOSMode ? (
+                <div className="p-2 rounded-lg bg-danger/10 border border-danger/30 text-[10.5px] text-danger font-semibold flex items-start gap-1.5">
+                  <ShieldAlert className="size-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Modo S.O.S. de Reparación activo:</strong> Nido alerta sobre auxilio y
+                    rescate patrimonial. Alertas promocionales de Toto silenciadas.
+                  </span>
+                </div>
+              ) : (
+                <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/30 text-[10.5px] text-teal-300 font-semibold flex items-start gap-1.5">
+                  <Zap className="size-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Modo Normal:</strong> Nido motiva tus metas de ahorro y Toto despacha
+                    retos globales de la Liga.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Selector de Guardianes para probar disparos */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {/* NIDO */}
+              <button
+                type="button"
+                onClick={() => triggerGuardianTest("nido")}
+                className={cn(
+                  "p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-between gap-1 group active:scale-95",
+                  isSOSMode
+                    ? "bg-rose-500/10 border-rose-500/40 hover:bg-rose-500/20"
+                    : "bg-teal-500/10 border-teal-500/30 hover:bg-teal-500/20",
+                )}
+              >
+                <div className="size-8 flex items-center justify-center">
+                  <NidoCharacter className="size-7" mood={isSOSMode ? "worried" : "happy"} />
+                </div>
+                <span className="text-[11px] font-black text-foreground block">Nido</span>
+                <span className="text-[9px] text-muted-foreground leading-tight block">
+                  {isSOSMode ? "🚨 S.O.S. Reparación" : "Ahorro / Metas"}
+                </span>
+                <span className="mt-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-secondary/80 text-teal-400">
+                  Disparar
+                </span>
+              </button>
+
+              {/* CHISPA */}
+              <button
+                type="button"
+                onClick={() => triggerGuardianTest("chispa")}
+                className="p-2.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-center transition flex flex-col items-center justify-between gap-1 group active:scale-95"
+              >
+                <div className="size-8 flex items-center justify-center">
+                  <ChispaCharacter className="size-7" />
+                </div>
+                <span className="text-[11px] font-black text-foreground block">Chispa</span>
+                <span className="text-[9px] text-muted-foreground leading-tight block">
+                  Equipo (Team_ID)
+                </span>
+                <span className="mt-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-secondary/80 text-purple-300">
+                  Disparar
+                </span>
+              </button>
+
+              {/* TOTO */}
+              <button
+                type="button"
+                onClick={() => triggerGuardianTest("toto")}
+                className={cn(
+                  "p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-between gap-1 group active:scale-95",
+                  isSOSMode
+                    ? "bg-secondary/40 border-border/80 opacity-60"
+                    : "bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20",
+                )}
+              >
+                <div className="size-8 flex items-center justify-center">
+                  <TotoCharacter className="size-7" />
+                </div>
+                <span className="text-[11px] font-black text-foreground block">Toto</span>
+                <span className="text-[9px] text-muted-foreground leading-tight block">
+                  {isSOSMode ? "Silenciado por Estrés" : "Liga Global"}
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded",
+                    isSOSMode
+                      ? "bg-secondary text-muted-foreground"
+                      : "bg-secondary/80 text-amber-400",
+                  )}
+                >
+                  {isSOSMode ? "Desactivado" : "Disparar"}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. PROBAR RADAR GPS DE COMERCIOS CERCANOS */}
           {settings.masterEnabled && settings.locationRadarEnabled && (
             <div className="p-3.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -386,8 +637,15 @@ export function NotificationCenterModal({
 
                     <div className="flex items-start gap-2.5">
                       <div className="size-8 rounded-xl bg-secondary border border-border/80 flex items-center justify-center shrink-0 mt-0.5">
-                        {n.iconType === "nido" ? (
-                          <NidoCharacter className="size-6" />
+                        {n.iconType === "nido" || n.character === "nido" ? (
+                          <NidoCharacter
+                            className="size-6"
+                            mood={n.title.includes("S.O.S.") ? "worried" : "happy"}
+                          />
+                        ) : n.iconType === "chispa" || n.character === "chispa" ? (
+                          <ChispaCharacter className="size-6" />
+                        ) : n.iconType === "toto" || n.character === "toto" ? (
+                          <TotoCharacter className="size-6" />
                         ) : n.iconType === "flame" ? (
                           <Flame className="size-4 text-amber-400 fill-amber-400" />
                         ) : n.iconType === "gas" ? (
@@ -402,10 +660,20 @@ export function NotificationCenterModal({
                       </div>
 
                       <div className="min-w-0 flex-1 pr-3">
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-xs font-extrabold text-foreground truncate">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3
+                            className={cn(
+                              "text-xs font-extrabold truncate",
+                              n.title.includes("S.O.S.") ? "text-danger" : "text-foreground",
+                            )}
+                          >
                             {n.title}
                           </h3>
+                          {n.title.includes("S.O.S.") && (
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-danger/20 text-danger border border-danger/30">
+                              S.O.S.
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                           {n.body}

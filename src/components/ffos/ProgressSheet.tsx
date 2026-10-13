@@ -5,9 +5,12 @@ import { LessonSheet } from "./LessonSheet";
 import { ACHIEVEMENTS, levelInfo } from "@/lib/ffos/gamification";
 import { useLessonsQuery, type LessonRow } from "@/lib/supabase/queries";
 import { useUserPoints } from "@/lib/ffos/points";
+import { resetUserGamificationAndTelemetry } from "@/lib/ffos/resetGamification";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Progress } from "@/lib/ffos/types";
 import { cn } from "@/lib/utils";
-import { Award, BookOpen, Check, Lock, Sparkles, Flame, Clock } from "lucide-react";
+import { Award, BookOpen, Check, Lock, Sparkles, Flame, Clock, RotateCcw } from "lucide-react";
 
 export function ProgressSheet({
   open,
@@ -22,6 +25,24 @@ export function ProgressSheet({
   const lessonsQuery = useLessonsQuery();
   const lessons = lessonsQuery.data ?? [];
   const { ffosTokens, xp, streak, levelData, pointsHistory } = useUserPoints();
+  const queryClient = useQueryClient();
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleReset = async () => {
+    setIsResetting(true);
+    try {
+      await resetUserGamificationAndTelemetry();
+      await queryClient.invalidateQueries();
+      toast.success("Reset de Telemetría Aplicado", {
+        description: "XP: 0, Nivel: 1, Fichas FFOS: 0, Racha: 0. Fase 2 bloqueada.",
+      });
+      onClose();
+    } catch {
+      toast.error("Error al reiniciar progreso");
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   return (
     <>
@@ -193,6 +214,19 @@ export function ProgressSheet({
                 );
               })}
             </ul>
+          </section>
+
+          {/* Sección de Pruebas: Reset de Telemetría */}
+          <section className="pt-2 border-t border-border/60">
+            <button
+              type="button"
+              disabled={isResetting}
+              onClick={handleReset}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 text-destructive text-xs font-bold transition active:scale-98 disabled:opacity-50"
+            >
+              <RotateCcw className={cn("size-3.5", isResetting && "animate-spin")} />
+              <span>Reset de Telemetría para Pruebas (Nivel 1, 0 XP, Bloqueo de Fase 2)</span>
+            </button>
           </section>
         </div>
       </BottomSheet>

@@ -46,7 +46,9 @@ export function addLocalXp(userId: string, amount: number): number {
     const current = getLocalXp(userId);
     const updated = current + amount;
     localStorage.setItem(`${LOCAL_XP_STORAGE_KEY}_${userId}`, updated.toString());
-    window.dispatchEvent(new CustomEvent("uali-xp-updated", { detail: { userId, xp: updated } }));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("uali-xp-updated", { detail: { userId, xp: updated } }));
+    }, 0);
     return updated;
   } catch {
     return 0;
@@ -97,17 +99,48 @@ export function getExtraTokens(userId?: string | null): number {
  * Suma tokens FFOS adicionales al usuario y dispara evento de sincronización.
  */
 export function addExtraTokens(userId: string, amount: number): number {
-  if (typeof window === "undefined" || !userId || amount <= 0) return 0;
+  if (typeof window === "undefined" || !userId || amount === 0) return 0;
   try {
     const current = getExtraTokens(userId);
     const updated = current + amount;
     localStorage.setItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`, updated.toString());
-    window.dispatchEvent(
-      new CustomEvent("uali-tokens-updated", { detail: { userId, tokens: updated } }),
-    );
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("uali-tokens-updated", { detail: { userId, tokens: updated } }),
+      );
+    }, 0);
     return updated;
   } catch {
     return 0;
+  }
+}
+
+/**
+ * Gasta tokens FFOS del usuario si dispone de saldo suficiente.
+ */
+export function spendExtraTokens(
+  userId: string,
+  amount: number,
+  reason = "Gasto en UALÍ",
+): boolean {
+  if (typeof window === "undefined" || !userId || amount <= 0) return false;
+  try {
+    const current = getExtraTokens(userId);
+    const updated = current - amount;
+    localStorage.setItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`, updated.toString());
+    recordPointEvent(userId, {
+      tokens: -amount,
+      xp: 0,
+      reason,
+    });
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("uali-tokens-updated", { detail: { userId, tokens: updated } }),
+      );
+    }, 0);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -141,9 +174,11 @@ export function recordPointEvent(
     };
     const updated = [newEntry, ...list].slice(0, 30);
     localStorage.setItem(`${POINTS_HISTORY_STORAGE_KEY}_${userId}`, JSON.stringify(updated));
-    window.dispatchEvent(
-      new CustomEvent("uali-points-history-updated", { detail: { userId, history: updated } }),
-    );
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("uali-points-history-updated", { detail: { userId, history: updated } }),
+      );
+    }, 0);
   } catch {
     // ignorar error de almacenamiento
   }
@@ -175,6 +210,7 @@ export function useUserPoints(): {
     reason?: string;
     silent?: boolean;
   }) => Promise<{ newXp: number; newTokens: number }>;
+  spendTokens: (amount: number, reason?: string) => boolean;
 } {
   const userId = useCurrentUserId();
   const progressQuery = useProgressQuery();
@@ -324,6 +360,20 @@ export function useUserPoints(): {
     [userId, effectiveXp, effectiveStreak, extraTokens, totalTokens, queryClient],
   );
 
+  const spendTokens = useCallback(
+    (amount: number, reason = "Gasto de tokens"): boolean => {
+      if (!userId || amount <= 0) return false;
+      if (totalTokens < amount) {
+        toast.error("Saldo insuficiente de FFOS", {
+          description: `Necesitas ${amount} FFOS, pero tienes ${totalTokens}.`,
+        });
+        return false;
+      }
+      return spendExtraTokens(userId, amount, reason);
+    },
+    [userId, totalTokens],
+  );
+
   return {
     userId,
     xp: effectiveXp,
@@ -332,5 +382,6 @@ export function useUserPoints(): {
     ffosTokens: totalTokens,
     pointsHistory,
     awardPoints,
+    spendTokens,
   };
 }

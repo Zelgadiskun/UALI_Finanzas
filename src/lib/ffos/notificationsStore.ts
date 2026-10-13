@@ -9,7 +9,7 @@ export interface SmartNotification {
   timestamp: string;
   read: boolean;
   priority: "high" | "medium" | "low";
-  iconType: "store" | "gas" | "nido" | "budget" | "flame" | "bell";
+  iconType: "store" | "gas" | "nido" | "budget" | "flame" | "bell" | "chispa" | "toto";
   character?: "toto" | "nido" | "chispa";
   groundingLinks?: GroundingLink[];
   actionPayload?: {
@@ -39,12 +39,21 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   streakAlertsEnabled: true,
 };
 
+const MAX_STRING_LENGTH = 90;
+
+function clamp90(text: string): string {
+  if (!text) return "";
+  const cleaned = text.trim().replace(/\s+/g, " ");
+  if (cleaned.length <= MAX_STRING_LENGTH) return cleaned;
+  return cleaned.slice(0, MAX_STRING_LENGTH - 1) + "…";
+}
+
 const INITIAL_NOTIFICATIONS: SmartNotification[] = [
   {
     id: "notif-goal-nido-1",
     type: "goal",
-    title: "Meta Fondo Nido: 25% completado",
-    body: "Tu colchón de tranquilidad tiene $150 de tu meta de $600. Un aporte de $20 hoy te acerca a tu siguiente insignia.",
+    title: "🐷 NIDO: Meta Fondo al 25%",
+    body: "Tu colchón tiene $150 de $600. Un aporte de $20 te acerca a tu siguiente insignia.",
     timestamp: "Hace 15 min",
     read: false,
     priority: "high",
@@ -54,34 +63,34 @@ const INITIAL_NOTIFICATIONS: SmartNotification[] = [
   {
     id: "notif-budget-alert-1",
     type: "budget",
-    title: "Atención: Reparto al 82% en Salidas & Ocio",
-    body: "Has utilizado $82 de los $100 asignados este mes. Quedan 18 días para el siguiente ciclo.",
+    title: "⚡ TOTO: Presupuesto al 82%",
+    body: "Gastaste $82 de $100 en Ocio. Cuida tu margen operativo para el cierre de mes.",
     timestamp: "Hace 2 horas",
     read: false,
     priority: "high",
-    iconType: "budget",
+    iconType: "toto",
     character: "toto",
   },
   {
     id: "notif-streak-1",
     type: "streak",
-    title: "Protege tu Racha Diaria con Chispa 🔥",
-    body: "¡Llevas 4 días de racha registrando tus movimientos! Haz un chequeo rápido de tus gastos de hoy antes de medianoche.",
+    title: "📐 CHISPA: Racha de Clan 🔥",
+    body: "¡Llevas 4 días registrando! Chequea los gastos de hoy antes de medianoche.",
     timestamp: "Hace 4 horas",
     read: false,
     priority: "medium",
-    iconType: "flame",
+    iconType: "chispa",
     character: "chispa",
   },
   {
     id: "notif-flow-1",
     type: "system",
-    title: "Flujo de Caja Continuo Activo 🌊",
-    body: "Tu remanente del mes anterior (+ $680.00) está disponible en tu balance consolidado. Tu dinero nunca se resetea a cero.",
+    title: "🪙 TOTO: Flujo Continuo Activo 🌊",
+    body: "Remanente previo (+ $680.00) disponible en tu balance. Tu dinero nunca va a cero.",
     timestamp: "Ayer",
     read: true,
     priority: "low",
-    iconType: "bell",
+    iconType: "toto",
     character: "toto",
   },
 ];
@@ -122,6 +131,8 @@ export function addSmartNotification(notif: Omit<SmartNotification, "id" | "time
   const current = getStoredNotifications();
   const newNotif: SmartNotification = {
     ...notif,
+    title: clamp90(notif.title),
+    body: clamp90(notif.body),
     id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     timestamp: "Hace un momento",
     read: false,
