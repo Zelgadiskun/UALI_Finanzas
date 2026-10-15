@@ -12,24 +12,41 @@ export function useSession(): { session: Session | null; loading: boolean } {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+    // Timeout defensivo de 1.5s: si la conexión con Supabase se demora o cuelga,
+    // liberamos loading para que la pantalla nunca quede en blanco perpetuo
+    const safetyTimer = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 1500);
+
     supabase.auth
       .getSession()
       .then(({ data }) => {
+        if (!active) return;
         setSession(data?.session ?? null);
         setLoading(false);
       })
       .catch((err) => {
+        if (!active) return;
         console.warn("No Supabase session available:", err);
         setSession(null);
         setLoading(false);
+      })
+      .finally(() => {
+        clearTimeout(safetyTimer);
       });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+      if (!active) return;
       setSession(next);
       setLoading(false);
     });
 
-    return () => sub?.subscription?.unsubscribe();
+    return () => {
+      active = false;
+      clearTimeout(safetyTimer);
+      sub?.subscription?.unsubscribe();
+    };
   }, []);
 
   return { session, loading };

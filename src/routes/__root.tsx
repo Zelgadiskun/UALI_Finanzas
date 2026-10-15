@@ -215,7 +215,14 @@ function AppGate() {
   useGlobalTransactionSheet(() => setGlobalTxOpen(true));
 
   if (loading) {
-    return <div className="min-h-screen bg-background" />;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <div className="size-11 animate-spin rounded-full border-3 border-teal-500 border-t-transparent" />
+        <p className="mt-4 text-xs font-bold text-muted-foreground animate-pulse tracking-wide uppercase">
+          Cargando UALÍ Finanzas...
+        </p>
+      </div>
+    );
   }
 
   if (!session) {
