@@ -25,7 +25,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Props
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-center">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <button
         aria-label="Cerrar"
         onClick={onClose}
@@ -36,7 +36,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Props
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "animate-sheet-up safe-bottom absolute bottom-0 flex max-h-[88vh] w-full max-w-[430px] flex-col rounded-t-[28px] bg-card border-t border-border/80 shadow-2xl",
+          "animate-sheet-up safe-bottom relative flex max-h-[90vh] w-full max-w-full sm:max-w-xl flex-col rounded-t-[28px] sm:rounded-3xl bg-card border-t sm:border border-border/80 shadow-2xl",
           className,
         )}
       >

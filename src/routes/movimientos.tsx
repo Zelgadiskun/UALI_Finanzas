@@ -250,7 +250,7 @@ function Movimientos() {
   }, [filtered]);
 
   return (
-    <main className="px-4 pt-4 pb-28 max-w-md mx-auto w-full">
+    <main className="px-3.5 sm:px-4 md:px-6 pt-4 pb-28 md:pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-bold text-foreground">Movimientos</h1>
@@ -406,8 +406,8 @@ function Movimientos() {
       </div>
 
       {/* Filtro por Tipo de Operación */}
-      <div className="relative -mx-4 mt-2.5">
-        <div className="flex gap-1.5 overflow-x-auto px-4 pb-1">
+      <div className="relative -mx-3.5 sm:mx-0 mt-2.5">
+        <div className="flex gap-1.5 overflow-x-auto px-3.5 sm:px-0 pb-1 no-scrollbar">
           {(
             [{ value: "todos", label: "Todos" }, ...TX_TYPES] as { value: Filter; label: string }[]
           ).map((f) => (

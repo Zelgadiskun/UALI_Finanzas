@@ -142,7 +142,7 @@ function Mas() {
   }
 
   return (
-    <main className="px-4 pt-4 pb-6">
+    <main className="px-3.5 sm:px-4 md:px-6 pt-4 pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full">
       <h1 className="font-display text-xl font-bold">Más</h1>
 
       <div className="mt-4 space-y-2">

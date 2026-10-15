@@ -171,13 +171,14 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegación principal de la aplicación"
-      className="fixed bottom-0 left-0 right-0 z-40 w-full max-w-md mx-auto
+      className="fixed bottom-0 left-0 right-0 z-40 w-full max-w-md mx-auto md:hidden
                  bg-card/95 dark:bg-[#0B1323]/98 backdrop-blur-xl
                  border-t border-border/60 dark:border-[#1E293B]
                  shadow-lg shadow-black/20
+                 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]
                  transition-all duration-200"
     >
-      <div className="flex items-center justify-between px-2 pt-2 pb-1">
+      <div className="flex items-center justify-between px-2 pt-1.5 pb-0.5">
         {/* 2 pestañas izquierdas: Inicio, Presupuesto */}
         <div className="flex flex-1 items-center justify-around">
           {LEFT_ITEMS.map(renderNavItem)}

@@ -23,6 +23,7 @@ import { useSession } from "@/lib/supabase/auth";
 import { queryPersister } from "@/lib/query-persister";
 import { getStoredTheme } from "@/lib/theme";
 import { OfflineIndicator } from "@/components/ffos/OfflineIndicator";
+import { DesktopNav } from "@/components/ffos/DesktopNav";
 
 function NotFoundComponent() {
   return (
@@ -99,7 +100,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         name: "viewport",
-        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+        content:
+          "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover",
       },
       { name: "theme-color", content: "#2EC4B6" },
       { name: "author", content: "UALI Finanzas" },
@@ -230,8 +232,9 @@ function AppGate() {
   }
 
   return (
-    <>
-      <div className="mx-auto min-h-screen w-full max-w-[430px] bg-background pb-[calc(56px+env(safe-area-inset-bottom,0px))] md:shadow-[0_0_40px_rgb(15_23_42/0.08)]">
+    <div className="min-h-screen bg-background flex flex-col">
+      <DesktopNav onOpenNewTx={() => setGlobalTxOpen(true)} />
+      <div className="flex-1 w-full max-w-full md:max-w-4xl lg:max-w-6xl mx-auto pb-[calc(76px+env(safe-area-inset-bottom,0px))] md:pb-12 md:pt-4 transition-all">
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </div>
@@ -239,6 +242,6 @@ function AppGate() {
       <OfflineIndicator />
       <TransactionSheet open={globalTxOpen} onClose={() => setGlobalTxOpen(false)} />
       <Celebration />
-    </>
+    </div>
   );
 }

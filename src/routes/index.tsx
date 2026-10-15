@@ -452,7 +452,7 @@ export function Inicio() {
   const savingsPct = Math.min(100, Math.round((savingsCurrent / savingsGoal) * 100));
 
   return (
-    <main className="px-4 pt-3 pb-28 max-w-md mx-auto w-full">
+    <main className="px-3.5 sm:px-4 md:px-6 pt-3 pb-28 md:pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full">
       {/* 1. Header Superior de Usuario y Gamificación Accesible */}
       <section className="mb-3.5">
         <div className="flex items-center justify-between gap-2">

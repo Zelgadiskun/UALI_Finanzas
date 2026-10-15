@@ -401,7 +401,7 @@ export function AprenderRoute() {
   }
 
   return (
-    <main className="px-4 pt-3 pb-28 max-w-md mx-auto w-full">
+    <main className="px-3.5 sm:px-4 md:px-6 pt-3 pb-28 md:pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full">
       {/* 1. TARJETA HERO: Perfil, Nivel, XP y Chispa */}
       <section className="relative overflow-hidden rounded-3xl bg-card border border-border/80 p-4.5 sm:p-5 shadow-sm mb-4">
         {/* Cabecera del usuario: Avatar, Saludo, Racha & Tokens FFOS */}

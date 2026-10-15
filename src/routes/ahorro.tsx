@@ -157,7 +157,7 @@ export function AhorroRoute() {
   }
 
   return (
-    <main className="px-4 pt-3 pb-24 max-w-md mx-auto w-full space-y-5">
+    <main className="px-3.5 sm:px-4 md:px-6 pt-3 pb-24 md:pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full space-y-5">
       {/* 1. Header Superior & Racha */}
       <section>
         <div className="flex items-center justify-between gap-2 mb-2.5">

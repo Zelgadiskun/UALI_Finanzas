@@ -151,7 +151,7 @@ function Deudas() {
   }
 
   return (
-    <main className="px-4 pt-3 pb-24">
+    <main className="px-3.5 sm:px-4 md:px-6 pt-3 pb-24 md:pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
