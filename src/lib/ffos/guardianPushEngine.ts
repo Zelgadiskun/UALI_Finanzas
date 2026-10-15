@@ -295,13 +295,13 @@ export function useFinancialStress() {
 
 export interface DispatchNotificationParams {
   guardian: GuardianId;
-  triggerCategory?: GuardianTriggerCategory;
+  triggerCategory?: GuardianTriggerCategory | undefined;
   title: string;
   body: string;
-  teamId?: string;
-  isPromo?: boolean;
-  stressLevelOverride?: number;
-  priority?: "high" | "medium" | "low";
+  teamId?: string | undefined;
+  isPromo?: boolean | undefined;
+  stressLevelOverride?: number | undefined;
+  priority?: "high" | "medium" | "low" | undefined;
 }
 
 export interface DispatchNotificationResult {

@@ -87,7 +87,10 @@ export default defineConfig({
     nitro({
       preset: "node-server",
       rollupConfig: {
-        onwarn(warning, warn) {
+        onwarn(
+          warning: { code?: string; message?: unknown },
+          warn: (w: { code?: string; message?: unknown }) => void,
+        ) {
           if (
             warning.code === "MODULE_LEVEL_DIRECTIVE" ||
             (typeof warning.message === "string" &&
@@ -99,7 +102,10 @@ export default defineConfig({
         },
       },
       rolldownConfig: {
-        onwarn(warning, warn) {
+        onwarn(
+          warning: { code?: string; message?: unknown },
+          warn: (w: { code?: string; message?: unknown }) => void,
+        ) {
           if (
             warning.code === "MODULE_LEVEL_DIRECTIVE" ||
             (typeof warning.message === "string" &&

@@ -9,6 +9,7 @@ import {
   Calculator,
   Car,
   CheckCircle2,
+  ChevronDown,
   EyeOff,
   Flame,
   HelpCircle,
@@ -30,6 +31,14 @@ import { NidoCharacter } from "@/components/ffos/characters/Characters";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
 import { SmartBudgetAssistantModal } from "@/components/ffos/SmartBudgetAssistantModal";
 import { TutorialModal } from "@/components/ffos/TutorialModal";
+import { BudgetAccordion } from "@/components/ffos/BudgetAccordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Cell, Pie, PieChart, Tooltip as RechartsTooltip } from "recharts";
 import { useUserPoints } from "@/lib/ffos/points";
 import { money, sameMonth } from "@/lib/ffos/format";
 import {
@@ -66,7 +75,51 @@ export const Route = createFileRoute("/presupuesto")({
   component: PresupuestoRoute,
 });
 
-export function PresupuestoRoute() {
+interface RingTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    payload: {
+      name: string;
+      value: number;
+      pct: number;
+      target: number;
+      color: string;
+      spent: number;
+      planned: number;
+    };
+  }>;
+}
+
+function BudgetRingTooltip({ active, payload }: RingTooltipProps) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0]?.payload;
+  if (!data) return null;
+
+  return (
+    <div className="rounded-xl bg-card/95 border border-border p-2 text-xs shadow-xl backdrop-blur-md z-50 pointer-events-none">
+      <div className="flex items-center gap-1.5">
+        <span className="size-2 rounded-full" style={{ backgroundColor: data.color }} />
+        <span className="font-bold text-foreground">{data.name}</span>
+        <span className="text-[10px] text-muted-foreground font-semibold">
+          (Meta {data.target}%)
+        </span>
+      </div>
+      <div className="flex items-baseline gap-2 mt-1">
+        <span className="font-black text-xs text-foreground font-sans">{money(data.spent)}</span>
+        <span className="text-[10px] text-muted-foreground">{data.pct}% del total</span>
+      </div>
+      {data.planned > 0 && (
+        <div className="text-[10px] text-muted-foreground mt-0.5">
+          Planeado: {money(data.planned)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PresupuestoRoute() {
   const profile = useProfileQuery();
   const inFamily = !!profile.data?.family_id;
   const budgetsQuery = useBudgetsQuery();
@@ -83,6 +136,7 @@ export function PresupuestoRoute() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [txSheetOpen, setTxSheetOpen] = useState(false);
+  const [nidoModalOpen, setNidoModalOpen] = useState(false);
 
   // Form states for new budget
   const [newBudgetName, setNewBudgetName] = useState("");
@@ -146,11 +200,38 @@ export function PresupuestoRoute() {
     return map;
   }, [allocationsQuery.data]);
 
+  // Clasificador de canastas (Regla 50/30/20 de Nido)
+  function getBudgetBasket(b: {
+    group?: string;
+    name?: string;
+  }): "necesidades" | "deseos" | "ahorro" {
+    const g = (b.group || "").toLowerCase();
+    const n = (b.name || "").toLowerCase();
+    if (g.includes("ahorro") || n.includes("ahorro") || n.includes("nido") || n.includes("fondo")) {
+      return "ahorro";
+    }
+    if (
+      g.includes("fijo") ||
+      n.includes("comida") ||
+      n.includes("súper") ||
+      n.includes("super") ||
+      n.includes("luz") ||
+      n.includes("servicio") ||
+      n.includes("transporte") ||
+      n.includes("salud") ||
+      n.includes("alquiler") ||
+      n.includes("renta")
+    ) {
+      return "necesidades";
+    }
+    return "deseos";
+  }
+
   // Lista enriquecida de presupuestos (datos de BD o configuración por defecto)
   const budgets = useMemo(() => {
     const raw = budgetsQuery.data ?? [];
     if (raw.length > 0) {
-      return raw.map((b) => {
+      const mapped = raw.map((b) => {
         const spent = spentByCategory.get(b.name) ?? 0;
         const pct = b.planned > 0 ? (spent / b.planned) * 100 : 0;
         let alertLevel: "critical_exceeded" | "critical_limit" | "healthy" = "healthy";
@@ -163,6 +244,27 @@ export function PresupuestoRoute() {
           excessAmount: Math.max(0, spent - b.planned),
         };
       });
+
+      const hasAhorro = mapped.some((b) => getBudgetBasket(b) === "ahorro");
+      if (!hasAhorro) {
+        const ahorroSpentThisMonth = transactions
+          .filter((t) => t.type === "ahorro" && sameMonth(t.date))
+          .reduce((sum, t) => sum + t.amount, 0);
+        const totalRawPlan = mapped.reduce((acc, item) => acc + item.planned, 0);
+        const autoPlanned = Math.round(totalRawPlan * 0.25) || 250;
+        mapped.push({
+          id: "nido-reserva-auto",
+          name: "Fondo de Reserva Nido",
+          group: "Ahorro",
+          planned: autoPlanned,
+          spent: ahorroSpentThisMonth,
+          createdBy: currentUserId ?? "u1",
+          isShared: true,
+          alertLevel: "healthy" as const,
+          excessAmount: 0,
+        });
+      }
+      return mapped;
     }
 
     return [
@@ -172,7 +274,7 @@ export function PresupuestoRoute() {
         group: "Fijos",
         planned: 600,
         spent: 450,
-        createdBy: currentUserId,
+        createdBy: currentUserId ?? "u1",
         isShared: true,
         alertLevel: "healthy" as const,
         excessAmount: 0,
@@ -183,7 +285,7 @@ export function PresupuestoRoute() {
         group: "Fijos",
         planned: 350,
         spent: 280,
-        createdBy: currentUserId,
+        createdBy: currentUserId ?? "u1",
         isShared: false,
         alertLevel: "healthy" as const,
         excessAmount: 0,
@@ -194,7 +296,7 @@ export function PresupuestoRoute() {
         group: "Variables",
         planned: 200,
         spent: 180,
-        createdBy: currentUserId,
+        createdBy: currentUserId ?? "u1",
         isShared: true,
         alertLevel: "critical_limit" as const,
         excessAmount: 0,
@@ -203,22 +305,26 @@ export function PresupuestoRoute() {
         id: "demo-salidas",
         name: "Salidas & Deseos",
         group: "Discrecional",
-        planned: 200,
-        spent: 120,
-        createdBy: currentUserId,
+        planned: 300,
+        spent: 190,
+        createdBy: currentUserId ?? "u1",
         isShared: false,
         alertLevel: "healthy" as const,
         excessAmount: 0,
       },
+      {
+        id: "demo-ahorro",
+        name: "Fondo de Reserva Nido",
+        group: "Ahorro",
+        planned: 250,
+        spent: 150,
+        createdBy: currentUserId ?? "u1",
+        isShared: true,
+        alertLevel: "healthy" as const,
+        excessAmount: 0,
+      },
     ];
-  }, [budgetsQuery.data, spentByCategory, currentUserId]);
-
-  const totalPlanned = budgets.reduce((a, b) => a + b.planned, 0);
-  const totalSpent = budgets.reduce((a, b) => a + b.spent, 0);
-  const isOverdrawn = totalSpent > totalPlanned;
-  const overdraftAmount = Math.max(0, totalSpent - totalPlanned);
-  const percentUsed = totalPlanned > 0 ? Math.round((totalSpent / totalPlanned) * 100) : 0;
-  const availableAmount = Math.max(0, totalPlanned - totalSpent);
+  }, [budgetsQuery.data, spentByCategory, currentUserId, transactions]);
 
   const sharedCount = budgets.filter((b) => b.isShared).length;
   const personalCount = budgets.filter((b) => !b.isShared).length;
@@ -229,33 +335,117 @@ export function PresupuestoRoute() {
     return budgets;
   }, [budgets, filter]);
 
-  // Cálculo de desglose 50/30/20 real y equilibrado
-  const breakdown503020 = useMemo(() => {
-    const fijos = budgets.filter((b) => b.group === "Fijos").reduce((a, b) => a + b.spent, 0);
-    const variables = budgets
-      .filter((b) => b.group === "Variables" || b.group === "Discrecional")
-      .reduce((a, b) => a + b.spent, 0);
-    const ahorro = transactions
-      .filter((t) => t.type === "ahorro" && sameMonth(t.date))
-      .reduce((a, t) => a + t.amount, 0);
+  const necesidadesBudgets = useMemo(
+    () => filteredBudgets.filter((b) => getBudgetBasket(b) === "necesidades"),
+    [filteredBudgets],
+  );
+  const deseosBudgets = useMemo(
+    () => filteredBudgets.filter((b) => getBudgetBasket(b) === "deseos"),
+    [filteredBudgets],
+  );
+  const ahorroBudgets = useMemo(
+    () => filteredBudgets.filter((b) => getBudgetBasket(b) === "ahorro"),
+    [filteredBudgets],
+  );
 
-    const fijosPlan = budgets.filter((b) => b.group === "Fijos").reduce((a, b) => a + b.planned, 0);
-    const varPlan = budgets
-      .filter((b) => b.group === "Variables" || b.group === "Discrecional")
-      .reduce((a, b) => a + b.planned, 0);
+  const necesidadesSpent = useMemo(
+    () => necesidadesBudgets.reduce((sum, b) => sum + (b.spent || 0), 0),
+    [necesidadesBudgets],
+  );
+  const necesidadesPlanned = useMemo(
+    () => necesidadesBudgets.reduce((sum, b) => sum + (b.planned || 0), 0),
+    [necesidadesBudgets],
+  );
+  const necesidadesPct =
+    necesidadesPlanned > 0 ? Math.round((necesidadesSpent / necesidadesPlanned) * 100) : 0;
 
-    return {
-      necesidades: fijos || 450,
-      necesidadesPct: totalSpent > 0 ? Math.round((fijos / totalSpent) * 100) : 50,
-      necesidadesBar: fijosPlan > 0 ? Math.min(100, Math.round((fijos / fijosPlan) * 100)) : 75,
-      deseos: variables || 180,
-      deseosPct: totalSpent > 0 ? Math.round((variables / totalSpent) * 100) : 30,
-      deseosBar: varPlan > 0 ? Math.min(100, Math.round((variables / varPlan) * 100)) : 60,
-      ahorroNido: ahorro || 150,
-      ahorroPct: 20,
-      ahorroBar: 65,
-    };
-  }, [budgets, transactions, totalSpent]);
+  const deseosSpent = useMemo(
+    () => deseosBudgets.reduce((sum, b) => sum + (b.spent || 0), 0),
+    [deseosBudgets],
+  );
+  const deseosPlanned = useMemo(
+    () => deseosBudgets.reduce((sum, b) => sum + (b.planned || 0), 0),
+    [deseosBudgets],
+  );
+  const deseosPct = deseosPlanned > 0 ? Math.round((deseosSpent / deseosPlanned) * 100) : 0;
+
+  const ahorroSpent = useMemo(
+    () => ahorroBudgets.reduce((sum, b) => sum + (b.spent || 0), 0),
+    [ahorroBudgets],
+  );
+  const ahorroPlanned = useMemo(
+    () => ahorroBudgets.reduce((sum, b) => sum + (b.planned || 0), 0),
+    [ahorroBudgets],
+  );
+  const ahorroPct = ahorroPlanned > 0 ? Math.round((ahorroSpent / ahorroPlanned) * 100) : 0;
+
+  // Totales generales consistentes que siempre cuadran matemáticamente con las 3 canastas
+  const totalPlanned = useMemo(
+    () => necesidadesPlanned + deseosPlanned + ahorroPlanned,
+    [necesidadesPlanned, deseosPlanned, ahorroPlanned],
+  );
+  const totalSpent = useMemo(
+    () => necesidadesSpent + deseosSpent + ahorroSpent,
+    [necesidadesSpent, deseosSpent, ahorroSpent],
+  );
+  const isOverdrawn = totalSpent > totalPlanned;
+  const overdraftAmount = Math.max(0, totalSpent - totalPlanned);
+  const percentUsed = totalPlanned > 0 ? Math.round((totalSpent / totalPlanned) * 100) : 0;
+  const availableAmount = Math.max(0, totalPlanned - totalSpent);
+
+  // Distribución porcentual 50/30/20 para gráfico de anillos circular (recharts)
+  const totalBasketsSpent = necesidadesSpent + deseosSpent + ahorroSpent;
+  const hasBasketSpent = totalBasketsSpent > 0;
+
+  const necPctOfTotal = hasBasketSpent
+    ? Math.round((necesidadesSpent / totalBasketsSpent) * 100)
+    : 50;
+  const desPctOfTotal = hasBasketSpent ? Math.round((deseosSpent / totalBasketsSpent) * 100) : 30;
+  const ahoPctOfTotal = hasBasketSpent ? Math.max(0, 100 - necPctOfTotal - desPctOfTotal) : 20;
+
+  const ringChartData = useMemo(
+    () => [
+      {
+        name: "Necesidades",
+        value: hasBasketSpent ? Math.max(0.001, necesidadesSpent) : 50,
+        pct: necPctOfTotal,
+        target: 50,
+        color: "#3B82F6", // Azul institucional para Necesidades
+        spent: necesidadesSpent,
+        planned: necesidadesPlanned,
+      },
+      {
+        name: "Deseos",
+        value: hasBasketSpent ? Math.max(0.001, deseosSpent) : 30,
+        pct: desPctOfTotal,
+        target: 30,
+        color: "#A855F7", // Púrpura para Deseos
+        spent: deseosSpent,
+        planned: deseosPlanned,
+      },
+      {
+        name: "Ahorro Nido",
+        value: hasBasketSpent ? Math.max(0.001, ahorroSpent) : 20,
+        pct: ahoPctOfTotal,
+        target: 20,
+        color: "#2EC4B6", // Teal oficial FFOS / Nido
+        spent: ahorroSpent,
+        planned: ahorroPlanned,
+      },
+    ],
+    [
+      hasBasketSpent,
+      necesidadesSpent,
+      necesidadesPlanned,
+      necPctOfTotal,
+      deseosSpent,
+      deseosPlanned,
+      desPctOfTotal,
+      ahorroSpent,
+      ahorroPlanned,
+      ahoPctOfTotal,
+    ],
+  );
 
   async function handleSaveBudget() {
     const val = Number(newBudgetPlanned.replace(",", "."));
@@ -297,152 +487,171 @@ export function PresupuestoRoute() {
   }, []);
 
   return (
-    <main className="px-4 pt-3 pb-28 max-w-md mx-auto w-full space-y-4">
-      {/* 1. Top Bar with App Logo / Streak / User & Actions */}
-      <section className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <main className="px-4 pt-3 pb-28 max-w-md mx-auto w-full space-y-3.5">
+      {/* 1. TÍTULO DE CICLO CON BOTÓN NUEVA TRANSACCIÓN Y ACCIONES */}
+      <section className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
             className={cn(
-              "size-10 rounded-2xl flex items-center justify-center shadow-inner border transition-colors",
+              "size-9 sm:size-10 rounded-2xl flex items-center justify-center shadow-inner border shrink-0 transition-colors",
               isOverdrawn
                 ? "bg-card border-red-500/40 text-red-400"
                 : "bg-card border-border/80 text-teal-400",
             )}
           >
-            <Wallet className="size-5" />
+            <Wallet className="size-4.5 sm:size-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <span
               className={cn(
-                "text-xs font-bold uppercase tracking-wider flex items-center gap-1.5",
-                isOverdrawn ? "text-red-400" : "text-slate-400",
+                "text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 truncate",
+                isOverdrawn ? "text-red-400" : "text-muted-foreground",
               )}
             >
-              <span>Ualí Finanzas</span>
-              {isOverdrawn && <span className="size-2 rounded-full bg-red-400 animate-ping" />}
+              <span>{currentMonthName}</span>
+              {isOverdrawn && <span className="size-1.5 rounded-full bg-red-400 animate-ping" />}
             </span>
-            <h1 className="text-xl font-black text-foreground tracking-tight">Presupuesto</h1>
+            <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight leading-tight">
+              Presupuesto
+            </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Asistente 0-Base Button */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Menú de Herramientas del Presupuesto (Despeja la cabecera eliminando solapamiento) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Herramientas y opciones"
+                className="size-9 rounded-xl bg-card border border-border/80 hover:bg-secondary/70 text-foreground flex items-center justify-center active:scale-95 transition-all shadow-xs"
+                title="Herramientas y opciones del presupuesto"
+              >
+                <SlidersHorizontal className="size-4 text-muted-foreground hover:text-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 p-1.5 rounded-2xl bg-card border border-border shadow-xl z-50"
+            >
+              <DropdownMenuItem
+                onClick={() => setModalOpen(true)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer text-foreground hover:bg-secondary/70 focus:bg-secondary/70"
+              >
+                <div className="size-6 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">
+                  <Plus className="size-3.5 stroke-[3]" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span>Nuevo rubro</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Crear cupo o categoría
+                  </span>
+                </div>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setAssistantOpen(true)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer text-foreground hover:bg-secondary/70 focus:bg-secondary/70"
+              >
+                <div className="size-6 rounded-lg bg-teal-500/15 text-teal-400 flex items-center justify-center shrink-0">
+                  <Sparkles className="size-3.5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span>Asistente 0-Base</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Calibrar según ingresos
+                  </span>
+                </div>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setNidoModalOpen(true)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer text-foreground hover:bg-secondary/70 focus:bg-secondary/70"
+              >
+                <div className="size-6 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 text-xs">
+                  🐷
+                </div>
+                <div className="flex flex-col text-left">
+                  <span>Consejos de Nido</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Equilibrio 50/30/20
+                  </span>
+                </div>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setTutorialOpen(true)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer text-foreground hover:bg-secondary/70 focus:bg-secondary/70"
+              >
+                <div className="size-6 rounded-lg bg-secondary text-muted-foreground flex items-center justify-center shrink-0">
+                  <HelpCircle className="size-3.5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span>Tutorial interactivo</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Cómo funciona el sistema
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Botón Guardián Nido 🐷 */}
           <button
             type="button"
-            onClick={() => setAssistantOpen(true)}
-            className="flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 hover:bg-teal-500/25 active:scale-95 transition font-black text-xs shadow-xs"
-            title="Asistente de reparto 0-Base y 50/30/20"
+            onClick={() => setNidoModalOpen(true)}
+            className={cn(
+              "relative size-9 rounded-xl bg-card border flex items-center justify-center transition active:scale-95 shadow-xs shrink-0",
+              isOverdrawn
+                ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
+                : "border-teal-500/30 text-teal-400 bg-teal-500/10 hover:border-teal-500/50",
+            )}
+            title="Consejo de Guardián Nido (Regla 50/30/20)"
           >
-            <Sparkles className="size-4" />
-            <span>0-Base</span>
+            <span className="text-base">🐷</span>
+            <span
+              className={cn(
+                "absolute -top-0.5 -right-0.5 size-2 rounded-full",
+                isOverdrawn ? "bg-amber-400 animate-ping" : "bg-teal-400",
+              )}
+            />
           </button>
 
-          {/* Streak Pill */}
-          <div className="flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-xl bg-card border border-border/80 text-amber-300 font-black text-xs shadow-xs">
-            <Flame className="size-4 fill-amber-400 text-amber-400" />
-            <span>{streak}d</span>
-          </div>
-
-          {/* New Budget Action Button */}
+          {/* Botón Nueva Transacción (+) */}
           <button
             type="button"
-            onClick={() => setModalOpen(true)}
-            aria-label="Nuevo presupuesto"
-            className="size-10 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 flex items-center justify-center font-black active:scale-95 transition-all shadow-md shadow-[#2EC4B6]/25"
+            onClick={() => setTxSheetOpen(true)}
+            aria-label="Nueva transacción"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 font-black text-xs active:scale-95 transition-all shadow-md shadow-[#2EC4B6]/25 shrink-0"
+            title="Registrar nueva transacción o gasto"
           >
-            <Plus className="size-5 stroke-[2.8]" />
+            <Plus className="size-4 stroke-[3]" />
+            <span>Transacción</span>
           </button>
         </div>
       </section>
 
-      {/* Banner de Inicio de Ciclo: Reparto 0-Base & 50/30/20 */}
-      <section className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-teal-500/15 via-[#141F36] to-amber-500/15 border border-teal-500/30 shadow-md">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="size-10 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 shrink-0">
-              <Sparkles className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-black uppercase tracking-wider text-teal-400 flex items-center gap-1">
-                <span>Inicio de Ciclo · {currentMonthName}</span>
-              </span>
-              <h2 className="text-sm font-black text-foreground truncate mt-0.5">
-                Divide tus ingresos con el método 0-Base
-              </h2>
-              <p className="text-xs text-slate-400 truncate mt-0.5 font-medium">
-                Asigna cada dólar antes de gastarlo según la regla 50/30/20 o personalizada.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setTutorialOpen(true)}
-              className="min-h-[40px] px-3 rounded-xl bg-secondary/80 hover:bg-secondary text-teal-400 font-bold text-xs border border-teal-500/30 active:scale-95 transition flex items-center gap-1.5"
-              title="Ver explicación y micro-tutorial 0-Base"
-            >
-              <HelpCircle className="size-3.5" />
-              <span>Manual</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAssistantOpen(true)}
-              className="min-h-[40px] px-3.5 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-md active:scale-95 transition"
-            >
-              Repartir
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Global Spend Overview Card - WARNING / EXCEEDED STATE */}
+      {/* 2. RESUMEN GLOBAL COMPACTO (Límite, Usado, Gráfico de Anillos 50/30/20 y Disponible) */}
       <section
         className={cn(
-          "relative overflow-hidden rounded-3xl p-4 shadow-card transition-all",
+          "relative overflow-hidden rounded-2xl p-3.5 shadow-card transition-all",
           isOverdrawn
             ? "bg-gradient-to-br from-[#1c1828] via-[#161b2e] to-[#0A1224] border border-red-500/40 shadow-xl shadow-red-950/20"
             : "bg-card border border-border/80",
         )}
       >
-        <div
-          className={cn(
-            "absolute -right-10 -bottom-10 size-36 rounded-full blur-2xl pointer-events-none",
-            isOverdrawn ? "bg-red-500/10" : "bg-teal-500/10",
-          )}
-        />
-        <div
-          className={cn(
-            "absolute -left-6 -top-6 size-28 rounded-full blur-xl pointer-events-none",
-            isOverdrawn ? "bg-amber-500/10" : "bg-blue-500/10",
-          )}
-        />
-
-        <div className="relative z-10 flex flex-col gap-3">
+        <div className="relative z-10 flex flex-col gap-2.5">
+          {/* Fila superior: Estado general + Montos + Badge de estado */}
           <div className="flex justify-between items-start">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  {currentMonthName}
-                </span>
-                {isOverdrawn ? (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 text-[10px] font-bold flex items-center gap-1">
-                    <span className="size-1.5 rounded-full bg-red-400 animate-pulse" />
-                    Alerta de sobregiro
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex items-center gap-1">
-                    <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Auto-sincronizado
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                ESTADO GENERAL DEL MES
+              </span>
+              <div className="flex items-baseline gap-2 mt-0.5">
                 <h2 className="text-2xl font-black text-foreground tracking-tight font-sans">
                   {money(totalSpent)}
                 </h2>
-                <span className="text-xs font-semibold text-muted-foreground">
+                <span className="text-xs font-bold text-muted-foreground">
                   de {money(totalPlanned)} límite
                 </span>
               </div>
@@ -450,22 +659,121 @@ export function PresupuestoRoute() {
 
             <div className="text-right">
               {isOverdrawn ? (
-                <span className="text-xs px-2.5 py-1 rounded-xl bg-red-500/20 text-red-400 font-extrabold border border-red-500/40 animate-pulse flex items-center gap-1 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEmergencyModalOpen(true)}
+                  className="text-xs px-2.5 py-1 rounded-xl bg-red-500/20 text-red-400 font-black border border-red-500/40 animate-pulse flex items-center gap-1 justify-end hover:bg-red-500/30 transition cursor-pointer"
+                  title="Toca para compensar con Ahorro Nido"
+                >
                   <AlertCircle className="size-3.5" />
-                  {percentUsed}% Límite superado
-                </span>
+                  {percentUsed > 0 ? `${percentUsed}%` : "0%"} Excedido
+                </button>
               ) : (
                 <span className="text-xs px-2.5 py-1 rounded-xl bg-teal-500/15 text-teal-400 font-black border border-teal-500/30">
-                  {percentUsed}% usado
+                  {totalPlanned > 0 ? `${percentUsed}% usado` : "0% usado"}
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Gráfico circular de anillos 50/30/20 con Recharts y distribución porcentual */}
+          <div className="flex items-center gap-3 bg-secondary/35 rounded-xl p-2.5 border border-border/50">
+            {/* Anillo Recharts */}
+            <div className="relative size-[84px] shrink-0 flex items-center justify-center">
+              <PieChart width={84} height={84} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <RechartsTooltip content={<BudgetRingTooltip />} />
+                <Pie
+                  data={ringChartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={26}
+                  outerRadius={39}
+                  paddingAngle={3}
+                  strokeWidth={0}
+                  isAnimationActive={false}
+                >
+                  {ringChartData.map((entry, index) => (
+                    <Cell key={`donut-cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+              {/* Centro del anillo con porcentaje consumido */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span
+                  className={cn(
+                    "text-xs font-black font-sans leading-none",
+                    isOverdrawn ? "text-red-400" : "text-foreground",
+                  )}
+                >
+                  {percentUsed}%
+                </span>
+                <span className="text-[7.5px] font-bold text-muted-foreground uppercase leading-none mt-0.5">
+                  {isOverdrawn ? "exceso" : "usado"}
+                </span>
+              </div>
+            </div>
+
+            {/* Leyenda con distribución porcentual de los 3 rubros */}
+            <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5 space-y-1">
+              {/* Necesidades (50%) - Azul institucional */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="size-2 rounded-full bg-blue-500 shrink-0" />
+                  <span className="font-bold text-foreground text-xs truncate">Necesidades</span>
+                  <span className="text-[10px] text-muted-foreground font-semibold shrink-0">
+                    (50%)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 font-sans">
+                  <span className="font-black text-blue-400 text-xs">{necPctOfTotal}%</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    ({money(necesidadesSpent)})
+                  </span>
+                </div>
+              </div>
+
+              {/* Deseos (30%) - Púrpura */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="size-2 rounded-full bg-purple-500 shrink-0" />
+                  <span className="font-bold text-foreground text-xs truncate">Deseos</span>
+                  <span className="text-[10px] text-muted-foreground font-semibold shrink-0">
+                    (30%)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 font-sans">
+                  <span className="font-black text-purple-400 text-xs">{desPctOfTotal}%</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    ({money(deseosSpent)})
+                  </span>
+                </div>
+              </div>
+
+              {/* Ahorro Nido (20%) - Teal */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="size-2 rounded-full bg-teal-400 shrink-0" />
+                  <span className="font-bold text-foreground text-xs truncate">Ahorro Nido</span>
+                  <span className="text-[10px] text-muted-foreground font-semibold shrink-0">
+                    (20%)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 font-sans">
+                  <span className="font-black text-teal-400 text-xs">{ahoPctOfTotal}%</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    ({money(ahorroSpent)})
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Master Progress Bar */}
           <div
             className={cn(
-              "w-full bg-secondary h-3 rounded-full overflow-hidden p-0.5 flex border",
+              "w-full bg-secondary h-2 rounded-full overflow-hidden p-0.5 flex border",
               isOverdrawn ? "border-red-900/60" : "border-border/60",
             )}
           >
@@ -474,35 +782,40 @@ export function PresupuestoRoute() {
                 "h-full rounded-full transition-all duration-700 shadow-xs",
                 isOverdrawn
                   ? "bg-gradient-to-r from-amber-500 via-[#f97316] to-red-500"
-                  : "bg-gradient-to-r from-[#2EC4B6] via-[#2563EB] to-[#F59E0B]",
+                  : "bg-gradient-to-r from-blue-500 via-purple-500 to-teal-400",
               )}
-              style={{ width: `${Math.min(100, percentUsed)}%` }}
+              style={{ width: `${Math.min(100, totalPlanned > 0 ? percentUsed : 0)}%` }}
             />
           </div>
 
-          <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-1 border-t border-border/60">
+          {/* Fila inferior: Disponible o Sobregiro */}
+          <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-1 border-t border-border/50">
             {isOverdrawn ? (
               <>
-                <span className="flex items-center gap-1.5 text-red-300 font-semibold">
-                  <span className="size-2 rounded-full bg-red-500 animate-ping" />
+                <span className="flex items-center gap-1.5 text-red-300 font-bold">
+                  <span className="size-1.5 rounded-full bg-red-500 animate-ping" />
                   Excedido por:{" "}
-                  <strong className="text-red-400 font-extrabold">-{money(overdraftAmount)}</strong>
+                  <strong className="text-red-400 font-black">-{money(overdraftAmount)}</strong>
                 </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <AlertTriangle className="size-3.5 text-amber-400" />
-                  Has excedido el presupuesto mensual planificado
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setEmergencyModalOpen(true)}
+                  className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Compensar con Nido</span>
+                  <ArrowRight className="size-3" />
+                </button>
               </>
             ) : (
               <>
                 <span className="flex items-center gap-1.5">
                   <span className="size-2 rounded-full bg-[#2EC4B6]" />
                   Disponible:{" "}
-                  <strong className="text-foreground font-bold">{money(availableAmount)}</strong>
+                  <strong className="text-foreground font-black">{money(availableAmount)}</strong>
                 </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="flex items-center gap-1 text-muted-foreground font-semibold">
                   <ShieldCheck className="size-3.5 text-teal-400" />
-                  Regla 50 / 30 / 20 activa
+                  Regla 50/30/20 activa
                 </span>
               </>
             )}
@@ -510,490 +823,158 @@ export function PresupuestoRoute() {
         </div>
       </section>
 
-      {/* 3. EMERGENCY COMPENSATION QUICK ACTION BANNER */}
-      {isOverdrawn && (
-        <section className="bg-gradient-to-r from-red-950/40 via-[#1a233d] to-amber-950/30 border border-red-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-md">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-9 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
-              <Scale className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-xs font-bold text-foreground">¿Descuadre en tu presupuesto?</h4>
-              <p className="text-[11px] text-muted-foreground truncate">
-                Reajusta límites o compensa con tu fondo seguro.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setEmergencyModalOpen(true)}
-            className="shrink-0 px-3 py-2 rounded-xl bg-gradient-to-r from-[#2EC4B6] to-emerald-400 hover:from-[#20A39E] hover:to-emerald-500 text-slate-950 font-black text-[11px] flex items-center gap-1 shadow-md shadow-[#2EC4B6]/20 transition-all active:scale-95"
-          >
-            <span>Compensar con Nido</span>
-            <ArrowRight className="size-3.5 stroke-[2.5]" />
-          </button>
-        </section>
-      )}
-
-      {/* 4. NIDO GUARDIÁN SAVINGS & PRIVACY BANNER - CONCERNED / ALERT STATE */}
-      <section
-        className={cn(
-          "relative border rounded-3xl p-4 shadow-card overflow-hidden transition-all",
-          isOverdrawn
-            ? "bg-gradient-to-b from-[#191e35] to-[#0F182B] border-amber-500/40"
-            : "bg-card border-border/80",
-        )}
-      >
-        <div
-          className={cn(
-            "absolute -top-10 -right-10 size-28 rounded-full blur-xl pointer-events-none",
-            isOverdrawn ? "bg-amber-500/10" : "bg-teal-500/15",
-          )}
-        />
-
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="shrink-0">
-            <NidoCharacter mood={isOverdrawn ? "worried" : "happy"} className="size-20" />
-          </div>
-
-          <div
-            className={cn(
-              "flex-1 bg-secondary/80 rounded-2xl p-3 relative shadow-inner border",
-              isOverdrawn ? "border-amber-500/40" : "border-teal-500/40",
-            )}
-          >
-            <div
-              className={cn(
-                "absolute -left-2 top-5 size-0 border-t-6 border-t-transparent border-r-[8px] border-b-6 border-b-transparent",
-                isOverdrawn ? "border-r-amber-500/40" : "border-r-teal-500/40",
-              )}
-            />
-            <div className="flex items-center justify-between mb-1">
-              <span
-                className={cn(
-                  "text-[11px] font-black uppercase tracking-wider flex items-center gap-1",
-                  isOverdrawn ? "text-amber-400" : "text-teal-400",
-                )}
-              >
-                <span>{isOverdrawn ? "Guardián Nido en Alerta" : "Guardián Nido"}</span>
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full animate-ping",
-                    isOverdrawn ? "bg-amber-400" : "bg-teal-400",
-                  )}
-                />
-              </span>
-              <span
-                className={cn(
-                  "text-[10px] font-bold px-1.5 py-0.5 rounded border",
-                  isOverdrawn
-                    ? "bg-red-500/15 text-red-300 border-red-500/30"
-                    : "bg-amber-400/10 text-amber-300 border-amber-400/30",
-                )}
-              >
-                {isOverdrawn ? "Zona de Riesgo" : "+20% Ahorro protegido"}
-              </span>
-            </div>
-
-            <p className="text-xs text-foreground leading-snug">
-              {isOverdrawn ? (
-                <>
-                  "¡Ojo con los gastos! El rubro de{" "}
-                  <strong className="text-red-400">Transporte</strong> y{" "}
-                  <strong className="text-amber-300">Salidas</strong> superaron el cupo pactado este
-                  mes. Es hora de reajustar."
-                </>
-              ) : (
-                <>
-                  "¡Vas impecable este mes! Tus{" "}
-                  <strong className="text-teal-400">ahorros protegidos</strong> no se tocan y tus
-                  gastos privados siguen en cofre fuerte."
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. PRIVACY SEGMENTED FILTER */}
-      <div className="bg-secondary/60 p-1 rounded-2xl border border-border/60 flex items-center gap-1 shadow-xs">
+      {/* 3. SELECTOR DE FLUJO COMPACTO (Todos | Solo Míos | En Equipo) */}
+      <section className="bg-secondary/60 p-1 rounded-2xl border border-border/60 flex items-center gap-1 shadow-xs">
         <button
           type="button"
           onClick={() => setFilter("all")}
           className={cn(
-            "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[42px]",
+            "flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[34px]",
             filter === "all"
               ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
           <span>Todos</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-black/20 font-black">
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 font-black">
             {budgets.length}
           </span>
         </button>
-
         <button
           type="button"
           onClick={() => setFilter("personal")}
           className={cn(
-            "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[42px]",
+            "flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[34px]",
             filter === "personal"
               ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Lock className="size-4" />
+          <Lock className="size-3.5" />
           <span>Solo míos</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-black">
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary text-muted-foreground font-black">
             {personalCount}
           </span>
         </button>
-
         <button
           type="button"
           onClick={() => setFilter("shared")}
           className={cn(
-            "flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[42px]",
+            "flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 min-h-[34px]",
             filter === "shared"
               ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Users className="size-4" />
+          <Users className="size-3.5" />
           <span>En Equipo</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-black">
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary text-muted-foreground font-black">
             {sharedCount}
           </span>
         </button>
-      </div>
-
-      {/* 6. 50 / 30 / 20 Mini Breakdown Pills con barras legibles */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="bg-card text-card-foreground border border-border/80 rounded-2xl p-3 flex flex-col shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1">
-            <span>Necesidades</span>
-            <span className={cn("font-black", isOverdrawn ? "text-red-400" : "text-primary")}>
-              {breakdown503020.necesidadesPct}%
-            </span>
-          </div>
-          <span className="text-sm sm:text-base font-black text-foreground font-sans">
-            {money(breakdown503020.necesidades)}
-          </span>
-          <div className="w-full bg-secondary/80 h-2 rounded-full overflow-hidden mt-2">
-            <div
-              className={cn("h-full rounded-full", isOverdrawn ? "bg-red-500" : "bg-primary")}
-              style={{ width: `${breakdown503020.necesidadesBar}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="bg-card text-card-foreground border border-border/80 rounded-2xl p-3 flex flex-col shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1">
-            <span>Deseos</span>
-            <span className="text-amber-400 font-black">{breakdown503020.deseosPct}%</span>
-          </div>
-          <span className="text-sm sm:text-base font-black text-foreground font-sans">
-            {money(breakdown503020.deseos)}
-          </span>
-          <div className="w-full bg-secondary/80 h-2 rounded-full overflow-hidden mt-2">
-            <div
-              className="bg-amber-400 h-full rounded-full"
-              style={{ width: `${breakdown503020.deseosBar}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="bg-card text-card-foreground border border-border/80 rounded-2xl p-3 flex flex-col shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-1">
-            <span>Ahorro Nido</span>
-            <span className="text-teal-400 font-black">{breakdown503020.ahorroPct}%</span>
-          </div>
-          <span className="text-sm sm:text-base font-black text-foreground font-sans">
-            {money(breakdown503020.ahorroNido)}
-          </span>
-          <div className="w-full bg-secondary/80 h-2 rounded-full overflow-hidden mt-2">
-            <div
-              className="bg-teal-400 h-full rounded-full"
-              style={{ width: `${breakdown503020.ahorroBar}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 7. DETAILED BUDGET CATEGORIES FEED */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Categorías Asignadas
-          </h3>
-          <button
-            type="button"
-            onClick={() => setEmergencyModalOpen(true)}
-            className={cn(
-              "text-xs font-bold flex items-center gap-1 hover:underline",
-              isOverdrawn ? "text-red-400" : "text-teal-400",
-            )}
-          >
-            <span>{isOverdrawn ? "Ajustar cupos de emergencia" : "Ajustar Cupos"}</span>
-            <SlidersHorizontal className="size-3.5" />
-          </button>
-        </div>
-
-        {filteredBudgets.map((b) => {
-          const pct = Math.round((b.spent / b.planned) * 100);
-          const delta = b.planned - b.spent;
-          const isCriticalExceeded = b.alertLevel === "critical_exceeded" || pct >= 100;
-          const isCriticalLimit = b.alertLevel === "critical_limit" || (pct >= 90 && pct < 100);
-          const isShared = b.isShared;
-
-          // Icon selector
-          const icon = b.name.toLowerCase().includes("transporte") ? (
-            <Car className="size-5" />
-          ) : b.name.toLowerCase().includes("comida") || b.name.toLowerCase().includes("súper") ? (
-            <ShoppingCart className="size-5" />
-          ) : b.name.toLowerCase().includes("luz") || b.name.toLowerCase().includes("servicio") ? (
-            <Zap className="size-5" />
-          ) : (
-            <Wine className="size-5" />
-          );
-
-          return (
-            <article
-              key={b.id}
-              className={cn(
-                "rounded-2xl p-4 shadow-card flex flex-col gap-3 transition-transform relative overflow-hidden",
-                isCriticalExceeded
-                  ? "bg-[#181a2e] border-2 border-red-500/70 shadow-xl shadow-red-950/30"
-                  : isCriticalLimit
-                    ? "bg-card border-2 border-amber-500/60 shadow-lg"
-                    : "bg-card border border-border/80 hover:border-border",
-              )}
-            >
-              {isCriticalExceeded && (
-                <div className="absolute -right-8 -top-8 size-20 bg-red-500/10 rounded-full blur-xl pointer-events-none" />
-              )}
-
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "size-10 rounded-2xl flex items-center justify-center shrink-0 border",
-                      isCriticalExceeded
-                        ? "bg-red-500/20 border-red-500/40 text-red-400"
-                        : isCriticalLimit
-                          ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                          : isShared
-                            ? "bg-teal-500/15 border-teal-500/30 text-teal-400"
-                            : "bg-purple-500/15 border-purple-500/30 text-purple-300",
-                    )}
-                  >
-                    {icon}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-base font-bold text-foreground leading-tight">
-                        {b.name}
-                      </h4>
-                      {isCriticalExceeded && (
-                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 text-[10px] font-bold flex items-center gap-1">
-                          <AlertCircle className="size-3" /> Excedido
-                        </span>
-                      )}
-                      {isCriticalLimit && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold flex items-center gap-1">
-                          <AlertTriangle className="size-3" /> Zona crítica
-                        </span>
-                      )}
-                      {isShared ? (
-                        <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold flex items-center gap-1">
-                          <Users className="size-3" /> Compartido
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[10px] font-bold flex items-center gap-1">
-                          <Lock className="size-3" /> Solo mío
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">{b.group}</p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span
-                    className={cn(
-                      "text-base font-black font-sans",
-                      isCriticalExceeded
-                        ? "text-red-400"
-                        : isCriticalLimit
-                          ? "text-amber-300"
-                          : "text-foreground",
-                    )}
-                  >
-                    {money(b.spent)}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground block font-medium">
-                    de {money(b.planned)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Barra de progreso */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center text-[11px] font-bold">
-                  {isCriticalExceeded ? (
-                    <>
-                      <span className="text-red-400 flex items-center gap-1">
-                        <AlertTriangle className="size-3.5 text-red-400" />
-                        {pct}% alcanzado (¡Límite excedido! -{money(Math.abs(delta))} de más)
-                      </span>
-                      <span className="text-red-400 font-extrabold">+{pct - 100}% extra</span>
-                    </>
-                  ) : isCriticalLimit ? (
-                    <>
-                      <span className="text-amber-300 flex items-center gap-1">
-                        <Bell className="size-3.5 text-amber-400" />
-                        {pct}% al límite (Pausar gastos de ocio)
-                      </span>
-                      <span className="text-amber-400 font-bold">Resta {money(delta)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-teal-400 flex items-center gap-1">
-                        <CheckCircle2 className="size-3.5 text-teal-400" />
-                        {pct}% dentro del ritmo planificado
-                      </span>
-                      <span className="text-muted-foreground">Resta {money(delta)}</span>
-                    </>
-                  )}
-                </div>
-
-                <div
-                  className={cn(
-                    "w-full bg-secondary h-2.5 rounded-full overflow-hidden p-0.5 border",
-                    isCriticalExceeded
-                      ? "border-red-800/80"
-                      : isCriticalLimit
-                        ? "border-amber-800/60"
-                        : "border-border/60",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all duration-500",
-                      isCriticalExceeded
-                        ? "bg-gradient-to-r from-amber-500 to-red-500 shadow-xs shadow-red-500/50"
-                        : isCriticalLimit
-                          ? "bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500"
-                          : isShared
-                            ? "bg-gradient-to-r from-teal-500 to-teal-300"
-                            : "bg-gradient-to-r from-purple-600 to-purple-400",
-                    )}
-                    style={{ width: `${Math.min(100, pct)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Desglose de cuotas o Aviso Privado */}
-              {isShared ? (
-                <div
-                  className={cn(
-                    "rounded-xl p-2.5 flex items-center justify-between text-[11px] border",
-                    isCriticalExceeded
-                      ? "bg-[#12162a] border-red-900/40"
-                      : "bg-secondary/40 border-border/60",
-                  )}
-                >
-                  <div className="flex items-center gap-2 overflow-x-auto py-0.5 max-w-[72%]">
-                    {familyMembers.length > 0 ? (
-                      familyMembers.map((m, idx) => {
-                        const userSpent = spentByCategoryAndUser.get(b.category)?.get(m.id) ?? 0;
-                        const initial = m.display_name?.charAt(0).toUpperCase() || "U";
-                        const colors = [
-                          "bg-blue-600 text-white",
-                          "bg-teal-500 text-slate-900",
-                          "bg-purple-600 text-white",
-                          "bg-amber-500 text-slate-900",
-                        ];
-                        const colorClass = colors[idx % colors.length];
-
-                        return (
-                          <div key={m.id} className="flex items-center gap-1.5 shrink-0">
-                            {idx > 0 && <div className="h-3 w-px bg-border/80 mr-1" />}
-                            <span
-                              className={cn(
-                                "size-5 rounded-full text-[9px] flex items-center justify-center font-black",
-                                colorClass,
-                              )}
-                            >
-                              {initial}
-                            </span>
-                            <span className="text-muted-foreground font-semibold truncate max-w-[90px]">
-                              {m.display_name}:{" "}
-                              <strong
-                                className={isCriticalExceeded ? "text-red-300" : "text-foreground"}
-                              >
-                                {money(userSpent)}
-                              </strong>
-                            </span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="size-3.5 text-teal-400" />
-                        <span>Compartido en equipo</span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setEmergencyModalOpen(true)}
-                    className={cn(
-                      "hover:underline text-[10px] font-bold flex items-center gap-0.5 shrink-0 ml-1.5",
-                      isCriticalExceeded ? "text-red-400" : "text-teal-400",
-                    )}
-                  >
-                    <RefreshCw className="size-3" />
-                    <span>Reequilibrar</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-secondary/40 rounded-xl px-3 py-2 flex items-center justify-between text-[11px] border border-border/60">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
-                    <EyeOff className="size-3.5 text-muted-foreground" />
-                    Oculto para miembros de tu grupo
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded border",
-                      isCriticalLimit
-                        ? "text-amber-300 bg-amber-400/10 border-amber-400/20"
-                        : "text-teal-400 bg-teal-500/10 border-teal-500/20",
-                    )}
-                  >
-                    {isCriticalLimit ? "Casi Lleno" : "Privado"}
-                  </span>
-                </div>
-              )}
-            </article>
-          );
-        })}
       </section>
 
-      {/* 8. Security / Privacy Educational Micro-Card */}
-      <section className="bg-card border border-border/80 rounded-2xl p-3.5 flex items-center gap-3">
-        <div className="size-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0">
-          <Lock className="size-5" />
+      {/* 4. COMPONENTE ACCORDION DE SHADCN/UI (Necesidades, Deseos, Ahorro Nido) */}
+      <BudgetAccordion
+        necesidadesBudgets={necesidadesBudgets}
+        deseosBudgets={deseosBudgets}
+        ahorroBudgets={ahorroBudgets}
+        necesidadesSpent={necesidadesSpent}
+        necesidadesPlanned={necesidadesPlanned}
+        necesidadesPct={necesidadesPct}
+        deseosSpent={deseosSpent}
+        deseosPlanned={deseosPlanned}
+        deseosPct={deseosPct}
+        ahorroSpent={ahorroSpent}
+        ahorroPlanned={ahorroPlanned}
+        ahorroPct={ahorroPct}
+        onOpenEmergencyModal={() => setEmergencyModalOpen(true)}
+        onOpenNewBudget={() => setModalOpen(true)}
+        onOpenTransaction={() => setTxSheetOpen(true)}
+      />
+
+      {/* 5. PRIVACIDAD INTELIGENTE UALÍ (MICRO-CARD INFORMATIVA) */}
+      <section className="bg-card border border-border/80 rounded-2xl p-3 flex items-center gap-2.5">
+        <div className="size-8 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0">
+          <Lock className="size-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h5 className="text-xs font-bold text-foreground">Privacidad Inteligente Ualí</h5>
-          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-            Los presupuestos con <strong className="text-foreground">candado</strong> se descuentan
-            de tu balance general sin revelar detalles a tu equipo.
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Los rubros con <Lock className="size-3 inline text-purple-400 mx-0.5" /> se descuentan
+            de tu balance general de forma privada sin exponerse a tu equipo.
           </p>
         </div>
       </section>
+
+      {/* MODAL: Consejo del Guardián Nido 🐷 */}
+      {nidoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-teal-500/40 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border/70">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🐷</span>
+                <div>
+                  <h3 className="text-sm font-black text-foreground">
+                    {isOverdrawn ? "Guardián Nido en Alerta" : "Consejo de Guardián Nido"}
+                  </h3>
+                  <span className="text-[10px] font-bold text-teal-400">
+                    Regla 50 / 30 / 20 Activa
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNidoModalOpen(false)}
+                className="size-7 rounded-full bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <NidoCharacter
+                mood={isOverdrawn ? "worried" : "happy"}
+                className="size-20 shrink-0"
+              />
+              <p className="text-xs text-foreground leading-relaxed">
+                {isOverdrawn ? (
+                  <>
+                    "¡Ojo con los consumos! Ciertos rubros han superado el cupo pactado este mes.
+                    Puedes compensar el exceso desde tu fondo de ahorro o ajustar los límites."
+                  </>
+                ) : (
+                  <>
+                    "¡Vas impecable este mes! Tus ahorros protegidos están al día y tus gastos se
+                    mantienen bajo control dentro de las tres canastas."
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="pt-1 flex gap-2">
+              {isOverdrawn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNidoModalOpen(false);
+                    setEmergencyModalOpen(true);
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition"
+                >
+                  Compensar Sobregiro
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setNidoModalOpen(false)}
+                className="flex-1 py-2 px-3 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:text-foreground"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: Ajuste de Cupos de Emergencia / Compensar con Nido */}
       {emergencyModalOpen && (
@@ -1340,13 +1321,9 @@ export function PresupuestoRoute() {
                       className="py-2 px-2.5 rounded-xl border bg-teal-500/15 border-teal-500 text-foreground flex flex-col items-center justify-center text-center transition-all"
                     >
                       <span className="text-xs font-black">
-                        {familyMembers.find(
-                          (m) => m.id !== currentUserId && m.user_id !== currentUserId,
-                        )?.display_name
+                        {familyMembers.find((m) => m.id !== currentUserId)?.display_name
                           ? `50% / 50% con ${
-                              familyMembers.find(
-                                (m) => m.id !== currentUserId && m.user_id !== currentUserId,
-                              )?.display_name
+                              familyMembers.find((m) => m.id !== currentUserId)?.display_name
                             }`
                           : familyMembers.length > 2
                             ? `Partes iguales (${familyMembers.length})`

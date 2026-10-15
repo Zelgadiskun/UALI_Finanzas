@@ -1,4 +1,9 @@
-export type GameEvent = { xp: number; levelUp: boolean; newAchievements: string[] };
+export type GameEvent = {
+  xp: number;
+  levelUp: boolean;
+  newAchievements: string[];
+  newBadges?: string[] | undefined;
+};
 
 const listeners = new Set<(e: GameEvent) => void>();
 

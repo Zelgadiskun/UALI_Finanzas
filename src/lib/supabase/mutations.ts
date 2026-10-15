@@ -285,7 +285,7 @@ export function useCompleteLessonMutation() {
         // Modo anónimo/offline
         addLocalXp("anon", xp);
         addExtraTokens("anon", 50);
-        return { xp, levelUp: false, newBadges: [] };
+        return { xp, levelUp: false, newAchievements: [], newBadges: [] };
       }
 
       return captureRewardEvent(

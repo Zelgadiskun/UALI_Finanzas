@@ -69,9 +69,10 @@ export function setPersonalBudgetsBulk(
     const existingIndex = updatedList.findIndex(
       (b) => b.name.toLowerCase() === item.name.toLowerCase(),
     );
-    if (existingIndex >= 0) {
+    const existing = updatedList[existingIndex];
+    if (existingIndex >= 0 && existing) {
       updatedList[existingIndex] = {
-        ...updatedList[existingIndex],
+        ...existing,
         planned: item.planned,
         group: item.group,
       };

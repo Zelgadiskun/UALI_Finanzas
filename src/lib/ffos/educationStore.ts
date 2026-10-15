@@ -102,10 +102,10 @@ export function completeSubLessonAction({
   userId,
 }: {
   lessonId: string;
-  slug?: string;
+  slug?: string | undefined;
   subLessonId: string;
   stepIndex: number;
-  userId?: string | null;
+  userId?: string | null | undefined;
 }): { isFirstTime: boolean; nextStep: number } {
   const current = getStoredEducationProgress();
   const completedList = [...current.completedSubLessonIds];

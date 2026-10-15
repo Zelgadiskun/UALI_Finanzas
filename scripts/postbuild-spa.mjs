@@ -5,8 +5,24 @@
 // there. public/_redirects (copied verbatim into .output/public by Vite)
 // handles the other half: rewriting every path to index.html so a deep link
 // like /deudas doesn't 404 against a host that only knows static files.
-import { copyFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { copyFileSync, existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const publicDir = resolve(import.meta.dirname, "..", ".output", "public");
-copyFileSync(resolve(publicDir, "_shell.html"), resolve(publicDir, "index.html"));
+const currentDir =
+  typeof import.meta.dirname === "string"
+    ? import.meta.dirname
+    : dirname(fileURLToPath(import.meta.url));
+
+const publicDir = resolve(currentDir, "..", ".output", "public");
+const shellFile = resolve(publicDir, "_shell.html");
+const indexFile = resolve(publicDir, "index.html");
+
+if (existsSync(shellFile)) {
+  copyFileSync(shellFile, indexFile);
+  console.log("✓ Copiado _shell.html -> index.html para hosting SPA en Vercel");
+} else if (existsSync(indexFile)) {
+  console.log("✓ index.html ya existe en .output/public");
+} else {
+  console.warn("⚠ Aviso: no se encontró _shell.html ni index.html en .output/public");
+}

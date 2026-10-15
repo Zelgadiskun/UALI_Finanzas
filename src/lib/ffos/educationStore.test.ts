@@ -61,9 +61,9 @@ describe("Education State Management System", () => {
   });
 
   it("calculates granular sub-lesson progress correctly", () => {
-    const lesson = DEFAULT_LESSONS[0]; // intro with 3 sub-lessons
-    const sub1 = lesson.subLessons![0].id;
-    const sub2 = lesson.subLessons![1].id;
+    const lesson = DEFAULT_LESSONS[0]!; // intro with 3 sub-lessons
+    const sub1 = lesson.subLessons![0]!.id;
+    const sub2 = lesson.subLessons![1]!.id;
 
     completeSubLessonAction({
       lessonId: lesson.id,
@@ -91,8 +91,8 @@ describe("Education State Management System", () => {
   });
 
   it("resumes at the next uncompleted sub-lesson step", () => {
-    const lesson = DEFAULT_LESSONS[0];
-    const sub1 = lesson.subLessons![0].id;
+    const lesson = DEFAULT_LESSONS[0]!;
+    const sub1 = lesson.subLessons![0]!.id;
 
     // Initially starts at 0
     expect(getLessonResumeStep(lesson, new Set())).toBe(0);
@@ -117,12 +117,12 @@ describe("Education State Management System", () => {
     expect(stats.overallPercentage).toBe(0);
 
     // Complete 3 sub-lessons
-    const l1 = DEFAULT_LESSONS[0];
+    const l1 = DEFAULT_LESSONS[0]!;
     for (let i = 0; i < 3; i++) {
       completeSubLessonAction({
         lessonId: l1.id,
         slug: l1.slug,
-        subLessonId: l1.subLessons![i].id,
+        subLessonId: l1.subLessons![i]!.id,
         stepIndex: i,
       });
     }

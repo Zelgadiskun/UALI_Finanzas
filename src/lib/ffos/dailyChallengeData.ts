@@ -244,7 +244,7 @@ export function getDilemmaForDate(dateKey: string = getTodayKey()): DailyMicroDi
     hash |= 0;
   }
   const index = Math.abs(hash) % DAILY_DILEMMAS.length;
-  return DAILY_DILEMMAS[index];
+  return DAILY_DILEMMAS[index] ?? (DAILY_DILEMMAS[0] as DailyMicroDilemma);
 }
 
 /**

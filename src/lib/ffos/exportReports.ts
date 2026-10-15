@@ -7,16 +7,17 @@ export interface TransactionExportRow {
   type: "ingreso" | "gasto" | "ahorro";
   category: string;
   amount: number;
-  note?: string;
-  shared?: boolean;
+  note?: string | undefined;
+  shared?: boolean | undefined;
+  [key: string]: unknown;
 }
 
 export interface ReportSummaryOptions {
   transactions: TransactionExportRow[];
-  userName?: string;
-  familyName?: string;
-  currency?: string;
-  monthName?: string;
+  userName?: string | undefined;
+  familyName?: string | undefined;
+  currency?: string | undefined;
+  monthName?: string | undefined;
 }
 
 /**

@@ -10,8 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AhorroRouteImport } from './routes/ahorro'
-import { Route as AprenderRouteImport } from './routes/aprender'
 import { Route as DeudasRouteImport } from './routes/deudas'
 import { Route as MasRouteImport } from './routes/mas'
 import { Route as MovimientosRouteImport } from './routes/movimientos'
@@ -20,16 +18,6 @@ import { Route as PresupuestoRouteImport } from './routes/presupuesto'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AhorroRoute = AhorroRouteImport.update({
-  id: '/ahorro',
-  path: '/ahorro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AprenderRoute = AprenderRouteImport.update({
-  id: '/aprender',
-  path: '/aprender',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeudasRoute = DeudasRouteImport.update({
@@ -55,8 +43,6 @@ const PresupuestoRoute = PresupuestoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/ahorro': typeof AhorroRoute
-  '/aprender': typeof AprenderRoute
   '/deudas': typeof DeudasRoute
   '/mas': typeof MasRoute
   '/movimientos': typeof MovimientosRoute
@@ -64,8 +50,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/ahorro': typeof AhorroRoute
-  '/aprender': typeof AprenderRoute
   '/deudas': typeof DeudasRoute
   '/mas': typeof MasRoute
   '/movimientos': typeof MovimientosRoute
@@ -74,8 +58,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/ahorro': typeof AhorroRoute
-  '/aprender': typeof AprenderRoute
   '/deudas': typeof DeudasRoute
   '/mas': typeof MasRoute
   '/movimientos': typeof MovimientosRoute
@@ -83,38 +65,14 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/ahorro'
-    | '/aprender'
-    | '/deudas'
-    | '/mas'
-    | '/movimientos'
-    | '/presupuesto'
+  fullPaths: '/' | '/deudas' | '/mas' | '/movimientos' | '/presupuesto'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/ahorro'
-    | '/aprender'
-    | '/deudas'
-    | '/mas'
-    | '/movimientos'
-    | '/presupuesto'
-  id:
-    | '__root__'
-    | '/'
-    | '/ahorro'
-    | '/aprender'
-    | '/deudas'
-    | '/mas'
-    | '/movimientos'
-    | '/presupuesto'
+  to: '/' | '/deudas' | '/mas' | '/movimientos' | '/presupuesto'
+  id: '__root__' | '/' | '/deudas' | '/mas' | '/movimientos' | '/presupuesto'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AhorroRoute: typeof AhorroRoute
-  AprenderRoute: typeof AprenderRoute
   DeudasRoute: typeof DeudasRoute
   MasRoute: typeof MasRoute
   MovimientosRoute: typeof MovimientosRoute
@@ -128,20 +86,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ahorro': {
-      id: '/ahorro'
-      path: '/ahorro'
-      fullPath: '/ahorro'
-      preLoaderRoute: typeof AhorroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/aprender': {
-      id: '/aprender'
-      path: '/aprender'
-      fullPath: '/aprender'
-      preLoaderRoute: typeof AprenderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deudas': {
@@ -177,8 +121,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AhorroRoute: AhorroRoute,
-  AprenderRoute: AprenderRoute,
   DeudasRoute: DeudasRoute,
   MasRoute: MasRoute,
   MovimientosRoute: MovimientosRoute,

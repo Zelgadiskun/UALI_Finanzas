@@ -5,6 +5,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Bell,
+  ChevronDown,
   ChevronRight,
   Compass,
   Eye,
@@ -117,6 +118,46 @@ export function Inicio() {
   const [flowViewMode, setFlowViewMode] = useState<"bridge" | "compare">("bridge");
   const [openLesson, setOpenLesson] = useState<{ lesson: LessonRow; done: boolean } | null>(null);
   const [challengeModalOpen, setChallengeModalOpen] = useState(false);
+
+  // Estados de simplificación de inicio: Hub de Guardianes y Análisis Colapsable
+  const [guardianTab, setGuardianTab] = useState<"nido" | "chispa" | "toto">("nido");
+  const [showFlowAnalysis, setShowFlowAnalysis] = useState(false);
+  const [pigShieldPulse, setPigShieldPulse] = useState(false);
+
+  const handleAportarNido = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass) {
+        const ctx = new AudioContextClass();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      }
+    } catch {
+      /* audio ignored */
+    }
+    setPigShieldPulse(true);
+    setTimeout(() => setPigShieldPulse(false), 1200);
+    setSheetDefaultValues({
+      type: "ahorro",
+      category: "Fondo de emergencia",
+      note: "Aporte blindado a Nido (Titanio)",
+    });
+    setSheetOpen(true);
+  };
+
   const actions = useTxActions();
 
   const {
@@ -144,6 +185,7 @@ export function Inicio() {
       }, 3000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, []);
 
   useEffect(() => {
@@ -151,6 +193,7 @@ export function Inicio() {
       const timer = setTimeout(() => setTutorialOpen(true), 600);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, []);
 
   const rawTransactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
@@ -385,7 +428,7 @@ export function Inicio() {
   }, [notificationsQuery.data, memberNames]);
 
   const latest = useMemo(
-    () => [...scopedTransactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4),
+    () => [...scopedTransactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2),
     [scopedTransactions],
   );
 
@@ -395,6 +438,7 @@ export function Inicio() {
 
   const progress = progressQuery.data;
   const levelData = levelInfo(progress.xp);
+  const level = levelData.level;
   const xpCurrent = progress.xp;
   // Fórmula indexada proporcional: Nivel 1 = 250 XP, Nivel 2 = Máximo 500 XP acumulados, Nivel 3 = 750 XP, etc.
   const xpLevelCap = levelData.level * 250;
@@ -434,7 +478,7 @@ export function Inicio() {
                 <span className="inline-block text-amber-400 shrink-0 text-sm">👋</span>
               </h1>
               <p className="text-xs font-bold text-teal-400 truncate leading-tight mt-0.5">
-                {levelData.title} • Nivel {levelData.level}
+                {levelData.name} • Nivel {levelData.level}
               </p>
             </div>
           </div>
@@ -574,103 +618,93 @@ export function Inicio() {
         </section>
       )}
 
-      {/* 3. Tarjeta de Balance Consolidado (Flujo de Caja Real Conservado) */}
+      {/* 2. TARJETA DE BALANCE MINIMALISTA (CENTRALIZADA, MÁX 120PX) */}
       <section className="mb-3.5">
-        <div className="relative overflow-hidden rounded-2xl bg-card border border-border/80 p-4.5 shadow-card">
-          <div className="absolute -right-8 -bottom-8 size-28 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-6 -top-6 size-24 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/80 p-4 shadow-card">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              {viewScope === "shared"
+                ? "BALANCE EN COMPAÑÍA"
+                : viewScope === "personal"
+                  ? "BALANCE PERSONAL"
+                  : "BALANCE TOTAL DISPONIBLE"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setHideBalance((v) => !v)}
+              aria-label={hideBalance ? "Mostrar balance" : "Ocultar balance"}
+              className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition active:scale-95"
+            >
+              {hideBalance ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
 
-          <div className="relative z-10 flex flex-col gap-2.5">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-slate-400 tracking-wider uppercase">
-                    {viewScope === "shared"
-                      ? "BALANCE EN COMPAÑÍA / EQUIPO"
-                      : viewScope === "personal"
-                        ? "BALANCE PERSONAL"
-                        : "BALANCE TOTAL DISPONIBLE"}
-                  </p>
-                  <span className="px-2.5 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-400 text-xs font-extrabold flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-teal-400 animate-pulse" />
-                    Flujo Continuo
-                  </span>
-                </div>
+          {/* Saldo Centralizado Limpio */}
+          <div className="text-center py-1">
+            <div className="inline-flex items-baseline gap-1.5">
+              <span className="text-3xl sm:text-4xl font-black tracking-tight text-foreground font-sans">
+                {hideBalance ? "••••••••" : money(stats.totalBalance)}
+              </span>
+              <span className="text-xs font-black text-muted-foreground">USD</span>
+            </div>
+            {/* Sub-indicador discreto de remanente y neto */}
+            <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-semibold mt-0.5">
+              <span>
+                Remanente:{" "}
+                <strong className="text-foreground">
+                  {hideBalance ? "••••" : `+${money(stats.carryoverBalance)}`}
+                </strong>
+              </span>
+              <span>•</span>
+              <span>
+                Neto {currentMonthName()}:{" "}
+                <strong
+                  className={
+                    hideBalance
+                      ? "text-foreground"
+                      : stats.currentMonthNet >= 0
+                        ? "text-emerald-400"
+                        : "text-amber-400"
+                  }
+                >
+                  {hideBalance ? "••••" : money(stats.currentMonthNet)}
+                </strong>
+              </span>
+            </div>
+          </div>
 
-                <div className="flex items-baseline gap-2 mt-1.5">
-                  <span className="text-3xl sm:text-4xl font-black tracking-tight font-sans text-foreground">
-                    {hideBalance ? "••••••••" : money(stats.totalBalance)}
-                  </span>
-                  <span className="text-sm font-bold text-slate-400">USD</span>
-                </div>
-
-                {/* Sub-indicador de conservación de flujo del mes anterior */}
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs text-slate-400 font-semibold">
-                  <span className="text-teal-400 font-bold flex items-center gap-1">
-                    <span>↳ Remanente {previousMonthName()}:</span>
-                    <strong className="text-foreground">
-                      {hideBalance ? "••••••" : `+${money(stats.carryoverBalance)}`}
-                    </strong>
-                  </span>
-                  <span>•</span>
-                  <span>
-                    Neto {currentMonthName()}:{" "}
-                    <strong
-                      className={
-                        hideBalance
-                          ? "text-foreground"
-                          : stats.currentMonthNet >= 0
-                            ? "text-emerald-400"
-                            : "text-amber-400"
-                      }
-                    >
-                      {hideBalance ? "••••••" : money(stats.currentMonthNet)}
-                    </strong>
-                  </span>
-                </div>
+          {/* Micro-Píldoras Horizontales Muy Compactas (Caja vs Nido) */}
+          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/60">
+            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-secondary/50 border border-border/60">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className="text-[11px] font-bold text-muted-foreground truncate">
+                  En Caja:
+                </span>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setHideBalance((v) => !v)}
-                aria-label={hideBalance ? "Mostrar balance" : "Ocultar balance"}
-                className="grid size-10 place-items-center rounded-xl border border-border bg-secondary/60 text-muted-foreground hover:text-foreground transition active:scale-95"
-              >
-                {hideBalance ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-              </button>
+              <span className="text-xs font-black text-foreground shrink-0">
+                {hideBalance ? "••••" : money(stats.freeLiquidity)}
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/60 mt-1">
-              <div className="flex items-center gap-2.5">
-                <span className="size-3 rounded-full bg-emerald-400 shrink-0" />
-                <div>
-                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">
-                    DISPONIBLE EN CAJA
-                  </p>
-                  <p className="text-base font-black text-foreground">
-                    {hideBalance ? "••••••" : money(stats.freeLiquidity)}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-secondary/50 border border-border/60">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="size-2 rounded-full bg-teal-400 shrink-0" />
+                <span className="text-[11px] font-bold text-muted-foreground truncate">
+                  Ahorro Nido:
+                </span>
               </div>
-
-              <div className="flex items-center gap-2.5">
-                <span className="size-3 rounded-full bg-[#2EC4B6] shrink-0" />
-                <div>
-                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">
-                    AHORRADO (NIDO)
-                  </p>
-                  <p className="text-base font-black text-teal-400">
-                    {hideBalance ? "••••••" : money(stats.savedTotal)}
-                  </p>
-                </div>
-              </div>
+              <span className="text-xs font-black text-teal-400 shrink-0">
+                {hideBalance ? "••••" : money(stats.savedTotal)}
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. SECCIÓN FINTECH DESTACADA: ESPACIO EN COMPAÑÍA / EQUIPO (SOLO ICONO + TÍTULO + NÚMEROS + BARRA DE PROGRESO) */}
-      <section className="mb-3">
+      {/* 3. RETOS Y ESPACIO COMPARTIDO (GRID COMPACTA DE 2 COLUMNAS) */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3.5">
+        {/* Espacio en Compañía */}
         <div
           role="button"
           tabIndex={0}
@@ -681,29 +715,28 @@ export function Inicio() {
               setFamilySheetOpen(true);
             }
           }}
-          className="bg-card border border-teal-500/40 hover:border-teal-400/70 rounded-2xl p-3.5 shadow-card transition cursor-pointer active:scale-[0.99] group"
+          className="bg-card border border-teal-500/40 hover:border-teal-400/70 rounded-2xl p-3 shadow-card transition cursor-pointer active:scale-[0.99] group"
         >
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
-                <Users className="size-4.5" />
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="size-7 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
+                <Users className="size-3.5" />
               </div>
-              <h3 className="text-xs sm:text-sm font-black text-foreground truncate">
-                {inFamily ? familyQuery.data?.name || "Espacio en Compañía" : "Espacio en Compañía"}
+              <h3 className="text-xs font-black text-foreground truncate">
+                {inFamily ? familyQuery.data?.name || "Espacio Compartido" : "Espacio en Compañía"}
               </h3>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-xs sm:text-sm font-black text-foreground">
-                {inFamily ? money(sharedBreakdown.total) : "1 / 2 conectados"}
+              <span className="text-xs font-black text-foreground">
+                {inFamily ? money(sharedBreakdown.total) : "1 / 2"}
               </span>
-              <span className="text-xs text-teal-400 font-bold ml-1.5">
-                {inFamily ? `${sharedBreakdown.myPct}% / ${sharedBreakdown.partnerPct}%` : "50%"}
+              <span className="text-[10px] text-teal-400 font-bold ml-1">
+                {inFamily ? `${sharedBreakdown.myPct}%` : "50%"}
               </span>
             </div>
           </div>
-
           {/* Barra de progreso */}
-          <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden flex border border-border/60">
+          <div className="w-full bg-secondary h-2 rounded-full overflow-hidden flex border border-border/60">
             {inFamily ? (
               <>
                 <div
@@ -723,10 +756,8 @@ export function Inicio() {
             )}
           </div>
         </div>
-      </section>
 
-      {/* 5. RETO SEMANAL DE GAMIFICACIÓN (SOLO ICONO + TÍTULO + NÚMEROS + BARRA DE PROGRESO) */}
-      <section className="mb-3">
+        {/* Reto Semanal */}
         <div
           role="button"
           tabIndex={0}
@@ -737,25 +768,22 @@ export function Inicio() {
               setChallengeModalOpen(true);
             }
           }}
-          className="bg-card border border-amber-500/40 hover:border-amber-400/70 rounded-2xl p-3.5 shadow-card transition cursor-pointer active:scale-[0.99] group"
+          className="bg-card border border-amber-500/40 hover:border-amber-400/70 rounded-2xl p-3 shadow-card transition cursor-pointer active:scale-[0.99] group"
         >
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
-                <Sparkles className="size-4.5" />
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="size-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                <Sparkles className="size-3.5" />
               </div>
-              <h3 className="text-xs sm:text-sm font-black text-foreground truncate">
-                Reto Semanal de Consumos
-              </h3>
+              <h3 className="text-xs font-black text-foreground truncate">Reto Semanal</h3>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-xs sm:text-sm font-black text-amber-400">2 / 3 días</span>
-              <span className="text-xs font-bold text-slate-400 ml-1.5">(67%) • +100 FFOS</span>
+              <span className="text-xs font-black text-amber-400">2 / 3 días</span>
+              <span className="text-[10px] font-bold text-slate-400 ml-1">+100 FFOS</span>
             </div>
           </div>
-
-          {/* Barra de progreso de reto */}
-          <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden border border-border/60">
+          {/* Barra de progreso */}
+          <div className="w-full bg-secondary h-2 rounded-full overflow-hidden border border-border/60">
             <div
               className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500"
               style={{ width: "67%" }}
@@ -764,368 +792,472 @@ export function Inicio() {
         </div>
       </section>
 
-      {/* 6. SECCIÓN UX: FLUJO DE CAJA CONTINUO & COMPARATIVA MENSUAL */}
-      <section className="mb-4">
-        <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-card space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="size-9 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
-                <TrendingUp className="size-5" />
-              </div>
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-foreground">
-                  Flujo de Caja & Comparativa
-                </h3>
-                <p className="text-xs text-slate-400 font-semibold">
-                  {currentMonthName()} vs {previousMonthName()}
-                </p>
-              </div>
-            </div>
-
-            {/* Selector de Pestaña */}
-            <div className="grid grid-cols-2 gap-1 p-0.5 bg-secondary/80 rounded-xl border border-border/60">
-              <button
-                type="button"
-                onClick={() => setFlowViewMode("bridge")}
-                className={cn(
-                  "py-1.5 px-3 rounded-lg text-xs font-bold transition-all",
-                  flowViewMode === "bridge"
-                    ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Puente
-              </button>
-              <button
-                type="button"
-                onClick={() => setFlowViewMode("compare")}
-                className={cn(
-                  "py-1.5 px-3 rounded-lg text-xs font-bold transition-all",
-                  flowViewMode === "compare"
-                    ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Mes a Mes
-              </button>
-            </div>
+      {/* 4. EL HUB DE LOS GUARDIANES (CARRUSEL HORIZONTAL / SELECTOR MODULAR) */}
+      <section className="mb-3.5">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
+            <h3 className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
+              Mi Progreso & Guardianes
+            </h3>
           </div>
-
-          {/* VISTA 1: PUENTE DE FLUJO CONTINUO CON TIPOGRAFÍA ACCESIBLE */}
-          {flowViewMode === "bridge" ? (
-            <div className="space-y-2 pt-1">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                {/* 1. Remanente Mes Anterior */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-teal-500/30 flex flex-col justify-between">
-                  <span className="text-xs font-bold text-teal-400 block truncate">
-                    Remanente {previousMonthName()}
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-foreground mt-1">
-                    {hideBalance ? "••••••" : `+${money(stats.carryoverBalance)}`}
-                  </span>
-                </div>
-
-                {/* 2. Ingresos Mes Actual */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-border/60 flex flex-col justify-between">
-                  <span className="text-xs font-bold text-emerald-400 block truncate">
-                    Ingresos {currentMonthName()}
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-emerald-400 mt-1">
-                    {hideBalance ? "••••••" : `+${money(stats.currentIncome)}`}
-                  </span>
-                </div>
-
-                {/* 3. Gastos Mes Actual */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-border/60 flex flex-col justify-between">
-                  <span className="text-xs font-bold text-amber-400 block truncate">
-                    Gastos {currentMonthName()}
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-amber-400 mt-1">
-                    {hideBalance
-                      ? "••••••"
-                      : `-${money(stats.currentExpense + stats.currentDebtPaid)}`}
-                  </span>
-                </div>
-
-                {/* 4. Saldo en Caja */}
-                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/40 flex flex-col justify-between">
-                  <span className="text-xs font-black text-teal-300 block truncate">
-                    Saldo en Caja
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-foreground mt-1">
-                    {hideBalance ? "••••••" : `=${money(stats.totalBalance)}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-xs font-semibold">
-                <span className="text-slate-300 flex items-center gap-1.5">
-                  <Scale className="size-4 text-teal-400 shrink-0" />
-                  <span>Los fondos no se pierden al cambiar de mes.</span>
-                </span>
-                <Link
-                  to="/movimientos"
-                  className="font-bold text-teal-400 hover:underline flex items-center gap-0.5 shrink-0"
-                >
-                  <span>Ver historial</span>
-                  <ChevronRight className="size-3.5" />
-                </Link>
-              </div>
-            </div>
-          ) : (
-            /* VISTA 2: COMPARATIVA MES A MES (MoM Statistics) */
-            <div className="space-y-2 pt-1">
-              <div className="grid grid-cols-3 gap-2">
-                {/* Ingresos MoM */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-border/60">
-                  <div className="flex items-center justify-between text-xs text-slate-400 font-bold mb-1">
-                    <span>Ingresos</span>
-                    {stats.incomeDelta !== undefined && (
-                      <span
-                        className={cn(
-                          "px-1.5 py-0.2 rounded text-xs font-extrabold",
-                          stats.incomeDelta >= 0
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-amber-500/20 text-amber-400",
-                        )}
-                      >
-                        {stats.incomeDelta >= 0 ? "+" : ""}
-                        {stats.incomeDelta}%
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm font-black text-foreground block">
-                    {hideBalance ? "••••••" : money(stats.currentIncome)}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    Ant: {hideBalance ? "••••••" : money(stats.prevIncome)}
-                  </span>
-                </div>
-
-                {/* Gastos MoM */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-border/60">
-                  <div className="flex items-center justify-between text-xs text-slate-400 font-bold mb-1">
-                    <span>Gastos</span>
-                    {stats.expenseDelta !== undefined && (
-                      <span
-                        className={cn(
-                          "px-1.5 py-0.2 rounded text-xs font-extrabold",
-                          stats.expenseDelta <= 0
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-amber-500/20 text-amber-400",
-                        )}
-                      >
-                        {stats.expenseDelta >= 0 ? "+" : ""}
-                        {stats.expenseDelta}%
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm font-black text-amber-400 block">
-                    {hideBalance ? "••••••" : money(stats.currentExpense)}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    Ant: {hideBalance ? "••••••" : money(stats.prevExpense)}
-                  </span>
-                </div>
-
-                {/* Ahorro Nido MoM */}
-                <div className="p-3 rounded-xl bg-secondary/60 border border-border/60">
-                  <div className="flex items-center justify-between text-xs text-slate-400 font-bold mb-1">
-                    <span>Ahorro</span>
-                    <span className="text-teal-400 text-xs font-black">Nido</span>
-                  </div>
-                  <span className="text-sm font-black text-teal-400 block">
-                    {hideBalance ? "••••••" : money(stats.currentSaved)}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    Ant: {hideBalance ? "••••••" : money(stats.prevSaved)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tasa de Margen Neto del mes */}
-              <div className="p-3 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-xs font-semibold">
-                <span className="text-slate-300">
-                  Margen neto del mes:{" "}
-                  <strong
-                    className={
-                      hideBalance
-                        ? "text-foreground"
-                        : stats.currentMonthNet >= 0
-                          ? "text-emerald-400 font-black"
-                          : "text-amber-400 font-black"
-                    }
-                  >
-                    {hideBalance ? "••••••" : money(stats.currentMonthNet)}
-                  </strong>
-                </span>
-                <span className="text-slate-400">
-                  Mes ant:{" "}
-                  <strong className="text-foreground">
-                    {hideBalance ? "••••••" : money(stats.prevMonthNet)}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          )}
+          <Link
+            to="/aprender"
+            className="text-[11px] font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-0.5"
+          >
+            <span>Ver mapa</span>
+            <ChevronRight className="size-3" />
+          </Link>
         </div>
-      </section>
 
-      {/* 7. Bloques Centrales Gamificados con Personajes (Chispa, Nido, Toto) */}
-      <section className="space-y-3 mb-4">
-        {/* BLOQUE 1: CHISPA - LOGROS Y NIVEL */}
-        <Link
-          to="/aprender"
-          className="block relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#592E8E] to-[#452270] p-4.5 text-white border border-[#7A40C2]/80 transition transform active:scale-[0.99] shadow-sm"
-        >
-          <div className="flex items-center justify-between relative z-10">
-            <div className="w-7/12 pr-2">
-              <span className="inline-block text-xs font-black uppercase tracking-wider text-purple-200 mb-1">
-                LOGROS Y PROGRESO
-              </span>
-              <h3 className="text-base sm:text-lg font-black text-white leading-tight mb-2">
-                ¡Subiendo de Nivel!
-              </h3>
-              {/* Barra de XP de mayor grosor para accesibilidad */}
-              <div className="w-full bg-[#341558] h-3 rounded-full overflow-hidden p-0.5 border border-purple-400/40">
-                <div
-                  className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${xpProgressPct}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-center mt-2 font-sans">
-                <span className="text-xs font-black text-amber-300">+{xpInLevel} XP</span>
-                <span className="text-xs font-bold text-purple-200">
-                  {xpCurrent} / {xpLevelCap} XP
-                </span>
-              </div>
+        {/* Fila de 3 Guardianes en Miniatura (Micro-Pestañas Interactivas) */}
+        <div className="grid grid-cols-3 gap-1.5 p-1 bg-secondary/60 rounded-2xl border border-border/70 mb-2">
+          {/* Nido */}
+          <button
+            type="button"
+            onClick={() => setGuardianTab("nido")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all text-xs font-bold",
+              guardianTab === "nido"
+                ? "bg-[#00897B] text-white shadow-xs font-black"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="text-sm">🐷</span>
+            <div className="text-left leading-none min-w-0">
+              <span className="block text-[10px] uppercase font-black truncate">Nido</span>
+              <span className="text-[9px] opacity-90">{savingsPct}%</span>
             </div>
+          </button>
 
-            {/* Chispa SVG */}
-            <div className="w-5/12 flex justify-center items-center">
-              <ChispaCharacter className="w-24 h-24" />
+          {/* Chispa */}
+          <button
+            type="button"
+            onClick={() => setGuardianTab("chispa")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all text-xs font-bold",
+              guardianTab === "chispa"
+                ? "bg-[#592E8E] text-white shadow-xs font-black"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="text-sm">📐</span>
+            <div className="text-left leading-none min-w-0">
+              <span className="block text-[10px] uppercase font-black truncate">Chispa</span>
+              <span className="text-[9px] opacity-90">Nv.{level}</span>
+            </div>
+          </button>
+
+          {/* Toto */}
+          <button
+            type="button"
+            onClick={() => setGuardianTab("toto")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all text-xs font-bold",
+              guardianTab === "toto"
+                ? "bg-[#1E52B7] text-white shadow-xs font-black"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="text-sm">🪙</span>
+            <div className="text-left leading-none min-w-0">
+              <span className="block text-[10px] uppercase font-black truncate">Toto</span>
+              <span className="text-[9px] opacity-90">Misión</span>
+            </div>
+          </button>
+        </div>
+
+        {/* Tarjeta Detallada Activa del Guardián Seleccionado */}
+        {guardianTab === "nido" && (
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#00897B] to-[#006D62] p-4 text-white border border-[#14A898]/80 shadow-card animate-in fade-in duration-200">
+            <div className="flex items-center justify-between relative z-10">
+              <div className="w-7/12 pr-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-200">
+                    Nido • Guardián de Ahorro
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-teal-950/60 text-emerald-300 border border-teal-400/30">
+                    {savingsPct}%
+                  </span>
+                </div>
+                <h3 className="text-base font-black text-white leading-tight">
+                  Fondo de Emergencia
+                </h3>
+                <p className="text-xs font-semibold text-teal-100/90 mb-2">
+                  Meta: {money(savingsGoal)}
+                </p>
+                {/* Barra de progreso */}
+                <div className="w-full bg-[#004D45] h-2.5 rounded-full overflow-hidden p-0.5 border border-teal-300/40">
+                  <div
+                    className="bg-gradient-to-r from-emerald-300 to-teal-200 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${savingsPct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-1.5 font-sans">
+                  <span className="text-xs font-black text-amber-200">{money(savingsCurrent)}</span>
+                  <span className="text-xs font-black text-emerald-200">{savingsPct}%</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2.5">
+                  <button
+                    type="button"
+                    onClick={handleAportarNido}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-xl shadow-xs transition active:scale-95",
+                      pigShieldPulse && "ring-2 ring-emerald-400 animate-pulse",
+                    )}
+                  >
+                    <Plus className="size-3.5 stroke-[3]" />
+                    <span>Aportar ahora</span>
+                  </button>
+                  <Link to="/ahorro" className="text-xs text-teal-100/90 font-bold hover:underline">
+                    Ver metas →
+                  </Link>
+                </div>
+              </div>
+              <div className="w-5/12 flex justify-center items-center">
+                <NidoCharacter className="w-20 h-20" />
+              </div>
             </div>
           </div>
-        </Link>
+        )}
 
-        {/* BLOQUE 2: NIDO - METAS DE AHORRO */}
-        <Link
-          to="/ahorro"
-          className="block relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#00897B] to-[#006D62] p-4.5 text-white border border-[#14A898]/80 transition transform active:scale-[0.99] shadow-sm"
-        >
-          <div className="flex items-center justify-between relative z-10">
-            <div className="w-7/12 pr-2">
-              <span className="inline-block text-xs font-black uppercase tracking-wider text-teal-200 mb-1">
-                METAS DE AHORRO
-              </span>
-              <h3 className="text-base sm:text-lg font-black text-white leading-tight">
-                Fondo de Emergencia
-              </h3>
-              <p className="text-xs font-semibold text-teal-100/90 mb-2">
-                Meta: {money(savingsGoal)}
-              </p>
-              {/* Progress Bar de mayor grosor */}
-              <div className="w-full bg-[#004D45] h-3 rounded-full overflow-hidden p-0.5 border border-teal-300/40">
-                <div
-                  className="bg-gradient-to-r from-emerald-300 to-teal-200 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${savingsPct}%` }}
-                />
+        {guardianTab === "chispa" && (
+          <Link
+            to="/aprender"
+            className="block relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#592E8E] to-[#452270] p-4 text-white border border-[#7A40C2]/80 shadow-card animate-in fade-in duration-200 transition active:scale-[0.99]"
+          >
+            <div className="flex items-center justify-between relative z-10">
+              <div className="w-7/12 pr-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-200">
+                    Chispa • Nivel y Logros
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-purple-950/60 text-amber-300 border border-purple-400/30">
+                    Nivel {level}
+                  </span>
+                </div>
+                <h3 className="text-base font-black text-white leading-tight mb-2">
+                  ¡Subiendo de Nivel!
+                </h3>
+                {/* Barra de XP */}
+                <div className="w-full bg-[#341558] h-2.5 rounded-full overflow-hidden p-0.5 border border-purple-400/40">
+                  <div
+                    className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${xpProgressPct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-1.5 font-sans">
+                  <span className="text-xs font-black text-amber-300">+{xpInLevel} XP</span>
+                  <span className="text-xs font-bold text-purple-200">
+                    {xpCurrent} / {xpLevelCap} XP
+                  </span>
+                </div>
+                <div className="mt-2.5">
+                  <span className="text-xs font-bold text-purple-200 hover:text-white transition">
+                    Ver mapa de aprendizaje →
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center mt-2 font-sans">
-                <span className="text-xs font-black text-amber-200">{money(savingsCurrent)}</span>
-                <span className="text-xs font-black text-emerald-200">{savingsPct}%</span>
+              <div className="w-5/12 flex justify-center items-center">
+                <ChispaCharacter className="w-20 h-20" />
               </div>
-              <div className="flex items-center gap-2 mt-2.5">
+            </div>
+          </Link>
+        )}
+
+        {guardianTab === "toto" && (
+          <article className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1E52B7] to-[#153D8C] p-4 text-white border border-[#2D6BE4]/80 shadow-card animate-in fade-in duration-200">
+            <div className="flex items-center justify-between relative z-10">
+              <div className="w-7/12 pr-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-sky-200">
+                    {nextLessonSubProg && nextLessonSubProg.completedCount > 0
+                      ? `SUBMÓDULO ${Math.min(3, nextLessonSubProg.completedCount + 1)} DE 3`
+                      : "TOTO • LECCIÓN ACTIVA"}
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-blue-950/60 text-amber-300 border border-blue-400/30">
+                    +50 FFOS
+                  </span>
+                </div>
+                <h3 className="text-base font-black text-white leading-snug mb-1">
+                  {nextLesson?.title ?? "Presupuesto 0-base"}
+                </h3>
+                <p className="text-xs text-sky-200 font-semibold mb-2.5">
+                  {nextLessonSubProg
+                    ? `${nextLessonSubProg.completedCount}/3 submódulos completados`
+                    : "Decisiones financieras"}
+                </p>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setSheetDefaultValues({
-                      type: "ahorro",
-                      category: "Fondo de emergencia",
-                      note: "Aporte protegido a Nido",
-                    });
-                    setSheetOpen(true);
+                  onClick={() => {
+                    if (nextLesson) setOpenLesson({ lesson: nextLesson, done: false });
                   }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-xl shadow-xs transition active:scale-95"
                 >
-                  <Plus className="size-3.5 stroke-[3]" />
-                  <span>Aportar ahora</span>
+                  <span>
+                    {nextLessonSubProg && nextLessonSubProg.completedCount > 0
+                      ? `Continuar (Paso ${Math.min(3, nextLessonSubProg.completedCount + 1)})`
+                      : "Aprender lección"}
+                  </span>
+                  <ChevronRight className="size-3.5" />
                 </button>
-                <span className="text-xs text-teal-100/90 font-bold">Ver metas →</span>
+              </div>
+              <div className="w-5/12 flex justify-center items-center">
+                <TotoCharacter className="w-20 h-20" />
               </div>
             </div>
-
-            {/* Nido SVG */}
-            <div className="w-5/12 flex justify-center items-center">
-              <NidoCharacter className="w-24 h-24" />
-            </div>
-          </div>
-        </Link>
-
-        {/* BLOQUE 3: TOTO - DECISIONES Y APRENDIZAJE */}
-        <article className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1E52B7] to-[#153D8C] p-4.5 text-white border border-[#2D6BE4]/80 transition transform active:scale-[0.99] shadow-sm">
-          <div className="flex items-center justify-between relative z-10">
-            <div className="w-7/12 pr-2">
-              <span className="inline-block text-xs font-black uppercase tracking-wider text-sky-200 mb-1">
-                {nextLessonSubProg && nextLessonSubProg.completedCount > 0
-                  ? `SUBMÓDULO ${Math.min(3, nextLessonSubProg.completedCount + 1)} DE 3`
-                  : "LECCIÓN ACTIVA"}
-              </span>
-              <h3 className="text-base font-black text-white leading-snug mb-1">
-                {nextLesson?.title ?? "Presupuesto 0-base"}
-              </h3>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-[#133A85] text-amber-300 border border-amber-400/40">
-                  +50 FFOS
-                </span>
-                <span className="text-xs text-sky-200 font-bold">
-                  {nextLessonSubProg ? `${nextLessonSubProg.completedCount}/3 listos` : "Con Toto"}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (nextLesson) setOpenLesson({ lesson: nextLesson, done: false });
-                }}
-                className="inline-flex items-center gap-1.5 min-h-[44px] px-4 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs sm:text-sm shadow-sm transition active:scale-95 rounded-xl"
-              >
-                <span>
-                  {nextLessonSubProg && nextLessonSubProg.completedCount > 0
-                    ? `Continuar (Paso ${Math.min(3, nextLessonSubProg.completedCount + 1)})`
-                    : "Aprender lección"}
-                </span>
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-
-            {/* Toto SVG */}
-            <div className="w-5/12 flex justify-center items-center">
-              <TotoCharacter className="w-24 h-24" />
-            </div>
-          </div>
-        </article>
+          </article>
+        )}
       </section>
 
-      {/* 8. Sección de Últimos Movimientos con Tipografía Limpia y Accesible */}
+      {/* 5. ACCESO RÁPIDO ANALÍTICO (FLUJO DE CAJA & COMPARATIVA MENSUAL) */}
+      <section className="mb-3.5">
+        <button
+          type="button"
+          onClick={() => setShowFlowAnalysis((v) => !v)}
+          className="w-full flex items-center justify-between p-3 rounded-2xl bg-card border border-border/80 hover:border-teal-500/50 transition shadow-card group active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="size-8.5 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
+              <TrendingUp className="size-4" />
+            </div>
+            <div className="text-left min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-black uppercase tracking-wider text-foreground">
+                  Flujo de Caja & Comparativa
+                </p>
+                <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-teal-500/15 text-teal-400 border border-teal-500/30">
+                  {currentMonthName()} vs {previousMonthName()}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground font-semibold truncate mt-0.5">
+                Remanente (+{money(stats.carryoverBalance)}) • Margen Neto (
+                {stats.currentMonthNet >= 0 ? "+" : ""}
+                {money(stats.currentMonthNet)})
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-xs font-bold text-teal-400 shrink-0 group-hover:translate-x-0.5 transition-transform ml-2">
+            <span className="hidden sm:inline">
+              {showFlowAnalysis ? "Ocultar" : "Ver análisis"}
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform duration-200",
+                showFlowAnalysis && "rotate-180",
+              )}
+            />
+          </div>
+        </button>
+
+        {/* Acordeón Desplegable de Flujo de Caja y Comparativa */}
+        {showFlowAnalysis && (
+          <div className="mt-2 bg-card border border-border/80 rounded-2xl p-3.5 shadow-card space-y-3 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
+                Desglose Financiero
+              </span>
+              {/* Selector de Pestaña */}
+              <div className="grid grid-cols-2 gap-1 p-0.5 bg-secondary/80 rounded-xl border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => setFlowViewMode("bridge")}
+                  className={cn(
+                    "py-1 px-2.5 rounded-lg text-xs font-bold transition-all",
+                    flowViewMode === "bridge"
+                      ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Puente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFlowViewMode("compare")}
+                  className={cn(
+                    "py-1 px-2.5 rounded-lg text-xs font-bold transition-all",
+                    flowViewMode === "compare"
+                      ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Mes a Mes
+                </button>
+              </div>
+            </div>
+
+            {/* VISTA 1: PUENTE DE FLUJO CONTINUO */}
+            {flowViewMode === "bridge" ? (
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                  {/* 1. Remanente Mes Anterior */}
+                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-teal-500/30 flex flex-col justify-between">
+                    <span className="text-[11px] font-bold text-teal-400 block truncate">
+                      Remanente {previousMonthName()}
+                    </span>
+                    <span className="text-sm font-black text-foreground mt-1">
+                      {hideBalance ? "••••••" : `+${money(stats.carryoverBalance)}`}
+                    </span>
+                  </div>
+                  {/* 2. Ingresos Mes Actual */}
+                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60 flex flex-col justify-between">
+                    <span className="text-[11px] font-bold text-emerald-400 block truncate">
+                      Ingresos {currentMonthName()}
+                    </span>
+                    <span className="text-sm font-black text-emerald-400 mt-1">
+                      {hideBalance ? "••••••" : `+${money(stats.currentIncome)}`}
+                    </span>
+                  </div>
+                  {/* 3. Gastos Mes Actual */}
+                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60 flex flex-col justify-between">
+                    <span className="text-[11px] font-bold text-amber-400 block truncate">
+                      Gastos {currentMonthName()}
+                    </span>
+                    <span className="text-sm font-black text-amber-400 mt-1">
+                      {hideBalance
+                        ? "••••••"
+                        : `-${money(stats.currentExpense + stats.currentDebtPaid)}`}
+                    </span>
+                  </div>
+                  {/* 4. Saldo en Caja */}
+                  <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/40 flex flex-col justify-between">
+                    <span className="text-[11px] font-black text-teal-300 block truncate">
+                      Saldo en Caja
+                    </span>
+                    <span className="text-sm font-black text-foreground mt-1">
+                      {hideBalance ? "••••••" : `=${money(stats.totalBalance)}`}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-xs font-semibold">
+                  <span className="text-slate-300 flex items-center gap-1.5">
+                    <Scale className="size-3.5 text-teal-400 shrink-0" />
+                    <span className="text-[11px]">Los fondos no se pierden al cambiar de mes.</span>
+                  </span>
+                  <Link
+                    to="/movimientos"
+                    className="font-bold text-teal-400 hover:underline flex items-center gap-0.5 shrink-0 text-[11px]"
+                  >
+                    <span>Historial</span>
+                    <ChevronRight className="size-3" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              /* VISTA 2: COMPARATIVA MES A MES (MoM Statistics) */
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Ingresos MoM */}
+                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">
+                      <span>Ingresos</span>
+                      {stats.incomeDelta !== undefined && (
+                        <span
+                          className={cn(
+                            "px-1 py-0.2 rounded text-[10px] font-extrabold",
+                            stats.incomeDelta >= 0
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : "bg-amber-500/20 text-amber-400",
+                          )}
+                        >
+                          {stats.incomeDelta >= 0 ? "+" : ""}
+                          {stats.incomeDelta}%
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-foreground block">
+                      {hideBalance ? "••••••" : money(stats.currentIncome)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold">
+                      Ant: {hideBalance ? "••••" : money(stats.prevIncome)}
+                    </span>
+                  </div>
+                  {/* Gastos MoM */}
+                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">
+                      <span>Gastos</span>
+                      {stats.expenseDelta !== undefined && (
+                        <span
+                          className={cn(
+                            "px-1 py-0.2 rounded text-[10px] font-extrabold",
+                            stats.expenseDelta <= 0
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : "bg-amber-500/20 text-amber-400",
+                          )}
+                        >
+                          {stats.expenseDelta >= 0 ? "+" : ""}
+                          {stats.expenseDelta}%
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-amber-400 block">
+                      {hideBalance ? "••••••" : money(stats.currentExpense)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold">
+                      Ant: {hideBalance ? "••••" : money(stats.prevExpense)}
+                    </span>
+                  </div>
+                  {/* Ahorro Nido MoM */}
+                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">
+                      <span>Ahorro</span>
+                      <span className="text-teal-400 text-[10px] font-black">Nido</span>
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-teal-400 block">
+                      {hideBalance ? "••••••" : money(stats.currentSaved)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold">
+                      Ant: {hideBalance ? "••••" : money(stats.prevSaved)}
+                    </span>
+                  </div>
+                </div>
+                {/* Tasa de Margen Neto del mes */}
+                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-[11px] font-semibold">
+                  <span className="text-slate-300">
+                    Margen neto:{" "}
+                    <strong
+                      className={
+                        hideBalance
+                          ? "text-foreground"
+                          : stats.currentMonthNet >= 0
+                            ? "text-emerald-400 font-black"
+                            : "text-amber-400 font-black"
+                      }
+                    >
+                      {hideBalance ? "••••••" : money(stats.currentMonthNet)}
+                    </strong>
+                  </span>
+                  <span className="text-slate-400">
+                    Mes ant:{" "}
+                    <strong className="text-foreground">
+                      {hideBalance ? "••••" : money(stats.prevMonthNet)}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* 6. MICRO-HISTORIAL DE MOVIMIENTOS (COMPACTO) */}
       <section className="mb-4">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-400">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h4 className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
             ÚLTIMOS MOVIMIENTOS
           </h4>
           <Link
             to="/movimientos"
-            className="text-xs sm:text-sm font-bold text-amber-400 hover:text-amber-300 transition"
+            className="text-xs font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-1"
           >
-            Ver todos ({scopedTransactions.length})
+            <span>Ver todos ({scopedTransactions.length})</span>
+            <ChevronRight className="size-3.5" />
           </Link>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {latest.length === 0 ? (
-            <div className="p-5 rounded-2xl border border-border bg-card">
+            <div className="p-4 rounded-2xl border border-border bg-card">
               <EmptyState
                 title="Sin movimientos"
                 description="Presioná el botón '+' central para registrar tu primer movimiento."
@@ -1136,16 +1268,15 @@ export function Inicio() {
               const isExpense = t.type === "gasto";
               const isIncome = t.type === "ingreso";
               const isSavings = t.type === "ahorro";
-
               return (
                 <div
                   key={t.id}
-                  className="rounded-2xl p-3.5 bg-card border border-border/80 flex items-center justify-between shadow-card"
+                  className="rounded-2xl p-2.5 sm:p-3 bg-card border border-border/80 flex items-center justify-between shadow-xs transition hover:border-border"
                 >
-                  <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                     <div
                       className={cn(
-                        "size-11 rounded-xl flex items-center justify-center font-bold shrink-0",
+                        "size-9 rounded-xl flex items-center justify-center font-bold shrink-0",
                         isIncome &&
                           "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
                         isExpense && "bg-rose-500/15 text-rose-400 border border-rose-500/30",
@@ -1155,36 +1286,35 @@ export function Inicio() {
                       )}
                     >
                       {isIncome ? (
-                        <ArrowDownRight className="size-5.5" />
+                        <ArrowDownRight className="size-4.5" />
                       ) : isExpense ? (
-                        <ArrowUpRight className="size-5.5" />
+                        <ArrowUpRight className="size-4.5" />
                       ) : isSavings ? (
-                        <Wallet className="size-5.5" />
+                        <Wallet className="size-4.5" />
                       ) : (
-                        <TrendingDown className="size-5.5" />
+                        <TrendingDown className="size-4.5" />
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm sm:text-base text-foreground truncate">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-xs sm:text-sm text-foreground truncate">
                           {t.category}
                         </span>
                         {t.shared && (
-                          <span className="text-xs px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 font-extrabold border border-teal-500/30 shrink-0">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 font-extrabold border border-teal-500/30 shrink-0">
                             En Compañía
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 font-semibold truncate mt-0.5">
+                      <p className="text-[11px] text-muted-foreground font-semibold truncate">
                         {t.note || t.date}
                       </p>
                     </div>
                   </div>
-
                   <div className="text-right shrink-0">
                     <span
                       className={cn(
-                        "font-black text-base sm:text-lg block font-sans",
+                        "font-black text-sm sm:text-base block font-sans",
                         isIncome && "text-emerald-400",
                         isExpense && "text-rose-400",
                         isSavings && "text-teal-400",

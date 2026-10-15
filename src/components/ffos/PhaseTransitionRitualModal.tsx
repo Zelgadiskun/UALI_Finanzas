@@ -2,6 +2,8 @@ import React from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PhaseTransitionRitual, type PhaseTransitionType } from "./PhaseTransitionRitual";
 
+export type { PhaseTransitionType };
+
 interface PhaseTransitionRitualModalProps {
   open: boolean;
   type: PhaseTransitionType;

@@ -17,7 +17,7 @@ import type { Progress, Transaction } from "@/lib/ffos/types";
 import type { Database } from "./types";
 
 type TransactionRow = Database["public"]["Tables"]["transactions"]["Row"];
-type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type FamilyRow = Database["public"]["Tables"]["families"]["Row"];
 type InvitationRow = Database["public"]["Tables"]["invitations"]["Row"];
 
@@ -83,7 +83,7 @@ export type LessonRow = {
   options: string[];
   answer: number;
   xp: number;
-  subLessons?: SubLesson[];
+  subLessons?: SubLesson[] | undefined;
 };
 
 export const queryKeys = {

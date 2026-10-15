@@ -67,10 +67,12 @@ export function useSwipeNavigation() {
         if (currentIndex === -1) return;
         if (e.key === "ArrowRight" && currentIndex < TABS.length - 1) {
           e.preventDefault();
-          navigate({ to: TABS[currentIndex + 1] });
+          const target = TABS[currentIndex + 1];
+          if (target) navigate({ to: target });
         } else if (e.key === "ArrowLeft" && currentIndex > 0) {
           e.preventDefault();
-          navigate({ to: TABS[currentIndex - 1] });
+          const target = TABS[currentIndex - 1];
+          if (target) navigate({ to: target });
         }
       }
     }

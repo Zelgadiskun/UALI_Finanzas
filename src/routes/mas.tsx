@@ -104,7 +104,7 @@ function Mas() {
     const list = (txQuery.data ?? []).map((t) => ({
       ...t,
       amount: Number(t.amount),
-      date: t.date || new Date().toISOString().split("T")[0],
+      date: t.date ? String(t.date) : new Date().toISOString().split("T")[0] || "2026-01-01",
     }));
     if (list.length === 0) {
       toast.info("No hay transacciones registradas para exportar aún.");

@@ -100,7 +100,7 @@ export async function detectNearbyPlaceWithMaps(
     };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env["GEMINI_API_KEY"];
   if (!apiKey) {
     return fallbackPlaceResult(latitude, longitude);
   }

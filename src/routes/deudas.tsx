@@ -888,7 +888,7 @@ function ReminderModal({
   onSave,
 }: {
   debt: DebtRow;
-  currentReminder?: DebtReminder;
+  currentReminder?: DebtReminder | undefined;
   onClose: () => void;
   onSave: (data: DebtReminder) => void;
 }) {

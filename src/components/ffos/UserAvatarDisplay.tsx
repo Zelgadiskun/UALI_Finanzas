@@ -8,11 +8,11 @@ import { useUserAvatar, type AvatarPreset } from "@/lib/ffos/avatar";
 import { cn } from "@/lib/utils";
 
 interface UserAvatarDisplayProps {
-  displayName?: string | null;
-  className?: string;
-  presetOverride?: AvatarPreset;
-  customPhotoOverride?: string | null;
-  size?: "sm" | "md" | "lg";
+  displayName?: string | null | undefined;
+  className?: string | undefined;
+  presetOverride?: AvatarPreset | undefined;
+  customPhotoOverride?: string | null | undefined;
+  size?: "sm" | "md" | "lg" | undefined;
 }
 
 export function UserAvatarDisplay({
