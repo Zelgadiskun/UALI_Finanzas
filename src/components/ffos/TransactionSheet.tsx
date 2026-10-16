@@ -141,7 +141,9 @@ export function TransactionSheet({ open, onClose, editing, defaultValues }: Prop
         toast.success("Movimiento actualizado");
       } else {
         const event = await addMutation.mutateAsync(payload);
-        toast.success("Movimiento guardado", { description: `+${event.xp} XP` });
+        toast.success("Movimiento guardado", {
+          description: `+${event.xp} XP • ¡Racha diaria al día! 🔥`,
+        });
         if (event.levelUp) toast.success("¡Subiste de nivel!");
         for (const a of event.newAchievements)
           toast.success("Logro desbloqueado", { description: a });

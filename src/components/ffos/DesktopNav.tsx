@@ -16,12 +16,17 @@ import {
   Moon,
   Sun,
   Bell,
+  Smartphone,
+  Tablet,
+  Monitor,
 } from "lucide-react";
 import { openGlobalTransactionSheet } from "@/lib/ffos/globalTxSheet";
 import { useBudgetsQuery, useTransactionsQuery, useProfileQuery } from "@/lib/supabase/queries";
 import { sameMonth } from "@/lib/ffos/format";
 import { applyTheme, getStoredTheme } from "@/lib/theme";
+import { useDeviceLayout } from "@/lib/ffos/deviceDetection";
 import { UserAvatarDisplay } from "./UserAvatarDisplay";
+import { DailyStreakBadge } from "./DailyStreakBadge";
 import { cn } from "@/lib/utils";
 
 interface DesktopNavProps {
@@ -35,6 +40,9 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => getStoredTheme() === "dark");
+
+  const { isTablet, isDesktop, layoutMode, setLayoutMode, detectedType, browserName } =
+    useDeviceLayout();
 
   const profile = useProfileQuery();
   const budgetsQuery = useBudgetsQuery();
@@ -151,7 +159,7 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
 
   return (
     <>
-      <header className="hidden md:block sticky top-0 z-40 w-full bg-card/90 dark:bg-[#0B1323]/95 backdrop-blur-md border-b border-border/80 shadow-xs transition-colors">
+      <header className="sticky top-0 z-40 w-full bg-card/90 dark:bg-[#0B1323]/95 backdrop-blur-md border-b border-border/80 shadow-xs transition-colors">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           {/* Marca y Logotipo UALÍ */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group outline-hidden">
@@ -164,6 +172,11 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
                 <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6] tracking-normal">
                   Finanzas
                 </span>
+                {isTablet && (
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                    Tablet
+                  </span>
+                )}
               </span>
               <span className="text-[11px] font-bold text-muted-foreground leading-tight mt-0.5">
                 Gestión inteligente y en equipo
@@ -223,8 +236,10 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
             </div>
           </nav>
 
-          {/* Acciones de Cabecera: Botón Crear Movimiento + Perfil */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Acciones de Cabecera: Racha Diaria + Botón Crear Movimiento + Perfil */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <DailyStreakBadge variant="badge" onOpenNewTx={handleNewTx} />
+
             <button
               type="button"
               onClick={handleNewTx}
@@ -379,8 +394,75 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
               })}
             </nav>
 
-            {/* Pie del Drawer con Toggle Modo Oscuro y Accesos Rápidos */}
-            <div className="p-4 border-t border-border/60 bg-secondary/30 space-y-2">
+            {/* Pie del Drawer con Selector de Dispositivo, Modo Oscuro y Accesos Rápidos */}
+            <div className="p-4 border-t border-border/60 bg-secondary/30 space-y-2.5">
+              {/* Selector de Pantalla / Dispositivo */}
+              <div className="p-2.5 rounded-2xl bg-card border border-border/70 space-y-1.5 shadow-2xs">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 font-black text-foreground text-[11px]">
+                    <Smartphone className="size-3.5 text-teal-400" />
+                    Modo de Pantalla
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-semibold">
+                    {browserName}:{" "}
+                    <strong className="text-foreground capitalize">{detectedType}</strong>
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1 p-1 bg-secondary/80 rounded-xl text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("auto")}
+                    className={cn(
+                      "py-1 px-1.5 rounded-lg transition-all text-center text-[10.5px]",
+                      layoutMode === "auto"
+                        ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Auto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("mobile")}
+                    className={cn(
+                      "py-1 px-1.5 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 text-[10.5px]",
+                      layoutMode === "mobile"
+                        ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Smartphone className="size-2.5" />
+                    Móvil
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("tablet")}
+                    className={cn(
+                      "py-1 px-1.5 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 text-[10.5px]",
+                      layoutMode === "tablet"
+                        ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Tablet className="size-2.5" />
+                    Tablet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("desktop")}
+                    className={cn(
+                      "py-1 px-1.5 rounded-lg transition-all text-center flex items-center justify-center gap-0.5 text-[10.5px]",
+                      layoutMode === "desktop"
+                        ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Monitor className="size-2.5" />
+                    PC
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-card border border-border/60">
                 <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                   {darkMode ? (

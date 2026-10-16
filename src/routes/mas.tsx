@@ -17,7 +17,11 @@ import {
   UserMinus,
   Users,
   Video,
+  Smartphone,
+  Tablet,
+  Monitor,
 } from "lucide-react";
+import { useDeviceLayout } from "@/lib/ffos/deviceDetection";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { FamilySheet } from "@/components/ffos/FamilySheet";
 import { GoalsSheet } from "@/components/ffos/GoalsSheet";
@@ -81,6 +85,7 @@ function Mas() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [darkMode, setDarkMode] = useState(() => getStoredTheme() === "dark");
+  const { layoutMode, setLayoutMode, detectedType, browserName } = useDeviceLayout();
   const info = levelInfo(progress?.xp ?? 0);
   const { unreadCount: smartUnreadCount } = useNotificationCenter();
   const { isPro, openPaywall, paywallOpen, closePaywall } = useSubscription();
@@ -413,6 +418,95 @@ function Mas() {
             </span>
           </span>
         </button>
+
+        {/* Selector de Modo de Pantalla y Dispositivo */}
+        <div className="w-full rounded-2xl border border-border bg-card p-4 shadow-card space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Smartphone className="size-5 text-[#2EC4B6]" strokeWidth={1.75} />
+              <div>
+                <span className="block text-sm font-bold text-foreground">Modo de pantalla</span>
+                <span className="block text-[12px] text-muted-foreground">
+                  Detectado: <strong className="text-foreground capitalize">{detectedType}</strong>{" "}
+                  ({browserName})
+                </span>
+              </div>
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-[#2EC4B6]">
+              {layoutMode === "auto" ? "Automático" : layoutMode}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-1 p-1 bg-secondary rounded-xl text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => {
+                setLayoutMode("auto");
+                toast.success("Modo automático: detecta según tu pantalla");
+              }}
+              className={cn(
+                "py-1.5 px-2 rounded-lg transition-all text-center",
+                layoutMode === "auto"
+                  ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Auto
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLayoutMode("mobile");
+                toast.success("Modo Móvil forzado (barra inferior táctil)");
+              }}
+              className={cn(
+                "py-1.5 px-2 rounded-lg transition-all text-center flex items-center justify-center gap-1",
+                layoutMode === "mobile"
+                  ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Smartphone className="size-3" />
+              Móvil
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLayoutMode("tablet");
+                toast.success("Modo Tablet activado (menú de hamburguesa)");
+              }}
+              className={cn(
+                "py-1.5 px-2 rounded-lg transition-all text-center flex items-center justify-center gap-1",
+                layoutMode === "tablet"
+                  ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Tablet className="size-3" />
+              Tablet
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLayoutMode("desktop");
+                toast.success("Modo Escritorio activado (barra superior)");
+              }}
+              className={cn(
+                "py-1.5 px-2 rounded-lg transition-all text-center flex items-center justify-center gap-1",
+                layoutMode === "desktop"
+                  ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Monitor className="size-3" />
+              PC
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Ideal si abres desde navegadores móviles como Brave o Safari con "Sitio de escritorio"
+            activo.
+          </p>
+        </div>
 
         <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
           <Moon className="size-5 text-accent" strokeWidth={1.75} aria-hidden="true" />

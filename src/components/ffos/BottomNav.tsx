@@ -12,6 +12,7 @@ import {
 import { openGlobalTransactionSheet } from "@/lib/ffos/globalTxSheet";
 import { useBudgetsQuery, useTransactionsQuery } from "@/lib/supabase/queries";
 import { sameMonth } from "@/lib/ffos/format";
+import { useDeviceLayout } from "@/lib/ffos/deviceDetection";
 import { cn } from "@/lib/utils";
 
 export type NavTabId = "inicio" | "movimientos" | "aprendizaje" | "presupuesto" | "deudas" | "mas";
@@ -32,6 +33,7 @@ export interface NavItemConfig {
 }
 
 export function BottomNav() {
+  const { isMobile } = useDeviceLayout();
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -168,10 +170,12 @@ export function BottomNav() {
     );
   }
 
+  if (!isMobile) return null;
+
   return (
     <nav
       aria-label="Navegación principal de la aplicación"
-      className="fixed bottom-0 left-0 right-0 z-40 w-full max-w-md mx-auto md:hidden
+      className="fixed bottom-0 left-0 right-0 z-40 w-full max-w-md mx-auto
                  bg-card/95 dark:bg-[#0B1323]/98 backdrop-blur-xl
                  border-t border-border/60 dark:border-[#1E293B]
                  shadow-lg shadow-black/20

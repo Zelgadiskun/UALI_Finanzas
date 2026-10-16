@@ -24,6 +24,8 @@ import { queryPersister } from "@/lib/query-persister";
 import { getStoredTheme } from "@/lib/theme";
 import { OfflineIndicator } from "@/components/ffos/OfflineIndicator";
 import { DesktopNav } from "@/components/ffos/DesktopNav";
+import { DeviceProvider, useDeviceLayout } from "@/lib/ffos/deviceDetection";
+import { cn } from "@/lib/utils";
 
 function NotFoundComponent() {
   return (
@@ -185,34 +187,27 @@ function RootComponent() {
   }, []);
 
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister: queryPersister,
-        maxAge: 1000 * 60 * 60 * 24,
-        // Sube este número cuando cambie la forma de los datos que devuelve
-        // alguna query (un campo nuevo, un rename) — sin esto, un caché
-        // persistido de antes del cambio sigue sirviendo la forma vieja
-        // hasta que expire por staleTime, en vez de refrescar en el próximo
-        // load. Así fue como `lessons.slug` quedó invisible en producción
-        // después de agregarlo: el caché de 1 hora seguía vivo.
-        buster: "2",
-      }}
-      // Un reload ya online no dispara el listener de reconexión de
-      // TanStack Query (ese solo reacciona a la transición offline->online),
-      // así que una mutación pausada y persistida antes de cerrar la PWA
-      // necesita este empujón explícito al restaurar.
-      onSuccess={() => queryClient.resumePausedMutations()}
-    >
-      <AppGate />
-      <Toaster position="top-center" richColors closeButton />
-    </PersistQueryClientProvider>
+    <DeviceProvider>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: queryPersister,
+          maxAge: 1000 * 60 * 60 * 24,
+          buster: "2",
+        }}
+        onSuccess={() => queryClient.resumePausedMutations()}
+      >
+        <AppGate />
+        <Toaster position="top-center" richColors closeButton />
+      </PersistQueryClientProvider>
+    </DeviceProvider>
   );
 }
 
 function AppGate() {
   const { session, loading } = useSession();
   const [globalTxOpen, setGlobalTxOpen] = useState(false);
+  const { isMobile } = useDeviceLayout();
   useSwipeNavigation();
   useGlobalTransactionSheet(() => setGlobalTxOpen(true));
 
@@ -233,12 +228,19 @@ function AppGate() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <DesktopNav onOpenNewTx={() => setGlobalTxOpen(true)} />
-      <div className="flex-1 w-full max-w-full md:max-w-4xl lg:max-w-6xl mx-auto pb-[calc(76px+env(safe-area-inset-bottom,0px))] md:pb-12 md:pt-4 transition-all">
+      {!isMobile && <DesktopNav onOpenNewTx={() => setGlobalTxOpen(true)} />}
+      <div
+        className={cn(
+          "flex-1 w-full mx-auto transition-all",
+          isMobile
+            ? "max-w-full pb-[calc(76px+env(safe-area-inset-bottom,0px))]"
+            : "max-w-4xl lg:max-w-6xl px-4 sm:px-6 pb-12 pt-3",
+        )}
+      >
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </div>
-      <BottomNav />
+      {isMobile && <BottomNav />}
       <OfflineIndicator />
       <TransactionSheet open={globalTxOpen} onClose={() => setGlobalTxOpen(false)} />
       <Celebration />

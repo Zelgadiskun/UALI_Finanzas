@@ -152,7 +152,7 @@ export function useAddTransactionMutation() {
           const newXp = currentXp + 10;
           addLocalXp(userId, 10);
           addExtraTokens(userId, 15);
-          setLocalStreak(userId, newStreak);
+          setLocalStreak(userId, newStreak, today);
           recordPointEvent(userId, {
             tokens: 15,
             xp: 10,

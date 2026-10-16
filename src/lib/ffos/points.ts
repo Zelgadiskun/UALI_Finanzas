@@ -55,6 +55,9 @@ export function addLocalXp(userId: string, amount: number): number {
   }
 }
 
+const BEST_STREAK_STORAGE_KEY = "uali_best_streak_v2";
+const LAST_STREAK_DATE_KEY = "uali_last_streak_date_v2";
+
 /**
  * Obtiene la racha guardada localmente para el usuario.
  */
@@ -69,13 +72,61 @@ export function getLocalStreak(userId?: string | null): number {
 }
 
 /**
- * Actualiza la racha guardada localmente.
+ * Obtiene la mejor racha histórica del usuario.
  */
-export function setLocalStreak(userId: string, streak: number): number {
+export function getBestStreak(userId?: string | null): number {
+  if (typeof window === "undefined" || !userId) return 1;
+  try {
+    const raw = localStorage.getItem(`${BEST_STREAK_STORAGE_KEY}_${userId}`);
+    const localBest = raw ? parseInt(raw, 10) || 1 : 1;
+    const current = getLocalStreak(userId);
+    return Math.max(localBest, current);
+  } catch {
+    return 1;
+  }
+}
+
+/**
+ * Obtiene la fecha del último registro de racha del usuario (formato YYYY-MM-DD).
+ */
+export function getLastStreakDate(userId?: string | null): string | null {
+  if (typeof window === "undefined" || !userId) return null;
+  try {
+    return localStorage.getItem(`${LAST_STREAK_DATE_KEY}_${userId}`);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Actualiza la racha guardada localmente y despacha el evento uali-streak-updated.
+ */
+export function setLocalStreak(userId: string, streak: number, dateStr?: string): number {
   if (typeof window === "undefined" || !userId) return 1;
   try {
     const val = Math.max(1, streak);
     localStorage.setItem(`${LOCAL_STREAK_STORAGE_KEY}_${userId}`, val.toString());
+
+    const prevBest = getBestStreak(userId);
+    const newBest = Math.max(prevBest, val);
+    localStorage.setItem(`${BEST_STREAK_STORAGE_KEY}_${userId}`, newBest.toString());
+
+    const effectiveDate = dateStr || new Date().toISOString().slice(0, 10);
+    localStorage.setItem(`${LAST_STREAK_DATE_KEY}_${userId}`, effectiveDate);
+
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("uali-streak-updated", {
+          detail: {
+            userId,
+            streak: val,
+            bestStreak: newBest,
+            date: effectiveDate,
+            isNewTransaction: true,
+          },
+        }),
+      );
+    }, 0);
     return val;
   } catch {
     return 1;
@@ -201,6 +252,7 @@ export function useUserPoints(): {
   userId: string | null;
   xp: number;
   streak: number;
+  bestStreak: number;
   levelData: LevelInfo;
   ffosTokens: number;
   pointsHistory: PointEvent[];
@@ -221,12 +273,16 @@ export function useUserPoints(): {
   const dbStreak = progress?.streak ?? 1;
 
   const [localXp, setLocalXp] = useState<number>(() => getLocalXp(userId));
+  const [localStreak, setLocalStreakState] = useState<number>(() => getLocalStreak(userId));
+  const [bestStreak, setBestStreakState] = useState<number>(() => getBestStreak(userId));
   const [extraTokens, setExtraTokens] = useState<number>(() => getExtraTokens(userId));
   const [pointsHistory, setPointsHistory] = useState<PointEvent[]>(() => getPointsHistory(userId));
 
   useEffect(() => {
     if (!userId) return;
     setLocalXp(getLocalXp(userId));
+    setLocalStreakState(getLocalStreak(userId));
+    setBestStreakState(getBestStreak(userId));
     setExtraTokens(getExtraTokens(userId));
     setPointsHistory(getPointsHistory(userId));
 
@@ -251,20 +307,37 @@ export function useUserPoints(): {
       }
     };
 
+    const handleStreakUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        userId: string;
+        streak: number;
+        bestStreak?: number;
+      }>;
+      if (customEvent.detail?.userId === userId) {
+        setLocalStreakState(customEvent.detail.streak);
+        if (customEvent.detail.bestStreak) {
+          setBestStreakState(customEvent.detail.bestStreak);
+        }
+      }
+    };
+
     window.addEventListener("uali-tokens-updated", handleTokensUpdate);
     window.addEventListener("uali-xp-updated", handleXpUpdate);
     window.addEventListener("uali-points-history-updated", handleHistoryUpdate);
+    window.addEventListener("uali-streak-updated", handleStreakUpdate);
 
     return () => {
       window.removeEventListener("uali-tokens-updated", handleTokensUpdate);
       window.removeEventListener("uali-xp-updated", handleXpUpdate);
       window.removeEventListener("uali-points-history-updated", handleHistoryUpdate);
+      window.removeEventListener("uali-streak-updated", handleStreakUpdate);
     };
   }, [userId]);
 
   // El XP efectivo es el mayor entre la base de datos y el acumulado local resiliente
   const effectiveXp = Math.max(dbXp, localXp);
-  const effectiveStreak = Math.max(dbStreak, getLocalStreak(userId));
+  const effectiveStreak = Math.max(dbStreak, localStreak);
+  const effectiveBestStreak = Math.max(effectiveStreak, bestStreak);
 
   const totalTokens = calculateFfosTokens(effectiveXp, effectiveStreak, extraTokens);
   const levelData = levelInfo(effectiveXp);
@@ -378,6 +451,7 @@ export function useUserPoints(): {
     userId,
     xp: effectiveXp,
     streak: effectiveStreak,
+    bestStreak: effectiveBestStreak,
     levelData,
     ffosTokens: totalTokens,
     pointsHistory,

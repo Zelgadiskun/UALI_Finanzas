@@ -20,12 +20,8 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import {
-  ChispaCharacter,
-  NidoCharacter,
-  TotoCharacter,
-} from "@/components/ffos/characters/Characters";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
+import { DailyStreakBadge } from "@/components/ffos/DailyStreakBadge";
 import { LessonSheet } from "@/components/ffos/LessonSheet";
 import { TutorialModal, isTutorialCompleted } from "@/components/ffos/TutorialModal";
 import { DashboardSkeleton } from "@/components/ffos/Skeletons";
@@ -511,23 +507,20 @@ export function Inicio() {
               <span>Tour</span>
             </button>
 
-            {/* Badge Unificado: Racha & Puntos FFOS */}
+            {/* Visual Badge: Racha Diaria con reacción en tiempo real */}
+            <DailyStreakBadge variant="compact" onOpenNewTx={() => setTxSheetOpen(true)} />
+
+            {/* Badge de Puntos FFOS */}
             <button
               type="button"
               onClick={() => setProgressOpen(true)}
-              className="flex items-center h-9 px-2.5 rounded-xl bg-card border border-amber-500/40 text-amber-300 font-black text-xs shadow-xs transition active:scale-95 divide-x divide-amber-500/30"
-              title="Tu racha diaria y puntos FFOS"
+              className="flex items-center gap-1.5 h-9 px-2.5 rounded-xl bg-card border border-amber-500/40 text-amber-300 font-black text-xs shadow-xs transition active:scale-95"
+              title="Tus puntos FFOS y progreso"
             >
-              <span className="flex items-center gap-1 pr-2">
-                <Flame className="size-4 fill-amber-400 text-amber-400" />
-                <span>{progress.streak}d</span>
+              <span className="size-4 rounded-full bg-[#F6BE22] flex items-center justify-center text-[10px] text-slate-900 font-black">
+                F
               </span>
-              <span className="flex items-center gap-1.5 pl-2">
-                <span className="size-4 rounded-full bg-[#F6BE22] flex items-center justify-center text-[10px] text-slate-900 font-black">
-                  F
-                </span>
-                <span>{ffosTokens}</span>
-              </span>
+              <span>{ffosTokens}</span>
             </button>
           </div>
         </div>
@@ -810,24 +803,21 @@ export function Inicio() {
           </Link>
         </div>
 
-        {/* Fila de 3 Guardianes en Miniatura (Micro-Pestañas Interactivas) */}
-        <div className="grid grid-cols-3 gap-1.5 p-1 bg-secondary/60 rounded-2xl border border-border/70 mb-2">
+        {/* Fila de 3 Guardianes Ultra-Compacta (Pestañas de datos directos, sin robar espacio) */}
+        <div className="grid grid-cols-3 gap-1.5 p-1 bg-secondary/60 rounded-xl border border-border/70 mb-2">
           {/* Nido */}
           <button
             type="button"
             onClick={() => setGuardianTab("nido")}
             className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all text-xs font-bold",
+              "flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-lg transition-all text-xs font-bold",
               guardianTab === "nido"
                 ? "bg-[#00897B] text-white shadow-xs font-black"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="text-sm">🐷</span>
-            <div className="text-left leading-none min-w-0">
-              <span className="block text-[10px] uppercase font-black truncate">Nido</span>
-              <span className="text-[9px] opacity-90">{savingsPct}%</span>
-            </div>
+            <span className="text-xs">🐷</span>
+            <span className="text-[11px] font-black truncate">Ahorro ({savingsPct}%)</span>
           </button>
 
           {/* Chispa */}
@@ -835,17 +825,16 @@ export function Inicio() {
             type="button"
             onClick={() => setGuardianTab("chispa")}
             className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all text-xs font-bold",
+              "flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-lg transition-all text-xs font-bold",
               guardianTab === "chispa"
                 ? "bg-[#592E8E] text-white shadow-xs font-black"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="text-sm">📐</span>
-            <div className="text-left leading-none min-w-0">
-              <span className="block text-[10px] uppercase font-black truncate">Chispa</span>
-              <span className="text-[9px] opacity-90">Nv.{level}</span>
-            </div>
+            <span className="text-xs">📐</span>
+            <span className="text-[11px] font-black truncate">
+              Nv.{level} ({xpProgressPct}%)
+            </span>
           </button>
 
           {/* Toto */}
@@ -853,160 +842,249 @@ export function Inicio() {
             type="button"
             onClick={() => setGuardianTab("toto")}
             className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all text-xs font-bold",
+              "flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-lg transition-all text-xs font-bold",
               guardianTab === "toto"
                 ? "bg-[#1E52B7] text-white shadow-xs font-black"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="text-sm">🪙</span>
-            <div className="text-left leading-none min-w-0">
-              <span className="block text-[10px] uppercase font-black truncate">Toto</span>
-              <span className="text-[9px] opacity-90">Misión</span>
-            </div>
+            <span className="text-xs">🪙</span>
+            <span className="text-[11px] font-black truncate">
+              Misión ({nextLessonSubProg ? `${nextLessonSubProg.completedCount}/3` : "1/3"})
+            </span>
           </button>
         </div>
 
-        {/* Tarjeta Detallada Activa del Guardián Seleccionado */}
+        {/* Tarjeta Detallada Activa: Máxima Prioridad a la Información Financiera y de Progreso */}
         {guardianTab === "nido" && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#00897B] to-[#006D62] p-4 text-white border border-[#14A898]/80 shadow-card animate-in fade-in duration-200">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="w-7/12 pr-2">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-200">
-                    Nido • Guardián de Ahorro
+          <div className="rounded-2xl bg-gradient-to-r from-[#00897B] to-[#006D62] p-3.5 text-white border border-[#14A898]/80 shadow-card animate-in fade-in duration-200">
+            <div className="w-full space-y-2">
+              {/* Cabecera: Micro-insignia y Números Clave de Ahorro */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="size-6 rounded-lg bg-black/25 border border-white/20 flex items-center justify-center text-xs shrink-0 shadow-inner">
+                    🐷
                   </span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-teal-950/60 text-emerald-300 border border-teal-400/30">
-                    {savingsPct}%
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-200 block truncate">
+                      Fondo de Ahorro • Nido
+                    </span>
+                    <h3 className="text-xs font-bold text-white truncate">Meta de Respaldo</h3>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <div className="flex items-baseline gap-1 justify-end">
+                    <span className="text-sm font-black text-white">{money(savingsCurrent)}</span>
+                    <span className="text-[10px] text-teal-200/90 font-bold">
+                      / {money(savingsGoal)}
+                    </span>
+                  </div>
+                  <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-black bg-teal-950/70 text-emerald-300 border border-teal-400/30">
+                    {savingsPct}% completado
                   </span>
                 </div>
-                <h3 className="text-base font-black text-white leading-tight">
-                  Fondo de Emergencia
-                </h3>
-                <p className="text-xs font-semibold text-teal-100/90 mb-2">
-                  Meta: {money(savingsGoal)}
-                </p>
-                {/* Barra de progreso */}
-                <div className="w-full bg-[#004D45] h-2.5 rounded-full overflow-hidden p-0.5 border border-teal-300/40">
+              </div>
+
+              {/* Barra de progreso nítida y datos de faltante */}
+              <div className="space-y-1">
+                <div className="w-full bg-[#004D45] h-2 rounded-full overflow-hidden p-0.5 border border-teal-300/40">
                   <div
                     className="bg-gradient-to-r from-emerald-300 to-teal-200 h-full rounded-full transition-all duration-500"
                     style={{ width: `${savingsPct}%` }}
                   />
                 </div>
-                <div className="flex justify-between items-center mt-1.5 font-sans">
-                  <span className="text-xs font-black text-amber-200">{money(savingsCurrent)}</span>
-                  <span className="text-xs font-black text-emerald-200">{savingsPct}%</span>
-                </div>
-                <div className="flex items-center gap-2 mt-2.5">
-                  <button
-                    type="button"
-                    onClick={handleAportarNido}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-xl shadow-xs transition active:scale-95",
-                      pigShieldPulse && "ring-2 ring-emerald-400 animate-pulse",
-                    )}
-                  >
-                    <Plus className="size-3.5 stroke-[3]" />
-                    <span>Aportar ahora</span>
-                  </button>
-                  <Link to="/ahorro" className="text-xs text-teal-100/90 font-bold hover:underline">
-                    Ver metas →
-                  </Link>
+                <div className="flex justify-between items-center text-xs font-sans">
+                  <span className="text-[11px] text-teal-100 font-medium">
+                    Faltan{" "}
+                    <strong className="text-amber-200 font-black">
+                      {money(Math.max(0, savingsGoal - savingsCurrent))}
+                    </strong>
+                  </span>
+                  <span className="text-[10px] text-teal-200 font-semibold">
+                    {savingsPct >= 100
+                      ? "¡Meta lista!"
+                      : `${Math.max(0, 100 - savingsPct)}% restante`}
+                  </span>
                 </div>
               </div>
-              <div className="w-5/12 flex justify-center items-center">
-                <NidoCharacter className="w-20 h-20" />
+
+              {/* Acciones directas compactas */}
+              <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={handleAportarNido}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-lg shadow-xs transition active:scale-95 cursor-pointer",
+                    pigShieldPulse && "ring-2 ring-emerald-400 animate-pulse",
+                  )}
+                >
+                  <Plus className="size-3 stroke-[3]" />
+                  <span>Aportar ahora</span>
+                </button>
+                <Link
+                  to="/ahorro"
+                  className="text-xs text-teal-100 hover:text-white font-bold flex items-center gap-0.5 transition"
+                >
+                  <span>Ver todas las metas</span>
+                  <ChevronRight className="size-3" />
+                </Link>
               </div>
             </div>
           </div>
         )}
 
         {guardianTab === "chispa" && (
-          <Link
-            to="/aprender"
-            className="block relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#592E8E] to-[#452270] p-4 text-white border border-[#7A40C2]/80 shadow-card animate-in fade-in duration-200 transition active:scale-[0.99]"
-          >
-            <div className="flex items-center justify-between relative z-10">
-              <div className="w-7/12 pr-2">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-200">
-                    Chispa • Nivel y Logros
+          <div className="rounded-2xl bg-gradient-to-r from-[#592E8E] to-[#452270] p-3.5 text-white border border-[#7A40C2]/80 shadow-card animate-in fade-in duration-200">
+            <div className="w-full space-y-2">
+              {/* Cabecera: Micro-insignia y Números Clave de Nivel */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="size-6 rounded-lg bg-black/25 border border-white/20 flex items-center justify-center text-xs shrink-0 shadow-inner">
+                    📐
                   </span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-purple-950/60 text-amber-300 border border-purple-400/30">
-                    Nivel {level}
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-purple-200 block truncate">
+                      Nivel & Gamificación • Chispa
+                    </span>
+                    <h3 className="text-xs font-bold text-white truncate">Experiencia Acumulada</h3>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-sm font-black text-amber-300">Nivel {level}</span>
+                  <span className="block text-[10px] text-purple-200 font-bold">
+                    {xpCurrent} / {xpLevelCap} XP
                   </span>
                 </div>
-                <h3 className="text-base font-black text-white leading-tight mb-2">
-                  ¡Subiendo de Nivel!
-                </h3>
-                {/* Barra de XP */}
-                <div className="w-full bg-[#341558] h-2.5 rounded-full overflow-hidden p-0.5 border border-purple-400/40">
+              </div>
+
+              {/* Barra de XP y faltante para subir de nivel */}
+              <div className="space-y-1">
+                <div className="w-full bg-[#341558] h-2 rounded-full overflow-hidden p-0.5 border border-purple-400/40">
                   <div
                     className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500"
                     style={{ width: `${xpProgressPct}%` }}
                   />
                 </div>
-                <div className="flex justify-between items-center mt-1.5 font-sans">
-                  <span className="text-xs font-black text-amber-300">+{xpInLevel} XP</span>
-                  <span className="text-xs font-bold text-purple-200">
-                    {xpCurrent} / {xpLevelCap} XP
+                <div className="flex justify-between items-center text-xs font-sans">
+                  <span className="text-[11px] text-purple-200 font-medium">
+                    Progreso:{" "}
+                    <strong className="text-amber-300 font-black">{xpProgressPct}%</strong>
                   </span>
-                </div>
-                <div className="mt-2.5">
-                  <span className="text-xs font-bold text-purple-200 hover:text-white transition">
-                    Ver mapa de aprendizaje →
+                  <span className="text-[11px] text-purple-100 font-semibold">
+                    Faltan {Math.max(0, xpLevelCap - xpCurrent)} XP para Nv.{level + 1}
                   </span>
                 </div>
               </div>
-              <div className="w-5/12 flex justify-center items-center">
-                <ChispaCharacter className="w-20 h-20" />
+
+              {/* Acción directa */}
+              <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                <span className="text-[11px] text-purple-200 font-medium">
+                  +{xpInLevel} XP ganados en este nivel
+                </span>
+                <Link
+                  to="/aprender"
+                  className="text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-0.5 transition"
+                >
+                  <span>Ver mapa de aprendizaje</span>
+                  <ChevronRight className="size-3" />
+                </Link>
               </div>
             </div>
-          </Link>
+          </div>
         )}
 
         {guardianTab === "toto" && (
-          <article className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1E52B7] to-[#153D8C] p-4 text-white border border-[#2D6BE4]/80 shadow-card animate-in fade-in duration-200">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="w-7/12 pr-2">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-sky-200">
-                    {nextLessonSubProg && nextLessonSubProg.completedCount > 0
-                      ? `SUBMÓDULO ${Math.min(3, nextLessonSubProg.completedCount + 1)} DE 3`
-                      : "TOTO • LECCIÓN ACTIVA"}
+          <div className="rounded-2xl bg-gradient-to-r from-[#1E52B7] to-[#153D8C] p-3.5 text-white border border-[#2D6BE4]/80 shadow-card animate-in fade-in duration-200">
+            <div className="w-full space-y-2">
+              {/* Cabecera: Micro-insignia y Datos de la Lección */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="size-6 rounded-lg bg-black/25 border border-white/20 flex items-center justify-center text-xs shrink-0 shadow-inner">
+                    🪙
                   </span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-blue-950/60 text-amber-300 border border-blue-400/30">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-sky-200 block truncate">
+                      {nextLessonSubProg && nextLessonSubProg.completedCount > 0
+                        ? `PASO ${Math.min(3, nextLessonSubProg.completedCount + 1)} DE 3 • TOTO`
+                        : "LECCIÓN ACTIVA • TOTO"}
+                    </span>
+                    <h3 className="text-xs font-bold text-white leading-tight truncate">
+                      {nextLesson?.title ?? "Presupuesto 0-base"}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-blue-950/70 text-amber-300 border border-blue-400/30">
                     +50 FFOS
                   </span>
+                  <span className="block text-[10px] text-sky-200 font-bold mt-0.5">
+                    {nextLessonSubProg ? `${nextLessonSubProg.completedCount}/3 listos` : "Paso 1"}
+                  </span>
                 </div>
-                <h3 className="text-base font-black text-white leading-snug mb-1">
-                  {nextLesson?.title ?? "Presupuesto 0-base"}
-                </h3>
-                <p className="text-xs text-sky-200 font-semibold mb-2.5">
-                  {nextLessonSubProg
-                    ? `${nextLessonSubProg.completedCount}/3 submódulos completados`
-                    : "Decisiones financieras"}
-                </p>
+              </div>
+
+              {/* Indicadores de submódulos en 3 segmentos */}
+              <div className="space-y-1">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[0, 1, 2].map((stepIdx) => {
+                    const completed =
+                      nextLessonSubProg && nextLessonSubProg.completedCount > stepIdx;
+                    return (
+                      <div
+                        key={stepIdx}
+                        className={cn(
+                          "h-1.5 rounded-full border transition-all",
+                          completed
+                            ? "bg-amber-300 border-amber-300"
+                            : stepIdx === (nextLessonSubProg?.completedCount ?? 0)
+                              ? "bg-sky-400/70 border-sky-300"
+                              : "bg-blue-950/80 border-blue-400/30",
+                        )}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between items-center text-xs font-sans">
+                  <span className="text-[11px] text-sky-200 font-medium">
+                    {nextLessonSubProg
+                      ? `${nextLessonSubProg.completedCount} de 3 submódulos completados`
+                      : "Lección guiada paso a paso"}
+                  </span>
+                  <span className="text-[11px] font-black text-amber-300">
+                    Recompensa: +50 FFOS
+                  </span>
+                </div>
+              </div>
+
+              {/* Botón de acción */}
+              <div className="flex items-center justify-between pt-1 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => {
                     if (nextLesson) setOpenLesson({ lesson: nextLesson, done: false });
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-xl shadow-xs transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-lg shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <span>
                     {nextLessonSubProg && nextLessonSubProg.completedCount > 0
                       ? `Continuar (Paso ${Math.min(3, nextLessonSubProg.completedCount + 1)})`
                       : "Aprender lección"}
                   </span>
-                  <ChevronRight className="size-3.5" />
+                  <ChevronRight className="size-3" />
                 </button>
-              </div>
-              <div className="w-5/12 flex justify-center items-center">
-                <TotoCharacter className="w-20 h-20" />
+                <Link
+                  to="/aprender"
+                  className="text-xs text-sky-200 hover:text-white font-bold flex items-center gap-0.5 transition"
+                >
+                  <span>Ver todas</span>
+                  <ChevronRight className="size-3" />
+                </Link>
               </div>
             </div>
-          </article>
+          </div>
         )}
       </section>
 

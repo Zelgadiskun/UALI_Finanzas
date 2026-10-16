@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { NidoCharacter } from "@/components/ffos/characters/Characters";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
+import { DailyStreakBadge, DailyStreakCard } from "@/components/ffos/DailyStreakBadge";
 import { SmartBudgetAssistantModal } from "@/components/ffos/SmartBudgetAssistantModal";
 import { TutorialModal } from "@/components/ffos/TutorialModal";
 import { BudgetAccordion } from "@/components/ffos/BudgetAccordion";
@@ -518,6 +519,9 @@ function PresupuestoRoute() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Badge de Racha Diaria con reacción en tiempo real */}
+          <DailyStreakBadge variant="compact" onOpenNewTx={() => setTxSheetOpen(true)} />
+
           {/* Menú de Herramientas del Presupuesto (Despeja la cabecera eliminando solapamiento) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -821,6 +825,11 @@ function PresupuestoRoute() {
             )}
           </div>
         </div>
+      </section>
+
+      {/* 2.5 HÁBITO Y RACHA DE CONTROL PRESUPUESTARIO */}
+      <section>
+        <DailyStreakCard onOpenNewTx={() => setTxSheetOpen(true)} />
       </section>
 
       {/* 3. SELECTOR DE FLUJO COMPACTO (Todos | Solo Míos | En Equipo) */}
