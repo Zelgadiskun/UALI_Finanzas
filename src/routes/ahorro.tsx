@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { NidoCharacter, TotoCharacter } from "@/components/ffos/characters/Characters";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
+import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
+import { evaluateMathExpression } from "@/lib/ffos/calculator";
 import { money } from "@/lib/ffos/format";
 import { levelInfo } from "@/lib/ffos/gamification";
 import { useUserPoints } from "@/lib/ffos/points";
@@ -122,7 +124,8 @@ export function AhorroRoute() {
   const secondaryPct = Math.min(100, Math.round((secondarySaved / secondaryTarget) * 100));
 
   async function handleCreateGoal() {
-    const targetVal = Number(newGoalTarget.replace(",", "."));
+    const mathVal = evaluateMathExpression(newGoalTarget);
+    const targetVal = mathVal !== null ? mathVal : Number(newGoalTarget.replace(",", "."));
     if (!newGoalName.trim() || !targetVal || targetVal <= 0) {
       toast.error("Completá el nombre y una meta mayor a 0.");
       return;
@@ -479,18 +482,13 @@ export function AhorroRoute() {
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Monto objetivo ($ USD)
-                </label>
-                <input
-                  inputMode="decimal"
-                  value={newGoalTarget}
-                  onChange={(e) => setNewGoalTarget(e.target.value.replace(/[^\d.,]/g, ""))}
-                  placeholder="0.00"
-                  className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
-                />
-              </div>
+              <MoneyCalculatorInput
+                label="Monto objetivo ($ USD)"
+                value={newGoalTarget}
+                onChange={setNewGoalTarget}
+                placeholder="0.00"
+                helperText="Puedes calcular operaciones matemáticas directamente."
+              />
 
               <button
                 type="button"

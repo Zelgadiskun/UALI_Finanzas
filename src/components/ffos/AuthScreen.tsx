@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from "@/lib/supabase/auth";
+import { Sparkles } from "lucide-react";
+import {
+  signIn,
+  signUp,
+  signInWithGoogle,
+  resetPasswordForEmail,
+  signInAsGuest,
+} from "@/lib/supabase/auth";
 import { cn } from "@/lib/utils";
 
 type Mode = "login" | "register" | "forgot";
@@ -160,6 +167,18 @@ export function AuthScreen() {
               >
                 <GoogleMark />
                 <span>Continuar con Google</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  signInAsGuest();
+                  toast.success("Ingresaste en Modo Demostración.");
+                }}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-teal-500/40 bg-teal-500/10 text-xs font-bold text-teal-300 hover:bg-teal-500/20 transition-all active:scale-[0.99] cursor-pointer"
+              >
+                <Sparkles className="size-4 text-amber-400" />
+                <span>Explorar en Modo Demo (sin cuenta)</span>
               </button>
             </>
           )}

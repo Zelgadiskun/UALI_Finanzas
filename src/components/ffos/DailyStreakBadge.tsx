@@ -61,7 +61,7 @@ interface DailyStreakBadgeProps {
 /**
  * Hook para calcular los datos de racha semanal y si el usuario ha registrado hoy.
  */
-export function useDailyStreakData() {
+function useDailyStreakData() {
   const { userId, streak, bestStreak, ffosTokens } = useUserPoints();
   const txQuery = useTransactionsQuery(userId);
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);

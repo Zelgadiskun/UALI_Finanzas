@@ -23,6 +23,7 @@ import {
   ChispaCharacter,
 } from "@/components/ffos/characters/Characters";
 import { TutorialModal } from "@/components/ffos/TutorialModal";
+import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
 import { useSetBudgetsBulkMutation } from "@/lib/supabase/mutations";
 import { useUserPoints } from "@/lib/ffos/points";
 import { money } from "@/lib/ffos/format";
@@ -217,21 +218,12 @@ export function SmartBudgetAssistantModal({
               </span>
             </div>
 
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-black text-muted-foreground">
-                $
-              </span>
-              <input
-                id="income-input"
-                type="number"
-                min="0"
-                step="50"
-                value={income}
-                onChange={(e) => handleIncomeChange(e.target.value)}
-                className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-background border border-border/80 text-lg font-black text-foreground focus:outline-none focus:border-teal-500 transition"
-                placeholder="1500.00"
-              />
-            </div>
+            <MoneyCalculatorInput
+              value={income}
+              onChange={handleIncomeChange}
+              placeholder="1500.00"
+              size="md"
+            />
           </div>
 
           {/* 2. Selector de estrategia / plantilla */}

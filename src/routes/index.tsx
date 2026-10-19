@@ -182,7 +182,7 @@ export function Inicio() {
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, []);
+  }, [notifSettings.masterEnabled, notifSettings.locationRadarEnabled, triggerLocationScan]);
 
   useEffect(() => {
     if (!isTutorialCompleted()) {

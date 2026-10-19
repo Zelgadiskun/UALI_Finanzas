@@ -30,6 +30,8 @@ import {
 import { NidoCharacter } from "@/components/ffos/characters/Characters";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
 import { DailyStreakBadge, DailyStreakCard } from "@/components/ffos/DailyStreakBadge";
+import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
+import { evaluateMathExpression } from "@/lib/ffos/calculator";
 import { SmartBudgetAssistantModal } from "@/components/ffos/SmartBudgetAssistantModal";
 import { TutorialModal } from "@/components/ffos/TutorialModal";
 import { BudgetAccordion } from "@/components/ffos/BudgetAccordion";
@@ -449,7 +451,8 @@ function PresupuestoRoute() {
   );
 
   async function handleSaveBudget() {
-    const val = Number(newBudgetPlanned.replace(",", "."));
+    const mathVal = evaluateMathExpression(newBudgetPlanned);
+    const val = mathVal !== null ? mathVal : Number(newBudgetPlanned.replace(",", "."));
     if (!newBudgetName.trim() || !val || val <= 0) {
       toast.error("Completá el nombre y un cupo mayor a 0.");
       return;
@@ -473,8 +476,10 @@ function PresupuestoRoute() {
   }
 
   function handleApplyCompensation() {
+    const mathVal = evaluateMathExpression(compensationAmount);
+    const amountNum = mathVal !== null ? mathVal : Number(compensationAmount) || 115;
     toast.success("¡Presupuesto reequilibrado!", {
-      description: `Se compensaron ${money(Number(compensationAmount) || 115)} desde el fondo de Nido ${
+      description: `Se compensaron ${money(amountNum)} desde el fondo de Nido ${
         compensationPrivate ? "(modo discreto)" : "(notificado a tu equipo)"
       }.`,
     });
@@ -1022,25 +1027,15 @@ function PresupuestoRoute() {
               </span>
             </div>
 
-            {/* Transfer from Nido Option */}
+            {/* Transfer from Nido Option con Calculadora Integrada */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-foreground">
-                Compensar desde Ahorro Protegido Nido
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-teal-400">
-                  $
-                </span>
-                <input
-                  type="number"
-                  value={compensationAmount}
-                  onChange={(e) => setCompensationAmount(e.target.value)}
-                  className="w-full h-11 pl-8 pr-3 rounded-xl bg-background border border-border/80 text-foreground text-base font-extrabold focus:outline-none focus:border-teal-400"
-                />
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                Saldo disponible en Nido: {money(totalNidoSaved > 0 ? totalNidoSaved : 250)}
-              </span>
+              <MoneyCalculatorInput
+                label="Compensar desde Ahorro Protegido Nido"
+                value={compensationAmount}
+                onChange={setCompensationAmount}
+                placeholder="115.00"
+                helperText={`Saldo disponible en Nido: ${money(totalNidoSaved > 0 ? totalNidoSaved : 250)}`}
+              />
             </div>
 
             {/* Privacy Toggle Selector */}
@@ -1231,29 +1226,14 @@ function PresupuestoRoute() {
               />
             </div>
 
-            {/* Monto Límite Mensual */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                <span>Monto Límite Mensual</span>
-                <span className="text-[10px] text-muted-foreground font-semibold">USD</span>
-              </label>
-              <div className="relative bg-secondary/80 border border-border/80 rounded-2xl text-foreground font-bold p-3 flex items-center justify-between shadow-inner focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/20 transition-all">
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-2xl font-black text-teal-400">$</span>
-                  <input
-                    inputMode="decimal"
-                    value={newBudgetPlanned}
-                    onChange={(e) => setNewBudgetPlanned(e.target.value.replace(/[^\d.,]/g, ""))}
-                    placeholder="250.00"
-                    className="w-full bg-transparent border-none text-2xl font-black text-foreground placeholder:text-muted-foreground focus:outline-none p-0 tracking-tight"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 bg-card border border-border/80 px-2.5 py-1 rounded-xl">
-                  <span className="text-[11px] font-bold text-slate-300">USD</span>
-                  <span className="size-1.5 rounded-full bg-emerald-400" />
-                </div>
-              </div>
-            </div>
+            {/* Monto Límite Mensual con Calculadora Integrada */}
+            <MoneyCalculatorInput
+              label="Monto Límite Mensual"
+              value={newBudgetPlanned}
+              onChange={setNewBudgetPlanned}
+              placeholder="250.00"
+              helperText="Escribe una operación (ej: 50*4 o 300/2) y calcula al instante."
+            />
 
             {/* Nivel de Privacidad */}
             <div className="bg-secondary/60 border border-border/80 rounded-2xl p-3.5 flex flex-col gap-3">

@@ -121,14 +121,16 @@ export function PhaseTransitionRitual({ type, onComplete, onClose }: PhaseTransi
   const userId = useCurrentUserId();
   const [step, setStep] = useState<"greeting" | "transfer" | "evolution">("greeting");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const playedMountSound = useRef(false);
 
   useEffect(() => {
-    if (soundEnabled) {
+    if (soundEnabled && !playedMountSound.current) {
+      playedMountSound.current = true;
       if (type === "phase1_to_2") playRitualGong();
       else if (type === "phase2_to_3") playElectricSurge();
       else playQuantumHarmonic();
     }
-  }, [type]);
+  }, [type, soundEnabled]);
 
   function handleFinalizeRitual() {
     const phaseNum = type === "phase1_to_2" ? 1 : type === "phase2_to_3" ? 2 : 3;

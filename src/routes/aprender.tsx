@@ -139,9 +139,18 @@ export function AprenderRoute() {
   const completedSet = useMemo(() => new Set(lessonsDone), [lessonsDone]);
 
   // Chequeo de ejecución de rituales por fase asociado a User_ID
-  const isPhase1RitualDone = useMemo(() => isRitualDone(1), [isRitualDone, ritualUpdateTick]);
-  const isPhase2RitualDone = useMemo(() => isRitualDone(2), [isRitualDone, ritualUpdateTick]);
-  const isPhase3RitualDone = useMemo(() => isRitualDone(3), [isRitualDone, ritualUpdateTick]);
+  const isPhase1RitualDone = useMemo(() => {
+    void ritualUpdateTick;
+    return isRitualDone(1);
+  }, [isRitualDone, ritualUpdateTick]);
+  const isPhase2RitualDone = useMemo(() => {
+    void ritualUpdateTick;
+    return isRitualDone(2);
+  }, [isRitualDone, ritualUpdateTick]);
+  const isPhase3RitualDone = useMemo(() => {
+    void ritualUpdateTick;
+    return isRitualDone(3);
+  }, [isRitualDone, ritualUpdateTick]);
 
   const { ffosTokens, xp: xpCurrent, streak, levelData, awardPoints } = useUserPoints();
 

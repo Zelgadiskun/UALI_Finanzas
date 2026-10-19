@@ -24,6 +24,8 @@ import { CATEGORIES, TX_TYPES, type Transaction, type TxType } from "@/lib/ffos/
 import { todayISO } from "@/lib/ffos/format";
 import { useAddTransactionMutation, useUpdateTransactionMutation } from "@/lib/supabase/mutations";
 import { useDebtsQuery, useGoalsQuery, useProfileQuery } from "@/lib/supabase/queries";
+import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
+import { evaluateMathExpression } from "@/lib/ffos/calculator";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -116,7 +118,8 @@ export function TransactionSheet({ open, onClose, editing, defaultValues }: Prop
   }
 
   async function submit() {
-    const value = Number(amount.replace(",", "."));
+    const mathVal = evaluateMathExpression(amount);
+    const value = mathVal !== null ? mathVal : Number(amount.replace(",", "."));
     const next: Record<string, string> = {};
     if (!value || value <= 0) next["amount"] = "El monto debe ser mayor a 0.";
     if (!category) next["category"] = "Elegí una categoría.";
@@ -280,30 +283,16 @@ export function TransactionSheet({ open, onClose, editing, defaultValues }: Prop
             </select>
           </div>
 
-          {/* 3. Monto con Indicador de Moneda */}
+          {/* 3. Monto con Calculadora Integrada */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between mb-1.5">
-              <span>Monto</span>
-              {errors["amount"] && (
-                <span className="text-[10px] text-danger font-semibold">{errors["amount"]}</span>
-              )}
-            </label>
-            <div className="relative bg-secondary/80 border border-border/80 rounded-2xl text-foreground font-bold p-3 flex items-center justify-between shadow-inner focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/20 transition-all">
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-2xl font-black text-teal-400">$</span>
-                <input
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
-                  placeholder="0.00"
-                  className="w-full bg-transparent border-none text-2xl font-black text-foreground placeholder:text-muted-foreground focus:outline-none p-0 tracking-tight"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0 bg-card border border-border/80 px-2.5 py-1 rounded-xl">
-                <span className="text-[11px] font-bold text-slate-300">USD</span>
-                <span className="size-1.5 rounded-full bg-emerald-400" />
-              </div>
-            </div>
+            <MoneyCalculatorInput
+              label="Monto"
+              value={amount}
+              onChange={setAmount}
+              error={errors["amount"]}
+              placeholder="0.00"
+              helperText="Escribe operaciones (ej: 15+23 o 120/3) o usa los botones para calcular."
+            />
           </div>
 
           {/* 4. Metas o Deudas asociadas (si corresponde) */}

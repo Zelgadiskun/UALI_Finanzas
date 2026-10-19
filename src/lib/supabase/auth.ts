@@ -2,17 +2,71 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./client";
 
+const GUEST_STORAGE_KEY = "quali_guest_session_active";
+
+export function isGuestSession(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(GUEST_STORAGE_KEY) === "true";
+}
+
+export function createGuestSession(): Session {
+  return {
+    access_token: "guest-token",
+    token_type: "bearer",
+    expires_in: 86400,
+    refresh_token: "guest-refresh",
+    user: {
+      id: "guest-user",
+      app_metadata: { provider: "guest" },
+      user_metadata: { display_name: "Invitado Demo", full_name: "Usuario Demo" },
+      aud: "authenticated",
+      created_at: "2026-01-01T00:00:00.000Z",
+    },
+  };
+}
+
+export function signInAsGuest() {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(GUEST_STORAGE_KEY, "true");
+    window.dispatchEvent(new CustomEvent("quali-auth-state-changed"));
+  }
+}
+
 /**
  * Sesión actual + si ya se resolvió el estado inicial. `loading` distingue
  * "todavía no sabemos" de "sabemos que no hay sesión" — sin eso, un usuario
  * ya logueado vería un parpadeo a la pantalla de login antes de entrar.
  */
 export function useSession(): { session: Session | null; loading: boolean } {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(() => {
+    return isGuestSession() ? createGuestSession() : null;
+  });
+  const [loading, setLoading] = useState(() => !isGuestSession());
 
   useEffect(() => {
     let active = true;
+
+    const handleAuthEvent = () => {
+      if (!active) return;
+      if (isGuestSession()) {
+        setSession(createGuestSession());
+        setLoading(false);
+      } else {
+        setSession(null);
+      }
+    };
+
+    window.addEventListener("quali-auth-state-changed", handleAuthEvent);
+
+    if (isGuestSession()) {
+      setSession(createGuestSession());
+      setLoading(false);
+      return () => {
+        active = false;
+        window.removeEventListener("quali-auth-state-changed", handleAuthEvent);
+      };
+    }
+
     // Timeout defensivo de 1.5s: si la conexión con Supabase se demora o cuelga,
     // liberamos loading para que la pantalla nunca quede en blanco perpetuo
     const safetyTimer = setTimeout(() => {
@@ -23,13 +77,23 @@ export function useSession(): { session: Session | null; loading: boolean } {
       .getSession()
       .then(({ data }) => {
         if (!active) return;
-        setSession(data?.session ?? null);
+        if (data?.session) {
+          setSession(data.session);
+        } else if (isGuestSession()) {
+          setSession(createGuestSession());
+        } else {
+          setSession(null);
+        }
         setLoading(false);
       })
       .catch((err) => {
         if (!active) return;
         console.warn("No Supabase session available:", err);
-        setSession(null);
+        if (isGuestSession()) {
+          setSession(createGuestSession());
+        } else {
+          setSession(null);
+        }
         setLoading(false);
       })
       .finally(() => {
@@ -38,13 +102,14 @@ export function useSession(): { session: Session | null; loading: boolean } {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       if (!active) return;
-      setSession(next);
+      setSession(next ?? (isGuestSession() ? createGuestSession() : null));
       setLoading(false);
     });
 
     return () => {
       active = false;
       clearTimeout(safetyTimer);
+      window.removeEventListener("quali-auth-state-changed", handleAuthEvent);
       sub?.subscription?.unsubscribe();
     };
   }, []);
@@ -100,8 +165,16 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(GUEST_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent("quali-auth-state-changed"));
+  }
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) console.warn("Supabase signOut:", error);
+  } catch (e) {
+    console.warn("Supabase signOut error:", e);
+  }
 }
 
 export async function resetPasswordForEmail(email: string) {

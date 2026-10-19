@@ -22,6 +22,7 @@ import { ProgressBar } from "@/components/ffos/ProgressBar";
 import { EmptyState } from "@/components/ffos/EmptyState";
 import { ConfirmModal } from "@/components/ffos/ConfirmModal";
 import { LessonLink } from "@/components/ffos/LessonLink";
+import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
 import { money } from "@/lib/ffos/format";
 import {
   useAddDebtMutation,
@@ -544,19 +545,15 @@ function AddDebtForm({ onDone }: { onDone: () => void }) {
         />
       </div>
 
+      <MoneyCalculatorInput
+        label="Saldo Total Adeudado"
+        value={principal}
+        onChange={setPrincipal}
+        placeholder="0.00"
+        size="md"
+      />
+
       <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="mb-1 block text-[11px] font-bold text-muted-foreground">
-            Saldo Total Adeudado ($)
-          </label>
-          <input
-            inputMode="decimal"
-            value={principal}
-            onChange={(e) => setPrincipal(e.target.value.replace(/[^\d.,]/g, ""))}
-            placeholder="0.00"
-            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs text-foreground font-semibold"
-          />
-        </div>
         <div>
           <label className="mb-1 block text-[11px] font-bold text-muted-foreground">
             Tasa Anual % (opcional)
@@ -569,20 +566,20 @@ function AddDebtForm({ onDone }: { onDone: () => void }) {
             className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs text-foreground font-semibold"
           />
         </div>
+        <div className="flex flex-col justify-end">
+          <p className="text-[10px] text-muted-foreground leading-tight pb-2">
+            Usada para calcular el costo por intereses en la estrategia de bola de nieve.
+          </p>
+        </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-[11px] font-bold text-muted-foreground">
-          Cuota Mínima Mensual ($) (opcional)
-        </label>
-        <input
-          inputMode="decimal"
-          value={minimum}
-          onChange={(e) => setMinimum(e.target.value.replace(/[^\d.,]/g, ""))}
-          placeholder="0.00"
-          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs text-foreground font-semibold"
-        />
-      </div>
+      <MoneyCalculatorInput
+        label="Cuota Mínima Mensual (opcional)"
+        value={minimum}
+        onChange={setMinimum}
+        placeholder="0.00"
+        size="sm"
+      />
 
       <button
         onClick={() => void submit()}
@@ -651,18 +648,15 @@ function EditDebtModal({ debt, onClose }: { debt: DebtRow; onClose: () => void }
           />
         </div>
 
+        <MoneyCalculatorInput
+          label="Saldo Original"
+          value={principal}
+          onChange={setPrincipal}
+          placeholder="0.00"
+          size="md"
+        />
+
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[11px] font-bold text-muted-foreground block mb-1">
-              Saldo Original ($)
-            </label>
-            <input
-              inputMode="decimal"
-              value={principal}
-              onChange={(e) => setPrincipal(e.target.value.replace(/[^\d.,]/g, ""))}
-              className="w-full h-10 px-3 rounded-xl bg-background border border-border text-xs text-foreground font-semibold"
-            />
-          </div>
           <div>
             <label className="text-[11px] font-bold text-muted-foreground block mb-1">
               Tasa anual %
@@ -674,19 +668,20 @@ function EditDebtModal({ debt, onClose }: { debt: DebtRow; onClose: () => void }
               className="w-full h-10 px-3 rounded-xl bg-background border border-border text-xs text-foreground font-semibold"
             />
           </div>
+          <div className="flex flex-col justify-end">
+            <p className="text-[10px] text-muted-foreground leading-tight pb-2">
+              Tasa nominal anual de la deuda.
+            </p>
+          </div>
         </div>
 
-        <div>
-          <label className="text-[11px] font-bold text-muted-foreground block mb-1">
-            Cuota mínima ($)
-          </label>
-          <input
-            inputMode="decimal"
-            value={minimum}
-            onChange={(e) => setMinimum(e.target.value.replace(/[^\d.,]/g, ""))}
-            className="w-full h-10 px-3 rounded-xl bg-background border border-border text-xs text-foreground font-semibold"
-          />
-        </div>
+        <MoneyCalculatorInput
+          label="Cuota mínima"
+          value={minimum}
+          onChange={setMinimum}
+          placeholder="0.00"
+          size="sm"
+        />
 
         <div className="flex gap-2 pt-1">
           <button
@@ -813,25 +808,15 @@ function ExtraordinaryPaymentModal({
           </div>
         </div>
 
-        {/* Monto Input */}
-        <div>
-          <label className="text-[11px] font-bold text-muted-foreground block mb-1">
-            Monto a abonar ($)
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-400">
-              $
-            </span>
-            <input
-              autoFocus
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
-              placeholder="0.00"
-              className="w-full h-11 pl-7 pr-3 rounded-xl bg-background border border-border text-base font-black text-foreground focus:outline-none focus:border-emerald-400"
-            />
-          </div>
-        </div>
+        {/* Monto Input con Calculadora */}
+        <MoneyCalculatorInput
+          label="Monto a abonar"
+          value={amount}
+          onChange={setAmount}
+          placeholder="0.00"
+          autoFocus
+          size="lg"
+        />
 
         {/* Fecha y Nota */}
         <div className="grid grid-cols-2 gap-2">

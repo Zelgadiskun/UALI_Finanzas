@@ -6,6 +6,8 @@ import { ProgressBar, barState } from "./ProgressBar";
 import { ConfirmModal } from "./ConfirmModal";
 import { EmptyState } from "./EmptyState";
 import { money } from "@/lib/ffos/format";
+import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
+import { evaluateMathExpression } from "@/lib/ffos/calculator";
 import { useAddGoalMutation, useDeleteGoalMutation } from "@/lib/supabase/mutations";
 import { useGoalsQuery, useTransactionsQuery } from "@/lib/supabase/queries";
 
@@ -117,7 +119,8 @@ function AddGoalForm({ onDone }: { onDone: () => void }) {
   const addMutation = useAddGoalMutation();
 
   async function submit() {
-    const value = Number(target.replace(",", "."));
+    const mathVal = evaluateMathExpression(target);
+    const value = mathVal !== null ? mathVal : Number(target.replace(",", "."));
     if (!name.trim() || !value || value <= 0) {
       toast.error("Completá el nombre y un monto objetivo mayor a 0.");
       return;
@@ -146,19 +149,14 @@ function AddGoalForm({ onDone }: { onDone: () => void }) {
           className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
         />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="mb-1.5 block text-[12px] font-medium text-muted-foreground">
-            Monto objetivo
-          </label>
-          <input
-            inputMode="decimal"
-            value={target}
-            onChange={(e) => setTarget(e.target.value.replace(/[^\d.,]/g, ""))}
-            placeholder="0.00"
-            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-          />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <MoneyCalculatorInput
+          label="Monto objetivo"
+          value={target}
+          onChange={setTarget}
+          placeholder="0.00"
+          size="sm"
+        />
         <div>
           <label className="mb-1.5 block text-[12px] font-medium text-muted-foreground">
             Fecha límite (opcional)
