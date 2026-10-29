@@ -7,22 +7,40 @@ import {
 } from "./educationStore";
 
 /**
- * Script & Utilidad de Reset de Telemetría y Gamificación para Pruebas (Usuario EDUARDO_PROFE / local)
+ * Protocolo de Reset Global de Telemetría y Gamificación
+ * Versión de Arquitectura: 2.0.0
  *
- * Equivalente al script SQL solicitado:
- * UPDATE usuarios_gamificacion SET xp = 0, level = 1, ffos_tokens = 0, streak_days = 0,
- *        lecciones_completadas = 0, ritual_fase1_visto = false, ritual_fase2_visto = false;
- * UPDATE progreso_misiones SET estado = 'BLOQUEADO', estrellas = 0, submodulos_completados = 0;
- * UPDATE progreso_misiones SET estado = 'DISPONIBLE' WHERE mision_id = 'MISION_01';
+ * Scope: Universal (Aplica a cualquier usuario nuevo o existente mediante sesión activa $USER_ID)
+ *
+ * Payload de Estado de Base de Datos:
+ * - profiles_and_user_progress:
+ *   xp: 0, level: 1, ffos_tokens: 0, streak_days: 0, last_active: CURRENT_TIMESTAMP,
+ *   ritual_fase1_visto: false, ritual_fase2_visto: false, estres_financiero_index: 0
+ * - progreso_misiones:
+ *   mision_01: { estado: 'DISPONIBLE', estrellas: 0, submodulos_completados: 0 }
+ *   misiones_02_to_12: { estado: 'BLOQUEADO', estrellas: 0, submodulos_completados: 0 }
  */
 export async function resetUserGamificationAndTelemetry(userId?: string | null): Promise<void> {
   if (typeof window === "undefined") return;
 
+  // Obtener ID de usuario activo o sesiones asociadas
+  let activeUid = userId;
+  if (!activeUid) {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.id) activeUid = user.id;
+    } catch (e) {
+      void e;
+    }
+  }
+
   const targetIds = Array.from(
-    new Set([userId, "EDUARDO_PROFE", "local-user"].filter(Boolean) as string[]),
+    new Set([activeUid, "EDUARDO_PROFE", "local-user"].filter(Boolean) as string[]),
   );
 
-  // 1. Limpieza de LocalStorage para todos los usuarios objetivo
+  // 1. Purgar claves locales en localStorage bajo el esquema local-first del store
   try {
     for (const uid of targetIds) {
       localStorage.removeItem(`uali_local_xp_v2_${uid}`);
@@ -32,31 +50,34 @@ export async function resetUserGamificationAndTelemetry(userId?: string | null):
       localStorage.removeItem(`uali_phase_ritual_p1_${uid}`);
       localStorage.removeItem(`uali_phase_ritual_p2_${uid}`);
       localStorage.removeItem(`uali_phase_ritual_p3_${uid}`);
+      localStorage.removeItem(`uali_phase_ritual_seen_p1_${uid}`);
+      localStorage.removeItem(`uali_phase_ritual_seen_p2_${uid}`);
+      localStorage.removeItem(`uali_stress_index_${uid}`);
     }
 
-    // Reset de progreso de lecciones y submódulos (deja solo Misión 01 disponible)
+    // Reset universal de progreso de lecciones y misiones
     localStorage.removeItem("uali_lessons_done_fallback_v1");
     localStorage.removeItem("uali_lessons_done");
     localStorage.removeItem("uali_lessons_done_v2");
     localStorage.removeItem("uali_spaced_repetition_v1");
 
-    // Guardar estado de educación vacío por defecto
+    // Guardar estado de educación vacío por defecto (solo Misión 01 disponible)
     const emptyState = createDefaultState();
     localStorage.setItem(EDUCATION_PROGRESS_STORAGE_KEY, JSON.stringify(emptyState));
 
-    // Desactivar banderas directas de rituales
+    // Desactivar banderas directas de rituales para todos los perfiles
     for (let p = 1; p <= 3; p++) {
       localStorage.removeItem(`uali_phase_ritual_p${p}_EDUARDO_PROFE`);
       localStorage.removeItem(`uali_phase_ritual_p${p}_local-user`);
-      if (userId) {
-        localStorage.removeItem(`uali_phase_ritual_p${p}_${userId}`);
+      if (activeUid) {
+        localStorage.removeItem(`uali_phase_ritual_p${p}_${activeUid}`);
       }
     }
   } catch (err) {
     console.warn("Error al limpiar localStorage de gamificación:", err);
   }
 
-  // 2. Notificar a toda la interfaz y ventanas mediante eventos personalizados sincrónicos
+  // 2. Desmontar modales del DOM y re-compilar la vista en estado inicial plano
   try {
     for (const uid of targetIds) {
       window.dispatchEvent(new CustomEvent("uali-xp-updated", { detail: { userId: uid, xp: 0 } }));
@@ -73,26 +94,34 @@ export async function resetUserGamificationAndTelemetry(userId?: string | null):
     );
     window.dispatchEvent(new CustomEvent(RITUAL_EVENT_NAME, { detail: { phaseNumber: 0 } }));
     window.dispatchEvent(new CustomEvent("uali-phase-ritual-completed"));
+    window.dispatchEvent(new CustomEvent("uali-close-all-modals"));
   } catch (err) {
     console.warn("Error emitiendo eventos de reset:", err);
   }
 
-  // 3. Si hay conexión a Supabase y sesión activa, intentar sincronizar base de datos
-  if (userId) {
+  // 3. Limpiar de forma atómica las tablas en Supabase vinculadas al $USER_ID activo
+  if (activeUid) {
     try {
+      const nowIso = new Date().toISOString();
       await supabase
         .from("profiles")
         .update({
           xp: 0,
           streak: 0,
-          last_active: new Date().toISOString(),
-        })
-        .eq("id", userId);
+          level: 1,
+          ffos_tokens: 0,
+          last_active: nowIso,
+          ritual_fase1_visto: false,
+          ritual_fase2_visto: false,
+          estres_financiero_index: 0,
+        } as Record<string, unknown>)
+        .eq("id", activeUid);
 
-      await supabase.from("lesson_progress").delete().eq("user_id", userId);
+      // Eliminar registros de lecciones para restaurar estado plano
+      await supabase.from("lesson_progress").delete().eq("user_id", activeUid);
     } catch (dbErr) {
-      // Si la tabla o RLS no lo permite, la capa local ya garantizó el reset
-      console.warn("Supabase reset sync notice:", dbErr);
+      // Si la base no tiene esas columnas extra o RLS restringe, la capa local-first garantiza la coherencia
+      console.warn("Supabase atomic reset note:", dbErr);
     }
   }
 }

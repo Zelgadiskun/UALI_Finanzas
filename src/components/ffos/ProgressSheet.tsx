@@ -197,7 +197,7 @@ export function ProgressSheet({
             </h3>
             <ul className="grid grid-cols-2 gap-2">
               {ACHIEVEMENTS.map((a) => {
-                const done = progress.achievements.includes(a.id);
+                const done = (progress.achievements ?? []).includes(a.id);
                 return (
                   <li
                     key={a.id}

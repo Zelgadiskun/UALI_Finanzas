@@ -26,8 +26,10 @@ import {
   Trophy,
   Users,
   Zap,
+  Compass,
 } from "lucide-react";
 
+import { FinancialLifeSimulation } from "@/components/ffos/FinancialLifeSimulation";
 import {
   ChispaCharacter,
   NidoCharacter,
@@ -47,12 +49,15 @@ import {
   type PhaseTransitionType,
 } from "@/components/ffos/PhaseTransitionRitualModal";
 import { LessonSheet } from "@/components/ffos/LessonSheet";
+import { SkillTree, type SkillNode } from "@/components/ffos/SkillTree";
 import { levelInfo } from "@/lib/ffos/gamification";
 import { useUserPoints } from "@/lib/ffos/points";
 import { getActiveLesson, isLessonDone } from "@/lib/ffos/lessonsData";
 import { useEducationProgress } from "@/lib/ffos/educationStore";
 import { resetUserGamificationAndTelemetry } from "@/lib/ffos/resetGamification";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSound } from "@/hooks/useSound";
+import { calculateLevelProgress } from "@/lib/ffos/behavioralEngine";
 import {
   useLessonsQuery,
   useProfileQuery,
@@ -84,8 +89,20 @@ export function AprenderRoute() {
   const { completedSubSet, getSubProgress, stats, isRitualDone, recordRitual } =
     useEducationProgress(profile.data?.id);
 
-  // 1. Pestaña activa superior: 'mapa' | 'retos' | 'inventario'
-  const [activeTab, setActiveTab] = useState<"mapa" | "retos" | "inventario">("mapa");
+  // 1. Pestaña activa superior: 'mapa' | 'simulador' | 'retos' | 'inventario'
+  const [activeTab, setActiveTab] = useState<"mapa" | "simulador" | "retos" | "inventario">(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const tabParam = p.get("tab");
+      if (tabParam === "simulador" || tabParam === "retos" || tabParam === "inventario") {
+        return tabParam;
+      }
+    }
+    return "mapa";
+  });
+  const [mapViewMode, setMapViewMode] = useState<"resilience_tree" | "phase_cards">(
+    "resilience_tree",
+  );
 
   // 2. Control de acordeón para nodos completados
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
@@ -94,9 +111,27 @@ export function AprenderRoute() {
   const [ritualUpdateTick, setRitualUpdateTick] = useState(0);
   useEffect(() => {
     const handleRitualDone = () => setRitualUpdateTick((t) => t + 1);
+    const handleCloseAll = () => {
+      setOpenLesson(null);
+      setMission01Open(false);
+      setMission02Open(false);
+      setMission03Open(false);
+      setMission04Open(false);
+      setMission05Open(false);
+      setMission06Open(false);
+      setMission07Open(false);
+      setMission08Open(false);
+      setRitualModalOpen(false);
+    };
     window.addEventListener("uali-phase-ritual-completed", handleRitualDone);
-    return () => window.removeEventListener("uali-phase-ritual-completed", handleRitualDone);
+    window.addEventListener("uali-close-all-modals", handleCloseAll);
+    return () => {
+      window.removeEventListener("uali-phase-ritual-completed", handleRitualDone);
+      window.removeEventListener("uali-close-all-modals", handleCloseAll);
+    };
   }, []);
+
+  const { playSuccessChord, triggerConfetti } = useSound();
 
   const [openLesson, setOpenLesson] = useState<{ lesson: LessonRow; done: boolean } | null>(null);
 
@@ -116,6 +151,28 @@ export function AprenderRoute() {
 
   const queryClient = useQueryClient();
   const [isResetting, setIsResetting] = useState(false);
+
+  const handleSelectSkillNode = (nodo: SkillNode) => {
+    switch (nodo.id) {
+      case 1:
+        setMission01Open(true);
+        break;
+      case 2:
+        setMission03Open(true);
+        break;
+      case 3:
+        setActiveTab("retos");
+        break;
+      case 4:
+        setMission02Open(true);
+        break;
+      case 5:
+        setMission07Open(true);
+        break;
+      default:
+        setMission01Open(true);
+    }
+  };
 
   const handleResetPruebas = async () => {
     setIsResetting(true);
@@ -154,12 +211,11 @@ export function AprenderRoute() {
 
   const { ffosTokens, xp: xpCurrent, streak, levelData, awardPoints } = useUserPoints();
 
-  // FÓRMULA INDEXADA PROPORCIONAL DE XP:
-  const currentLevelNumber = levelData.level;
-  const xpLevelCap = currentLevelNumber * 250;
-  const xpLevelFloor = (currentLevelNumber - 1) * 250;
-  const xpInLevel = Math.max(0, xpCurrent - xpLevelFloor);
-  const xpProgressPct = Math.min(100, Math.max(0, Math.round((xpInLevel / 250) * 100)));
+  // FÓRMULA UNIVERSAL DE PROGRESIÓN (level = Math.floor(xp / 250) + 1):
+  const levelProgress = useMemo(() => calculateLevelProgress(xpCurrent), [xpCurrent]);
+  const currentLevelNumber = levelProgress.level;
+  const xpInLevel = levelProgress.xpIntoLevel;
+  const xpProgressPct = levelProgress.pct;
 
   // Encontrar la lección activa sugerida (respetando el bloqueo mecánico de ritual)
   const activeLesson = useMemo(() => {
@@ -438,26 +494,26 @@ export function AprenderRoute() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Botón de Reset de Telemetría para Pruebas */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Botón de Reset de Telemetría para Pruebas (Ícono compacto en móvil para no estrangular el saludo) */}
             <button
               type="button"
               disabled={isResetting}
               onClick={handleResetPruebas}
-              title="Reset de Telemetría y Gamificación para Pruebas (Usuario EDUARDO_PROFE)"
-              className="flex items-center gap-1 h-8 px-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 text-destructive text-[11px] font-bold transition active:scale-95 disabled:opacity-50"
+              title="Reset de Telemetría y Gamificación para Pruebas"
+              className="flex items-center justify-center size-8 sm:w-auto sm:px-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 text-destructive text-[11px] font-bold transition active:scale-95 disabled:opacity-50"
             >
               <RotateCcw className={cn("size-3", isResetting && "animate-spin")} />
-              <span className="hidden sm:inline">Reset</span>
+              <span className="hidden sm:inline ml-1">Reset</span>
             </button>
 
             {/* Badge Unificado: Racha & Monedas FFOS */}
-            <div className="flex items-center h-8 px-2.5 rounded-xl bg-secondary/80 border border-border/80 text-amber-300 font-black text-xs shadow-xs shrink-0 divide-x divide-border/80">
-              <div className="flex items-center gap-1.5 pr-2">
+            <div className="flex items-center h-8 px-2 sm:px-2.5 rounded-xl bg-secondary/80 border border-border/80 text-amber-300 font-black text-xs shadow-xs shrink-0 divide-x divide-border/80">
+              <div className="flex items-center gap-1 sm:gap-1.5 pr-1.5 sm:pr-2">
                 <Flame className="size-3.5 fill-amber-400 text-amber-400" />
                 <span>{streak}d</span>
               </div>
-              <div className="flex items-center gap-1.5 pl-2">
+              <div className="flex items-center gap-1 sm:gap-1.5 pl-1.5 sm:pl-2">
                 <span className="size-3.5 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-[9px] font-black">
                   F
                 </span>
@@ -506,16 +562,16 @@ export function AprenderRoute() {
         </div>
       </section>
 
-      {/* 2. PESTAÑAS SUPERIORES DE CONTROL (TAB LAYOUT: MAPA | RETOS | INVENTARIO) */}
+      {/* 2. PESTAÑAS SUPERIORES DE CONTROL (TAB LAYOUT: MAPA | SIMULADOR | RETOS | INVENTARIO) */}
       <nav
         aria-label="Navegación de secciones de aprendizaje"
-        className="grid grid-cols-3 p-1 rounded-2xl bg-secondary/80 border border-border/80 mb-4 shadow-xs gap-1"
+        className="grid grid-cols-4 p-1 rounded-2xl bg-secondary/80 border border-border/80 mb-4 shadow-xs gap-1"
       >
         <button
           type="button"
           onClick={() => setActiveTab("mapa")}
           className={cn(
-            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-black transition active:scale-95",
+            "flex items-center justify-center gap-1.5 py-2 px-1.5 rounded-xl text-xs font-black transition active:scale-95",
             activeTab === "mapa"
               ? "bg-background text-foreground shadow-xs border border-border/60"
               : "text-muted-foreground hover:text-foreground",
@@ -527,9 +583,24 @@ export function AprenderRoute() {
 
         <button
           type="button"
+          onClick={() => setActiveTab("simulador")}
+          className={cn(
+            "flex items-center justify-center gap-1.5 py-2 px-1.5 rounded-xl text-xs font-black transition active:scale-95 relative",
+            activeTab === "simulador"
+              ? "bg-background text-foreground shadow-xs border border-border/60"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Compass className="size-3.5 text-purple-400 shrink-0" />
+          <span className="truncate">Simulador</span>
+          <span className="size-1.5 rounded-full bg-purple-400 animate-pulse shrink-0" />
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("retos")}
           className={cn(
-            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-black transition active:scale-95 relative",
+            "flex items-center justify-center gap-1.5 py-2 px-1.5 rounded-xl text-xs font-black transition active:scale-95 relative",
             activeTab === "retos"
               ? "bg-background text-foreground shadow-xs border border-border/60"
               : "text-muted-foreground hover:text-foreground",
@@ -537,14 +608,13 @@ export function AprenderRoute() {
         >
           <Zap className="size-3.5 text-teal-400 shrink-0" />
           <span className="truncate">Retos</span>
-          <span className="size-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("inventario")}
           className={cn(
-            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-black transition active:scale-95",
+            "flex items-center justify-center gap-1.5 py-2 px-1.5 rounded-xl text-xs font-black transition active:scale-95",
             activeTab === "inventario"
               ? "bg-background text-foreground shadow-xs border border-border/60"
               : "text-muted-foreground hover:text-foreground",
@@ -560,445 +630,491 @@ export function AprenderRoute() {
       {/* ============================================================== */}
       {activeTab === "mapa" && (
         <section className="rounded-3xl bg-card border border-border/80 p-4 sm:p-5 shadow-sm mb-4">
-          <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-border/60">
-            <div className="flex items-center gap-2">
-              <Trophy className="size-4.5 text-amber-400" />
-              <div>
-                <h3 className="text-sm font-black text-foreground">Mapa de Habilidades</h3>
-                <p className="text-[11px] text-muted-foreground font-medium">
-                  Ruta progresiva • 3 Guardianes
-                </p>
-              </div>
+          {/* Sub-selector: Mapa de Resiliencia (SkillTree) vs Fases de Guardianes */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4 pb-2.5 border-b border-border/60">
+            <div className="flex items-center gap-1.5 p-1 bg-secondary/80 rounded-xl border border-border/60 w-fit">
+              <button
+                type="button"
+                onClick={() => setMapViewMode("resilience_tree")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95",
+                  mapViewMode === "resilience_tree"
+                    ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Sparkles className="size-3.5" />
+                <span>Mapa de Resiliencia</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapViewMode("phase_cards")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95",
+                  mapViewMode === "phase_cards"
+                    ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Trophy className="size-3.5" />
+                <span>Fases de Guardianes</span>
+              </button>
             </div>
-            <span className="text-xs font-extrabold text-secondary-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-full shrink-0">
-              {completedCount} / {lessons.length || 12}
+
+            <span className="text-xs font-extrabold text-secondary-foreground bg-secondary border border-border px-2.5 py-1 rounded-full shrink-0 w-fit">
+              {completedCount} / {lessons.length || 12} Dominadas
             </span>
           </div>
 
-          <div className="space-y-6">
-            {phases.map((phase) => {
-              const phaseCompleted = phase.lessons.filter((l) =>
-                isLessonDone(l, completedSet),
-              ).length;
-              const isPhaseAllDone = phaseCompleted === phase.lessons.length;
+          {mapViewMode === "resilience_tree" ? (
+            <div className="space-y-4">
+              <SkillTree
+                userId={profile.data?.id}
+                userXP={xpCurrent}
+                onSelectNode={(nodo) => handleSelectSkillNode(nodo)}
+              />
+              <p className="text-center text-xs text-muted-foreground font-medium">
+                Toca cualquier nodo desbloqueado para acceder a la misión o lección interactiva.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {phases.map((phase) => {
+                const phaseCompleted = phase.lessons.filter((l) =>
+                  isLessonDone(l, completedSet),
+                ).length;
+                const isPhaseAllDone = phaseCompleted === phase.lessons.length;
 
-              // NIEBLA DE GUERRA VISUAL: Si la fase está bloqueada, se renderiza una tarjeta de contención
-              if (phase.isLocked) {
+                // NIEBLA DE GUERRA VISUAL: Si la fase está bloqueada, se renderiza una tarjeta de contención
+                if (phase.isLocked) {
+                  return (
+                    <div
+                      key={phase.id}
+                      className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-950/90 via-slate-900/50 to-slate-950/90 p-4 sm:p-5 shadow-md"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700/80 text-amber-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                              <Lock className="size-3 text-amber-400" />
+                              Niebla de Guerra • Fase {phase.number}
+                            </span>
+                          </div>
+                          <h4 className="text-sm sm:text-base font-black text-slate-200 tracking-tight leading-snug">
+                            Próximo Horizonte: {phase.envTitle}
+                          </h4>
+                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            {phase.lockReason}
+                          </p>
+                          <div className="mt-3">
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-300/90 bg-amber-950/30 border border-amber-800/40 px-2.5 py-1 rounded-xl">
+                              <span>⚡ Requisito:</span> Consagra el Protocolo de Cierre de Fase{" "}
+                              {phase.number - 1}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center justify-center relative">
+                          <div className="opacity-20 grayscale blur-[0.5px]">
+                            {phase.number === 2 ? (
+                              <ChispaCharacter className="w-16 h-16" />
+                            ) : (
+                              <TotoCharacter className="w-16 h-16" />
+                            )}
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="size-9 rounded-full bg-slate-950/90 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-sm">
+                              <Lock className="size-4.5" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // FASE ACTIVA O COMPLETADA: Renderiza sus nodos con enfoque de acordeón anti-fatiga
                 return (
                   <div
                     key={phase.id}
-                    className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-950/90 via-slate-900/50 to-slate-950/90 p-4 sm:p-5 shadow-md"
+                    className={cn(
+                      "relative flex flex-col rounded-3xl border p-4 sm:p-5 shadow-lg overflow-hidden transition-all",
+                      phase.containerStyle,
+                    )}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700/80 text-amber-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
-                            <Lock className="size-3 text-amber-400" />
-                            Niebla de Guerra • Fase {phase.number}
+                    {/* Cabecera de la Fase */}
+                    <div className="w-full flex items-center justify-between mb-4 pb-3 border-b border-white/5">
+                      <div className="flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <div>
+                          <span className="text-xs font-black text-foreground block">
+                            Fase {phase.number}: {phase.title}
                           </span>
-                        </div>
-                        <h4 className="text-sm sm:text-base font-black text-slate-200 tracking-tight leading-snug">
-                          Próximo Horizonte: {phase.envTitle}
-                        </h4>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                          {phase.lockReason}
-                        </p>
-                        <div className="mt-3">
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-300/90 bg-amber-950/30 border border-amber-800/40 px-2.5 py-1 rounded-xl">
-                            <span>⚡ Requisito:</span> Consagra el Protocolo de Cierre de Fase{" "}
-                            {phase.number - 1}
+                          <span className="text-[10px] text-slate-400 font-medium block">
+                            Guardián {phase.guardian} • {phase.envTitle}
                           </span>
                         </div>
                       </div>
-
-                      <div className="shrink-0 flex items-center justify-center relative">
-                        <div className="opacity-20 grayscale blur-[0.5px]">
-                          {phase.number === 2 ? (
-                            <ChispaCharacter className="w-16 h-16" />
-                          ) : (
-                            <TotoCharacter className="w-16 h-16" />
-                          )}
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="size-9 rounded-full bg-slate-950/90 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-sm">
-                            <Lock className="size-4.5" />
-                          </div>
-                        </div>
-                      </div>
+                      <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-black/40 border border-white/10 text-slate-300">
+                        {phaseCompleted}/{phase.lessons.length}
+                      </span>
                     </div>
-                  </div>
-                );
-              }
 
-              // FASE ACTIVA O COMPLETADA: Renderiza sus nodos con enfoque de acordeón anti-fatiga
-              return (
-                <div
-                  key={phase.id}
-                  className={cn(
-                    "relative flex flex-col rounded-3xl border p-4 sm:p-5 shadow-lg overflow-hidden transition-all",
-                    phase.containerStyle,
-                  )}
-                >
-                  {/* Cabecera de la Fase */}
-                  <div className="w-full flex items-center justify-between mb-4 pb-3 border-b border-white/5">
-                    <div className="flex items-center gap-2">
-                      <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <div>
-                        <span className="text-xs font-black text-foreground block">
-                          Fase {phase.number}: {phase.title}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium block">
-                          Guardián {phase.guardian} • {phase.envTitle}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-black/40 border border-white/10 text-slate-300">
-                      {phaseCompleted}/{phase.lessons.length}
-                    </span>
-                  </div>
+                    {/* LISTADO DE NODOS CON ACORDEÓN PROGRESIVO */}
+                    <div className="w-full space-y-2.5">
+                      {phase.lessons.map((lesson, idx) => {
+                        const globalIdx = (phase.number - 1) * 4 + idx;
+                        const isDone = isLessonDone(lesson, completedSet);
+                        const isCurrentActive =
+                          !phase.isLocked &&
+                          (activeLesson?.id === lesson.id || activeLesson?.slug === lesson.slug);
 
-                  {/* LISTADO DE NODOS CON ACORDEÓN PROGRESIVO */}
-                  <div className="w-full space-y-2.5">
-                    {phase.lessons.map((lesson, idx) => {
-                      const globalIdx = (phase.number - 1) * 4 + idx;
-                      const isDone = isLessonDone(lesson, completedSet);
-                      const isCurrentActive =
-                        !phase.isLocked &&
-                        (activeLesson?.id === lesson.id || activeLesson?.slug === lesson.slug);
+                        // Una lección completada está expandida SOLO si el usuario la seleccionó expresamente
+                        // La lección activa siempre está expandida
+                        const isExpanded = isCurrentActive || expandedLessonId === lesson.id;
 
-                      // Una lección completada está expandida SOLO si el usuario la seleccionó expresamente
-                      // La lección activa siempre está expandida
-                      const isExpanded = isCurrentActive || expandedLessonId === lesson.id;
+                        const prevLesson = phase.lessons[idx - 1];
+                        const isUnlockedInPhase =
+                          idx === 0 || (prevLesson ? isLessonDone(prevLesson, completedSet) : true);
+                        const isLocked = !isUnlockedInPhase;
 
-                      const prevLesson = phase.lessons[idx - 1];
-                      const isUnlockedInPhase =
-                        idx === 0 || (prevLesson ? isLessonDone(prevLesson, completedSet) : true);
-                      const isLocked = !isUnlockedInPhase;
+                        const subProg = getSubProgress(lesson);
+                        const mission = getLessonMissionInfo(lesson.slug);
 
-                      const subProg = getSubProgress(lesson);
-                      const mission = getLessonMissionInfo(lesson.slug);
-
-                      // ==============================================================
-                      // RENDERIZADO SIMPLIFICADO 1: Nodo Completado Colapsado (<= 50px)
-                      // ==============================================================
-                      if (isDone && !isExpanded) {
-                        return (
-                          <div
-                            key={lesson.id}
-                            onClick={() => setExpandedLessonId(lesson.id)}
-                            className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800/80 border border-emerald-500/25 cursor-pointer transition active:scale-98 shadow-xs"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <CheckCircle2 className="size-4.5 text-emerald-400 shrink-0" />
-                              <div className="min-w-0">
-                                <span className="text-xs sm:text-sm font-bold text-slate-200 truncate block">
-                                  Nodo {globalIdx + 1}: {lesson.title}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <div className="flex items-center gap-0.5 text-amber-400 text-xs">
-                                <span>★</span>
-                                <span>★</span>
-                                <span>★</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedLessonId(lesson.id);
-                                }}
-                                className="text-[10px] font-black text-teal-300 bg-teal-950/80 hover:bg-teal-900/80 border border-teal-700/50 px-2 py-0.5 rounded-lg flex items-center gap-1"
-                              >
-                                <span>Ver</span>
-                                <ChevronDown className="size-3" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      // ==============================================================
-                      // RENDERIZADO SIMPLIFICADO 2: Nodo Bloqueado dentro de fase activa
-                      // ==============================================================
-                      if (isLocked && !isExpanded) {
-                        return (
-                          <div
-                            key={lesson.id}
-                            className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/40 border border-slate-800/60 opacity-60"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <Lock className="size-4 text-slate-500 shrink-0" />
-                              <span className="text-xs font-semibold text-slate-400 truncate">
-                                Nodo {globalIdx + 1}: {lesson.title}
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-800 shrink-0">
-                              Nodo {globalIdx} pendiente
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      // ==============================================================
-                      // RENDERIZADO COMPLETO: Solo si es la lección activa o expandida
-                      // ==============================================================
-                      return (
-                        <div
-                          key={lesson.id}
-                          className={cn(
-                            "w-full rounded-2xl border p-4 shadow-sm transition-all",
-                            isCurrentActive
-                              ? "bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 border-purple-500/50 shadow-purple-950/20 ring-1 ring-purple-500/30"
-                              : isDone
-                                ? "bg-slate-900/80 border-teal-500/30"
-                                : "bg-secondary/40 border-border/80",
-                          )}
-                        >
-                          {/* Cabecera de la Tarjeta */}
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                  Nodo {globalIdx + 1} • Fase {phase.number}
-                                </span>
-
-                                {isDone ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300 border border-emerald-500/30">
-                                    <CheckCircle2 className="size-3" />
-                                    Dominada (3/3)
+                        // ==============================================================
+                        // RENDERIZADO SIMPLIFICADO 1: Nodo Completado Colapsado (<= 50px)
+                        // ==============================================================
+                        if (isDone && !isExpanded) {
+                          return (
+                            <div
+                              key={lesson.id}
+                              onClick={() => setExpandedLessonId(lesson.id)}
+                              className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800/80 border border-emerald-500/25 cursor-pointer transition active:scale-98 shadow-xs"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <CheckCircle2 className="size-4.5 text-emerald-400 shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="text-xs sm:text-sm font-bold text-slate-200 truncate block">
+                                    Nodo {globalIdx + 1}: {lesson.title}
                                   </span>
-                                ) : isCurrentActive ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-black text-amber-300 border border-amber-400/30 animate-pulse">
-                                    <Zap className="size-3" />
-                                    ¡Continúa Aquí!
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-foreground border border-border">
-                                    Disponible
-                                  </span>
-                                )}
+                                </div>
                               </div>
-
-                              <h4 className="text-sm sm:text-base font-black text-foreground mt-1 leading-snug">
-                                {lesson.title}
-                              </h4>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {/* Botón para colapsar si ya estaba completada */}
-                              {isDone && (
-                                <button
-                                  type="button"
-                                  onClick={() => setExpandedLessonId(null)}
-                                  title="Colapsar tarjeta"
-                                  className="text-slate-400 hover:text-slate-200 p-1 rounded-lg bg-slate-800/60 border border-slate-700/60"
-                                >
-                                  <ChevronUp className="size-3.5" />
-                                </button>
-                              )}
-                              {isDone ? (
+                              <div className="flex items-center gap-2 shrink-0">
                                 <div className="flex items-center gap-0.5 text-amber-400 text-xs">
                                   <span>★</span>
                                   <span>★</span>
                                   <span>★</span>
                                 </div>
-                              ) : (
-                                <span className="text-[11px] font-bold text-amber-300">
-                                  +{lesson.xp || 25} XP
-                                </span>
-                              )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedLessonId(lesson.id);
+                                  }}
+                                  className="text-[10px] font-black text-teal-300 bg-teal-950/80 hover:bg-teal-900/80 border border-teal-700/50 px-2 py-0.5 rounded-lg flex items-center gap-1"
+                                >
+                                  <span>Ver</span>
+                                  <ChevronDown className="size-3" />
+                                </button>
+                              </div>
                             </div>
-                          </div>
+                          );
+                        }
 
-                          {/* Submódulos visibles en Modo Foco */}
-                          <div className="mt-2.5 pt-2 border-t border-border/50">
-                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-1.5">
-                              <span>
-                                Submódulos ({subProg.completedCount}/
-                                {lesson.subLessons?.length || 3})
-                              </span>
-                              <span
-                                className={cn(
-                                  "font-black text-[10px]",
-                                  isDone ? "text-teal-400" : "text-amber-300",
-                                )}
-                              >
-                                {isDone
-                                  ? "100% Completado"
-                                  : `${Math.round((subProg.completedCount / 3) * 100)}%`}
-                              </span>
-                            </div>
-
-                            <div className="space-y-1">
-                              {lesson.subLessons?.map((sub, sIdx) => {
-                                const isSubDone = completedSubSet.has(sub.id);
-                                const isSubActive = !isDone && sIdx === subProg.completedCount;
-
-                                return (
-                                  <div
-                                    key={sub.id}
-                                    className={cn(
-                                      "flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs transition-colors",
-                                      isSubDone
-                                        ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-200"
-                                        : isSubActive
-                                          ? "bg-amber-400/15 border border-amber-400/40 text-amber-200 font-bold"
-                                          : "bg-secondary/30 border border-border/30 text-muted-foreground",
-                                    )}
-                                  >
-                                    {isSubDone ? (
-                                      <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0" />
-                                    ) : isSubActive ? (
-                                      <div className="size-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                                    ) : (
-                                      <span className="size-3.5 text-[10px] text-muted-foreground/70 font-bold shrink-0 text-center">
-                                        {sIdx + 1}
-                                      </span>
-                                    )}
-                                    <span className="truncate flex-1 font-medium text-[11px]">
-                                      {sub.title}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Lanzador de Misión Práctica (si tiene misión asignada) */}
-                          {mission && (
+                        // ==============================================================
+                        // RENDERIZADO SIMPLIFICADO 2: Nodo Bloqueado dentro de fase activa
+                        // ==============================================================
+                        if (isLocked && !isExpanded) {
+                          return (
                             <div
-                              className={cn(
-                                "mt-3 p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all",
-                                mission.isDone
-                                  ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-200"
-                                  : "bg-gradient-to-r from-teal-950/60 via-slate-900 to-teal-950/60 border-teal-500/40 text-slate-200",
-                              )}
+                              key={lesson.id}
+                              className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/40 border border-slate-800/60 opacity-60"
                             >
-                              <div className="min-w-0 flex items-center gap-2">
-                                <div className="size-7 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-300 shrink-0">
-                                  <Zap className="size-3.5 fill-current" />
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-300">
-                                      🎮 Misión 0{mission.number}
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <Lock className="size-4 text-slate-500 shrink-0" />
+                                <span className="text-xs font-semibold text-slate-400 truncate">
+                                  Nodo {globalIdx + 1}: {lesson.title}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-800 shrink-0">
+                                Nodo {globalIdx} pendiente
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        // ==============================================================
+                        // RENDERIZADO COMPLETO: Solo si es la lección activa o expandida
+                        // ==============================================================
+                        return (
+                          <div
+                            key={lesson.id}
+                            className={cn(
+                              "w-full rounded-2xl border p-4 shadow-sm transition-all",
+                              isCurrentActive
+                                ? "bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 border-purple-500/50 shadow-purple-950/20 ring-1 ring-purple-500/30"
+                                : isDone
+                                  ? "bg-slate-900/80 border-teal-500/30"
+                                  : "bg-secondary/40 border-border/80",
+                            )}
+                          >
+                            {/* Cabecera de la Tarjeta */}
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    Nodo {globalIdx + 1} • Fase {phase.number}
+                                  </span>
+
+                                  {isDone ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300 border border-emerald-500/30">
+                                      <CheckCircle2 className="size-3" />
+                                      Dominada (3/3)
                                     </span>
-                                    <span className="text-[10px] font-bold text-amber-300">
-                                      {mission.reward}
+                                  ) : isCurrentActive ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-black text-amber-300 border border-amber-400/30 animate-pulse">
+                                      <Zap className="size-3" />
+                                      ¡Continúa Aquí!
                                     </span>
-                                  </div>
-                                  <p className="text-xs font-bold text-foreground truncate">
-                                    {mission.title}
-                                  </p>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-foreground border border-border">
+                                      Disponible
+                                    </span>
+                                  )}
                                 </div>
+
+                                <h4 className="text-sm sm:text-base font-black text-foreground mt-1 leading-snug">
+                                  {lesson.title}
+                                </h4>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  mission.onPlay();
-                                }}
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {/* Botón para colapsar si ya estaba completada */}
+                                {isDone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedLessonId(null)}
+                                    title="Colapsar tarjeta"
+                                    className="text-slate-400 hover:text-slate-200 p-1 rounded-lg bg-slate-800/60 border border-slate-700/60"
+                                  >
+                                    <ChevronUp className="size-3.5" />
+                                  </button>
+                                )}
+                                {isDone ? (
+                                  <div className="flex items-center gap-0.5 text-amber-400 text-xs">
+                                    <span>★</span>
+                                    <span>★</span>
+                                    <span>★</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[11px] font-bold text-amber-300">
+                                    +{lesson.xp || 25} XP
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Submódulos visibles en Modo Foco */}
+                            <div className="mt-2.5 pt-2 border-t border-border/50">
+                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-1.5">
+                                <span>
+                                  Submódulos ({subProg.completedCount}/
+                                  {lesson.subLessons?.length || 3})
+                                </span>
+                                <span
+                                  className={cn(
+                                    "font-black text-[10px]",
+                                    isDone ? "text-teal-400" : "text-amber-300",
+                                  )}
+                                >
+                                  {isDone
+                                    ? "100% Completado"
+                                    : `${Math.round((subProg.completedCount / 3) * 100)}%`}
+                                </span>
+                              </div>
+
+                              <div className="space-y-1">
+                                {lesson.subLessons?.map((sub, sIdx) => {
+                                  const isSubDone = completedSubSet.has(sub.id);
+                                  const isSubActive = !isDone && sIdx === subProg.completedCount;
+
+                                  return (
+                                    <div
+                                      key={sub.id}
+                                      className={cn(
+                                        "flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs transition-colors",
+                                        isSubDone
+                                          ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-200"
+                                          : isSubActive
+                                            ? "bg-amber-400/15 border border-amber-400/40 text-amber-200 font-bold"
+                                            : "bg-secondary/30 border border-border/30 text-muted-foreground",
+                                      )}
+                                    >
+                                      {isSubDone ? (
+                                        <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0" />
+                                      ) : isSubActive ? (
+                                        <div className="size-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                                      ) : (
+                                        <span className="size-3.5 text-[10px] text-muted-foreground/70 font-bold shrink-0 text-center">
+                                          {sIdx + 1}
+                                        </span>
+                                      )}
+                                      <span className="truncate flex-1 font-medium text-[11px]">
+                                        {sub.title}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Lanzador de Misión Práctica (si tiene misión asignada) */}
+                            {mission && (
+                              <div
                                 className={cn(
-                                  "shrink-0 px-2.5 py-1.5 rounded-lg font-black text-xs flex items-center gap-1 transition active:scale-95 shadow-sm",
+                                  "mt-3 p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all",
                                   mission.isDone
-                                    ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
-                                    : "bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 hover:brightness-110",
+                                    ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-200"
+                                    : "bg-gradient-to-r from-teal-950/60 via-slate-900 to-teal-950/60 border-teal-500/40 text-slate-200",
                                 )}
                               >
-                                {mission.isDone ? (
+                                <div className="min-w-0 flex items-center gap-2">
+                                  <div className="size-7 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-300 shrink-0">
+                                    <Zap className="size-3.5 fill-current" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-teal-300">
+                                        🎮 Misión 0{mission.number}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-amber-300">
+                                        {mission.reward}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs font-bold text-foreground truncate">
+                                      {mission.title}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    mission.onPlay();
+                                  }}
+                                  className={cn(
+                                    "shrink-0 px-2.5 py-1.5 rounded-lg font-black text-xs flex items-center gap-1 transition active:scale-95 shadow-sm",
+                                    mission.isDone
+                                      ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40"
+                                      : "bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 hover:brightness-110",
+                                  )}
+                                >
+                                  {mission.isDone ? (
+                                    <>
+                                      <RotateCcw className="size-3" />
+                                      <span>Rejugar</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Play className="size-3 fill-current" />
+                                      <span>Jugar Misión</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Botón de Acción Principal */}
+                            <div className="mt-3">
+                              <button
+                                type="button"
+                                onClick={() => setOpenLesson({ lesson, done: isDone })}
+                                className={cn(
+                                  "w-full py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-98 shadow-sm",
+                                  isCurrentActive
+                                    ? "bg-primary text-primary-foreground hover:bg-primary/90 ring-2 ring-primary/30"
+                                    : isDone
+                                      ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
+                                      : "bg-secondary/80 hover:bg-secondary text-foreground border border-border",
+                                )}
+                              >
+                                {isDone ? (
                                   <>
-                                    <RotateCcw className="size-3" />
-                                    <span>Rejugar</span>
+                                    <RotateCcw className="size-3.5" />
+                                    <span>Repasar Lección Teórica</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Play className="size-3 fill-current" />
-                                    <span>Jugar Misión</span>
+                                    <BookOpen className="size-3.5" />
+                                    <span>
+                                      {subProg.completedCount > 0
+                                        ? `Continuar (Paso ${Math.min(3, subProg.completedCount + 1)})`
+                                        : "Aprender Lección"}
+                                    </span>
+                                    <ChevronRight className="size-3.5" />
                                   </>
                                 )}
                               </button>
                             </div>
-                          )}
+                          </div>
+                        );
+                      })}
+                    </div>
 
-                          {/* Botón de Acción Principal */}
-                          <div className="mt-3">
-                            <button
-                              type="button"
-                              onClick={() => setOpenLesson({ lesson, done: isDone })}
-                              className={cn(
-                                "w-full py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-98 shadow-sm",
-                                isCurrentActive
-                                  ? "bg-primary text-primary-foreground hover:bg-primary/90 ring-2 ring-primary/30"
-                                  : isDone
-                                    ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
-                                    : "bg-secondary/80 hover:bg-secondary text-foreground border border-border",
-                              )}
-                            >
-                              {isDone ? (
-                                <>
-                                  <RotateCcw className="size-3.5" />
-                                  <span>Repasar Lección Teórica</span>
-                                </>
-                              ) : (
-                                <>
-                                  <BookOpen className="size-3.5" />
-                                  <span>
-                                    {subProg.completedCount > 0
-                                      ? `Continuar (Paso ${Math.min(3, subProg.completedCount + 1)})`
-                                      : "Aprender Lección"}
-                                  </span>
-                                  <ChevronRight className="size-3.5" />
-                                </>
-                              )}
-                            </button>
+                    {/* PROTOCOLO DE CIERRE / RITUAL DE EVOLUCIÓN */}
+                    <div className="w-full mt-4 pt-3 border-t border-slate-800/80">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveRitualType(phase.ritualType);
+                          setRitualModalOpen(true);
+                        }}
+                        className={cn(
+                          "w-full p-2.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition active:scale-98 shadow-sm",
+                          isPhaseAllDone
+                            ? "bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-teal-500/20 border-amber-400/60 text-amber-200 animate-pulse"
+                            : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700",
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm">⚡</span>
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-black uppercase tracking-wider block text-amber-300">
+                              Protocolo de Cierre • Fase {phase.number}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-200 block truncate">
+                              {phase.ritualHandover}
+                            </span>
                           </div>
                         </div>
-                      );
-                    })}
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 shrink-0">
+                          {isPhaseAllDone ? "¡Ver Ritual!" : "Ritual"}
+                        </span>
+                      </button>
+                    </div>
                   </div>
-
-                  {/* PROTOCOLO DE CIERRE / RITUAL DE EVOLUCIÓN */}
-                  <div className="w-full mt-4 pt-3 border-t border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveRitualType(phase.ritualType);
-                        setRitualModalOpen(true);
-                      }}
-                      className={cn(
-                        "w-full p-2.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition active:scale-98 shadow-sm",
-                        isPhaseAllDone
-                          ? "bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-teal-500/20 border-amber-400/60 text-amber-200 animate-pulse"
-                          : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700",
-                      )}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm">⚡</span>
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-black uppercase tracking-wider block text-amber-300">
-                            Protocolo de Cierre • Fase {phase.number}
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-200 block truncate">
-                            {phase.ritualHandover}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 shrink-0">
-                        {isPhaseAllDone ? "¡Ver Ritual!" : "Ritual"}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
       {/* ============================================================== */}
-      {/* VISTA 2: RETOS DIARIOS (DESAFÍO FLASH DE TOTO DESACOPLADO)     */}
+      {/* VISTA 2: SIMULADOR DE VIDA FINANCIERA (ROLES & ENSAYO Y ERROR) */}
+      {/* ============================================================== */}
+      {activeTab === "simulador" && (
+        <section className="space-y-4 mb-4">
+          <FinancialLifeSimulation
+            userId={profile.data?.id}
+            onNavigateTab={(t) => setActiveTab(t)}
+          />
+        </section>
+      )}
+
+      {/* ============================================================== */}
+      {/* VISTA 3: RETOS DIARIOS (DESAFÍO FLASH DE TOTO DESACOPLADO)     */}
       {/* ============================================================== */}
       {activeTab === "retos" && (
         <section className="space-y-4 mb-4">

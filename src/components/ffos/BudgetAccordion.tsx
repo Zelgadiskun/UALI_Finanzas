@@ -149,7 +149,7 @@ export function BudgetAccordion({
                       : "text-blue-400",
                 )}
               >
-                {necesidadesPlanned > 0 ? `${necesidadesPct}% usado` : "0% usado"}
+                {necesidadesPlanned > 0 ? `${necesidadesPct}% usado` : "0% utilizado de tu cupo"}
               </span>
             </div>
           </div>
@@ -326,7 +326,7 @@ export function BudgetAccordion({
                       : "text-purple-400",
                 )}
               >
-                {deseosPlanned > 0 ? `${deseosPct}% usado` : "0% usado"}
+                {deseosPlanned > 0 ? `${deseosPct}% usado` : "0% utilizado de tu cupo"}
               </span>
             </div>
           </div>
@@ -494,7 +494,7 @@ export function BudgetAccordion({
                 </span>
               </span>
               <span className="text-[10px] text-emerald-400 font-bold block">
-                {ahorroPlanned > 0 ? `${ahorroPct}% aportado` : "0% aportado"}
+                {ahorroPlanned > 0 ? `${ahorroPct}% aportado` : "0% utilizado de tu cupo"}
               </span>
             </div>
           </div>

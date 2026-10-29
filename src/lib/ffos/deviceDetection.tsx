@@ -26,7 +26,7 @@ export function detectDevice(): { type: DeviceType; isTouch: boolean; browser: s
   const isTouch =
     "ontouchstart" in window ||
     navigator.maxTouchPoints > 0 ||
-    window.matchMedia("(pointer: coarse)").matches;
+    (typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches);
 
   // Detectar navegador Brave o Chromium / Safari
   let browser = "Navegador";

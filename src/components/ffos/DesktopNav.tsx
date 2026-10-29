@@ -25,6 +25,7 @@ import { useBudgetsQuery, useTransactionsQuery, useProfileQuery } from "@/lib/su
 import { sameMonth } from "@/lib/ffos/format";
 import { applyTheme, getStoredTheme } from "@/lib/theme";
 import { useDeviceLayout } from "@/lib/ffos/deviceDetection";
+import { setNavDrawerListener } from "@/lib/ffos/navDrawerStore";
 import { UserAvatarDisplay } from "./UserAvatarDisplay";
 import { DailyStreakBadge } from "./DailyStreakBadge";
 import { cn } from "@/lib/utils";
@@ -41,12 +42,18 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => getStoredTheme() === "dark");
 
-  const { isTablet, isDesktop, layoutMode, setLayoutMode, detectedType, browserName } =
+  const { isMobile, isTablet, isDesktop, layoutMode, setLayoutMode, detectedType, browserName } =
     useDeviceLayout();
 
   const profile = useProfileQuery();
   const budgetsQuery = useBudgetsQuery();
   const txQuery = useTransactionsQuery();
+
+  // Sincronizar el listener global para abrir el menú hamburguesa desde cualquier vista
+  useEffect(() => {
+    setNavDrawerListener(setMenuOpen);
+    return () => setNavDrawerListener(null);
+  }, []);
 
   // Cerrar el menú automáticamente al cambiar de ruta
   useEffect(() => {
@@ -159,111 +166,147 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-card/90 dark:bg-[#0B1323]/95 backdrop-blur-md border-b border-border/80 shadow-xs transition-colors">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-          {/* Marca y Logotipo UALÍ */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0 group outline-hidden">
-            <div className="size-10 rounded-2xl bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] flex items-center justify-center text-slate-950 font-black shadow-md shadow-[#2EC4B6]/25 group-hover:scale-105 transition-transform">
-              <Wallet className="size-5 text-slate-950 stroke-[2.5]" />
+      {isMobile ? (
+        /* Cabecera Móvil Compacta y Esencial con Botón Hamburguesa Accesible */
+        <header className="sticky top-0 z-40 w-full bg-card/95 dark:bg-[#0B1323]/98 backdrop-blur-md border-b border-border/80 px-3.5 h-12 flex items-center justify-between transition-colors shadow-2xs">
+          <Link to="/" className="flex items-center gap-2 group outline-hidden">
+            <div className="size-8 rounded-xl bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] flex items-center justify-center text-slate-950 font-black shadow-sm group-hover:scale-105 transition-transform">
+              <Wallet className="size-4 text-slate-950 stroke-[2.5]" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-display font-black text-lg tracking-tight text-foreground leading-none flex items-center gap-1.5">
-                <span>UALÍ</span>
-                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6] tracking-normal">
-                  Finanzas
-                </span>
-                {isTablet && (
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                    Tablet
-                  </span>
-                )}
+            <div className="flex items-center gap-1.5">
+              <span className="font-display font-black text-sm tracking-tight text-foreground">
+                UALÍ
               </span>
-              <span className="text-[11px] font-bold text-muted-foreground leading-tight mt-0.5">
-                Gestión inteligente y en equipo
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6]">
+                Finanzas
               </span>
             </div>
           </Link>
 
-          {/* Navegación para Versiones de Pantalla Ancha (Tablet y Web) con Menú de Hamburguesa */}
-          <nav aria-label="Navegación de escritorio" className="flex items-center gap-2">
-            {/* Botón Principal Menú de Hamburguesa para Tablet y Web */}
+          <div className="flex items-center gap-2">
+            {/* Botón Principal Menú de Hamburguesa para Móvil */}
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="Abrir menú de navegación"
               aria-expanded={menuOpen}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border/90 bg-secondary/70 hover:bg-secondary text-foreground text-xs font-black transition-all active:scale-95 shadow-2xs cursor-pointer group"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/90 bg-secondary/80 hover:bg-secondary text-foreground text-xs font-black transition-all active:scale-95 shadow-2xs cursor-pointer group"
             >
-              <Menu className="size-4.5 stroke-[2.3] text-[#2EC4B6] group-hover:scale-110 transition-transform" />
-              <span>Menú</span>
+              <Menu className="size-4 stroke-[2.4] text-[#2EC4B6] group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] font-bold">Menú</span>
               {hasBudgetAlert && (
-                <span className="size-2 rounded-full bg-rose-500 animate-pulse ring-2 ring-card" />
+                <span className="size-2 rounded-full bg-rose-500 animate-pulse ring-1 ring-card" />
               )}
             </button>
-
-            {/* Accesos rápidos visibles en pantallas amplias */}
-            <div className="hidden lg:flex items-center gap-1 ml-1 border-l border-border/60 pl-2">
-              {NAV_ITEMS.slice(0, 4).map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.to);
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.to}
-                    className={cn(
-                      "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all select-none",
-                      active
-                        ? "bg-primary/10 text-primary dark:text-[#4EE2D5] font-extrabold shadow-2xs"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "size-4 shrink-0 transition-transform",
-                        active ? "scale-110 stroke-[2.3]" : "stroke-[1.8]",
-                      )}
-                    />
-                    <span>{item.label}</span>
-                    {item.badge && (
-                      <span className="size-2 rounded-full bg-rose-500 animate-pulse shrink-0 ring-2 ring-card" />
-                    )}
-                    {active && (
-                      <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary dark:bg-[#4EE2D5] rounded-full" />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          {/* Acciones de Cabecera: Racha Diaria + Botón Crear Movimiento + Perfil */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <DailyStreakBadge variant="badge" onOpenNewTx={handleNewTx} />
-
-            <button
-              type="button"
-              onClick={handleNewTx}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] text-slate-950 font-black text-xs shadow-md shadow-[#2EC4B6]/20 hover:brightness-105 active:scale-95 transition-all cursor-pointer"
-            >
-              <Plus className="size-4 stroke-[2.8]" />
-              <span>Nuevo Movimiento</span>
-            </button>
-
-            <Link
-              to="/mas"
-              className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-xl hover:bg-secondary/60 transition outline-hidden group"
-              title="Ajustes y perfil"
-            >
-              <div className="size-8 rounded-full overflow-hidden border-2 border-[#F6BE22] bg-[#141F36] ring-1 ring-[#F6BE22]/20">
-                <UserAvatarDisplay displayName={profile.data?.display_name} />
-              </div>
-              <span className="text-xs font-bold text-foreground max-w-[100px] truncate hidden xl:inline">
-                {profile.data?.display_name || "Explorador"}
-              </span>
-            </Link>
           </div>
-        </div>
-      </header>
+        </header>
+      ) : (
+        <header className="sticky top-0 z-40 w-full bg-card/90 dark:bg-[#0B1323]/95 backdrop-blur-md border-b border-border/80 shadow-xs transition-colors">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+            {/* Marca y Logotipo UALÍ */}
+            <Link to="/" className="flex items-center gap-2.5 shrink-0 group outline-hidden">
+              <div className="size-10 rounded-2xl bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] flex items-center justify-center text-slate-950 font-black shadow-md shadow-[#2EC4B6]/25 group-hover:scale-105 transition-transform">
+                <Wallet className="size-5 text-slate-950 stroke-[2.5]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-display font-black text-lg tracking-tight text-foreground leading-none flex items-center gap-1.5">
+                  <span>UALÍ</span>
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6] tracking-normal">
+                    Finanzas
+                  </span>
+                  {isTablet && (
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                      Tablet
+                    </span>
+                  )}
+                </span>
+                <span className="text-[11px] font-bold text-muted-foreground leading-tight mt-0.5">
+                  Gestión inteligente y en equipo
+                </span>
+              </div>
+            </Link>
+
+            {/* Navegación para Versiones de Pantalla Ancha (Tablet y Web) con Menú de Hamburguesa */}
+            <nav aria-label="Navegación de escritorio" className="flex items-center gap-2">
+              {/* Botón Principal Menú de Hamburguesa para Tablet y Web */}
+              <button
+                type="button"
+                onClick={() => setMenuOpen(true)}
+                aria-label="Abrir menú de navegación"
+                aria-expanded={menuOpen}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border/90 bg-secondary/70 hover:bg-secondary text-foreground text-xs font-black transition-all active:scale-95 shadow-2xs cursor-pointer group"
+              >
+                <Menu className="size-4.5 stroke-[2.3] text-[#2EC4B6] group-hover:scale-110 transition-transform" />
+                <span>Menú</span>
+                {hasBudgetAlert && (
+                  <span className="size-2 rounded-full bg-rose-500 animate-pulse ring-2 ring-card" />
+                )}
+              </button>
+
+              {/* Accesos rápidos visibles en pantallas amplias */}
+              <div className="hidden lg:flex items-center gap-1 ml-1 border-l border-border/60 pl-2">
+                {NAV_ITEMS.slice(0, 4).map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.to);
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.to}
+                      className={cn(
+                        "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all select-none",
+                        active
+                          ? "bg-primary/10 text-primary dark:text-[#4EE2D5] font-extrabold shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60",
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "size-4 shrink-0 transition-transform",
+                          active ? "scale-110 stroke-[2.3]" : "stroke-[1.8]",
+                        )}
+                      />
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span className="size-2 rounded-full bg-rose-500 animate-pulse shrink-0 ring-2 ring-card" />
+                      )}
+                      {active && (
+                        <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary dark:bg-[#4EE2D5] rounded-full" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
+
+            {/* Acciones de Cabecera: Racha Diaria + Botón Crear Movimiento + Perfil */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <DailyStreakBadge variant="badge" onOpenNewTx={handleNewTx} />
+
+              <button
+                type="button"
+                onClick={handleNewTx}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] text-slate-950 font-black text-xs shadow-md shadow-[#2EC4B6]/20 hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus className="size-4 stroke-[2.8]" />
+                <span>Nuevo Movimiento</span>
+              </button>
+
+              <Link
+                to="/mas"
+                className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-xl hover:bg-secondary/60 transition outline-hidden group"
+                title="Ajustes y perfil"
+              >
+                <div className="size-8 rounded-full overflow-hidden border-2 border-[#F6BE22] bg-[#141F36] ring-1 ring-[#F6BE22]/20">
+                  <UserAvatarDisplay displayName={profile.data?.display_name} />
+                </div>
+                <span className="text-xs font-bold text-foreground max-w-[100px] truncate hidden xl:inline">
+                  {profile.data?.display_name || "Explorador"}
+                </span>
+              </Link>
+            </div>
+          </div>
+        </header>
+      )}
 
       {/* PANEL LATERAL DESPLEGABLE (DRAWER) DEL MENÚ DE HAMBURGUESA PARA TABLET Y WEB */}
       {menuOpen && (
@@ -493,3 +536,6 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
     </>
   );
 }
+
+export const AppNav = DesktopNav;
+export default DesktopNav;

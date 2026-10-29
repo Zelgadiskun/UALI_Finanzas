@@ -20,6 +20,8 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CanastaGastosAccordion } from "@/components/ffos/CanastaGastosAccordion";
 import { ProgressSheet } from "@/components/ffos/ProgressSheet";
 import { DailyStreakBadge } from "@/components/ffos/DailyStreakBadge";
 import { LessonSheet } from "@/components/ffos/LessonSheet";
@@ -48,6 +50,12 @@ import { levelInfo } from "@/lib/ffos/gamification";
 import { getActiveLesson } from "@/lib/ffos/lessonsData";
 import { useEducationProgress } from "@/lib/ffos/educationStore";
 import { useMarkNotificationReadMutation } from "@/lib/supabase/mutations";
+import { useSound } from "@/hooks/useSound";
+import {
+  computeVirtualTelemetry,
+  calculateLevelProgress,
+  GUARDIAN_IDENTITIES,
+} from "@/lib/ffos/behavioralEngine";
 import {
   useBudgetsQuery,
   useCurrentUserId,
@@ -115,35 +123,20 @@ export function Inicio() {
   const [openLesson, setOpenLesson] = useState<{ lesson: LessonRow; done: boolean } | null>(null);
   const [challengeModalOpen, setChallengeModalOpen] = useState(false);
 
-  // Estados de simplificación de inicio: Hub de Guardianes y Análisis Colapsable
+  // Estados de contención visual y progressive disclosure (Ocultamiento Progresivo anti-ansiedad)
   const [guardianTab, setGuardianTab] = useState<"nido" | "chispa" | "toto">("nido");
   const [showFlowAnalysis, setShowFlowAnalysis] = useState(false);
+  const [showTxHistory, setShowTxHistory] = useState(false);
+  const [showGuardiansHub, setShowGuardiansHub] = useState(false);
   const [pigShieldPulse, setPigShieldPulse] = useState(false);
+
+  const { playDepositChime, playShieldRecharge } = useSound();
 
   const handleAportarNido = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    try {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioContextClass) {
-        const ctx = new AudioContextClass();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(320, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.22);
-        gain.gain.setValueAtTime(0.18, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.25);
-      }
-    } catch {
-      /* audio ignored */
-    }
+    playDepositChime();
+    playShieldRecharge();
     setPigShieldPulse(true);
     setTimeout(() => setPigShieldPulse(false), 1200);
     setSheetDefaultValues({
@@ -424,131 +417,138 @@ export function Inicio() {
   }, [notificationsQuery.data, memberNames]);
 
   const latest = useMemo(
-    () => [...scopedTransactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2),
+    () => [...scopedTransactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
     [scopedTransactions],
   );
+
+  // Desglose de gastos por categoría para la Canasta de Consumo Consciente
+  const categoryExpenses = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const t of scopedTransactions) {
+      if (t.type === "gasto" && sameMonth(t.date)) {
+        map[t.category] = (map[t.category] || 0) + t.amount;
+      }
+    }
+    return Object.entries(map).map(([concepto, monto]) => ({ concepto, monto }));
+  }, [scopedTransactions]);
 
   if (txQuery.isPending || progressQuery.isPending || !progressQuery.data) {
     return <DashboardSkeleton />;
   }
 
   const progress = progressQuery.data;
+  const levelProgress = calculateLevelProgress(progress.xp);
   const levelData = levelInfo(progress.xp);
-  const level = levelData.level;
+  const level = levelProgress.level;
   const xpCurrent = progress.xp;
-  // Fórmula indexada proporcional: Nivel 1 = 250 XP, Nivel 2 = Máximo 500 XP acumulados, Nivel 3 = 750 XP, etc.
-  const xpLevelCap = levelData.level * 250;
-  const xpLevelFloor = (levelData.level - 1) * 250;
-  const xpInLevel = Math.max(0, xpCurrent - xpLevelFloor);
-  const xpProgressPct = Math.min(100, Math.round((xpInLevel / 250) * 100));
+  const xpLevelCap = levelProgress.xpCap;
+  const xpInLevel = levelProgress.xpIntoLevel;
+  const xpProgressPct = levelProgress.pct;
 
   // Calculo de ahorro meta
   const savingsGoal = 600;
   const savingsCurrent = stats.savedTotal > 0 ? stats.savedTotal : 150;
   const savingsPct = Math.min(100, Math.round((savingsCurrent / savingsGoal) * 100));
 
+  // Telemetría de Mapeo Real a Virtual:
+  const virtualTelemetry = computeVirtualTelemetry({
+    savingsThisMonth: stats.currentSaved,
+    totalSpentThisMonth: stats.currentExpense,
+    totalPlannedThisMonth: stats.plannedTotal,
+    sharedExpensesCount: scopedTransactions.filter((t) => t.shared).length,
+    sharedExpensesTotal: sharedBreakdown.total,
+    overdrawnCategoriesCount:
+      stats.plannedTotal > 0 && stats.currentExpense > stats.plannedTotal ? 1 : 0,
+  });
+
   return (
-    <main className="px-3.5 sm:px-4 md:px-6 pt-3 pb-28 md:pb-12 max-w-md md:max-w-3xl lg:max-w-5xl mx-auto w-full">
-      {/* 1. Header Superior de Usuario y Gamificación Accesible */}
-      <section className="mb-3.5">
-        <div className="flex items-center justify-between gap-2">
-          {/* Avatar y Nombre con espacio protegido y tipografía legible */}
-          <div className="flex items-center gap-3 min-w-0 flex-1 pr-1">
-            <button
-              type="button"
-              onClick={() => setProfileOpen(true)}
-              className="relative shrink-0 group outline-hidden min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="Ajustes de perfil y compartir en redes"
-            >
-              <div className="grid size-11 place-items-center rounded-full overflow-hidden border-2 border-[#F6BE22] bg-[#141F36] ring-2 ring-[#F6BE22]/20 shadow-md group-hover:scale-105 active:scale-95 transition-transform">
-                <UserAvatarDisplay displayName={profile.data?.display_name} />
-              </div>
-              <span className="absolute bottom-0.5 right-0.5 size-3 bg-emerald-500 rounded-full ring-2 ring-background" />
-            </button>
-
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg font-black text-foreground tracking-tight flex items-center gap-1.5 truncate leading-tight">
-                <span className="truncate">
-                  ¡Hola, {profile.data?.display_name || "Explorador"}!
-                </span>
-                <span className="inline-block text-amber-400 shrink-0 text-sm">👋</span>
-              </h1>
-              <p className="text-xs font-bold text-teal-400 truncate leading-tight mt-0.5">
-                {levelData.name} • Nivel {levelData.level}
-              </p>
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 sm:px-6 md:px-8 pt-4 pb-32 md:pb-16 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto w-full space-y-8 antialiased selection:bg-teal-500/30 selection:text-teal-200">
+      {/* 1. Header Clínico de Identidad y Bienestar (Espaciado amplio y sin sobrecarga) */}
+      <header className="flex items-center justify-between gap-3 pt-1">
+        {/* Avatar y Bienvenida Amigable para Eduardo */}
+        <div className="flex items-center gap-3 min-w-0 flex-1 pr-1">
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className="relative shrink-0 group outline-hidden min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+            title="Ajustes de perfil y salud financiera"
+          >
+            <div className="grid size-11 place-items-center rounded-full overflow-hidden border-2 border-amber-400 bg-slate-900 ring-2 ring-amber-400/20 shadow-md group-hover:scale-105 active:scale-95 transition-transform">
+              <UserAvatarDisplay displayName={profile.data?.display_name} />
             </div>
+            <span className="absolute bottom-0.5 right-0.5 size-3 bg-emerald-400 rounded-full ring-2 ring-slate-950" />
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight flex items-center gap-1.5 truncate leading-tight">
+              <span className="truncate">¡Hola, {profile.data?.display_name || "Eduardo"}!</span>
+              <span className="inline-block text-amber-400 shrink-0 text-sm">✨</span>
+            </h1>
+            <p className="text-xs font-medium text-slate-400 truncate mt-0.5">
+              {levelData.name} • Bienestar Activo
+            </p>
           </div>
+        </div>
 
-          {/* Badges de Gamificación: Notificaciones, Tour, Racha y Puntos FFOS legibles */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Bell de Notificaciones */}
-            <button
-              type="button"
-              onClick={() => setNotifModalOpen(true)}
-              className="relative flex items-center justify-center size-9 rounded-xl bg-secondary border border-teal-500/30 text-teal-400 hover:bg-secondary/80 transition active:scale-95 shadow-xs"
-              title="Centro de alertas y metas"
-            >
-              <Bell className="size-4" />
-              {smartUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 size-4 bg-danger text-danger-foreground rounded-full text-xs font-black flex items-center justify-center animate-pulse">
-                  {smartUnreadCount}
-                </span>
-              )}
-            </button>
+        {/* Notificaciones y Racha Unificada */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setNotifModalOpen(true)}
+            className="relative flex items-center justify-center size-9 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-95 shadow-sm"
+            title="Centro de notificaciones y recordatorios"
+          >
+            <Bell className="size-4" />
+            {smartUnreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 size-4 bg-teal-500 text-slate-950 rounded-full text-[10px] font-black flex items-center justify-center animate-pulse">
+                {smartUnreadCount}
+              </span>
+            )}
+          </button>
 
-            {/* Tour Button */}
-            <button
-              type="button"
-              onClick={() => setTutorialOpen(true)}
-              className="flex items-center gap-1 h-9 px-2.5 rounded-xl bg-secondary border border-teal-500/30 text-teal-400 font-bold text-xs hover:bg-secondary/80 transition active:scale-95 shadow-xs"
-              title="Tour interactivo de Ualí"
-            >
-              <Compass className="size-3.5" />
-              <span>Tour</span>
-            </button>
-
-            {/* Visual Badge: Racha Diaria con reacción en tiempo real */}
-            <DailyStreakBadge variant="compact" onOpenNewTx={() => setTxSheetOpen(true)} />
-
-            {/* Badge de Puntos FFOS */}
-            <button
-              type="button"
-              onClick={() => setProgressOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-2.5 rounded-xl bg-card border border-amber-500/40 text-amber-300 font-black text-xs shadow-xs transition active:scale-95"
-              title="Tus puntos FFOS y progreso"
-            >
-              <span className="size-4 rounded-full bg-[#F6BE22] flex items-center justify-center text-[10px] text-slate-900 font-black">
+          <button
+            type="button"
+            onClick={() => setProgressOpen(true)}
+            className="flex items-center h-9 px-2.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:bg-slate-800 text-amber-300 font-bold text-xs shadow-sm transition active:scale-95 divide-x divide-slate-800 shrink-0"
+            title="Racha y Puntos de Bienestar FFOS"
+          >
+            <div className="flex items-center gap-1 pr-2">
+              <Flame className="size-3.5 fill-amber-400 text-amber-400" />
+              <span>{progress.streakDays || 1}d</span>
+            </div>
+            <div className="flex items-center gap-1 pl-2">
+              <span className="size-3.5 rounded-full bg-amber-400 flex items-center justify-center text-[9px] text-slate-950 font-black">
                 F
               </span>
               <span>{ffosTokens}</span>
-            </button>
-          </div>
+            </div>
+          </button>
         </div>
-      </section>
+      </header>
 
-      {/* 2. Selector de Ámbito Fintech: Todos / Personal / En Pareja */}
-      <section className="mb-3.5">
-        <div className="grid grid-cols-3 gap-1.5 p-1 bg-secondary/80 rounded-2xl border border-border/70 shadow-xs">
+      {/* Ámbito Financiero Discreto (Selector limpio con baja carga cognitiva) */}
+      <section aria-label="Ámbito de finanzas">
+        <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-900/50 rounded-2xl border border-slate-800/60">
           <button
             type="button"
             onClick={() => setViewScope("all")}
             className={cn(
-              "py-2 px-3 rounded-xl text-xs font-extrabold transition-all text-center min-h-[38px]",
+              "py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-center min-h-[36px]",
               viewScope === "all"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-slate-800 text-slate-100 font-bold shadow-sm"
+                : "text-slate-400 hover:text-slate-200",
             )}
           >
-            Todos
+            General
           </button>
           <button
             type="button"
             onClick={() => setViewScope("personal")}
             className={cn(
-              "py-2 px-3 rounded-xl text-xs font-extrabold transition-all text-center min-h-[38px]",
+              "py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-center min-h-[36px]",
               viewScope === "personal"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-slate-800 text-slate-100 font-bold shadow-sm"
+                : "text-slate-400 hover:text-slate-200",
             )}
           >
             Personal
@@ -557,10 +557,10 @@ export function Inicio() {
             type="button"
             onClick={() => setViewScope("shared")}
             className={cn(
-              "py-2 px-3 rounded-xl text-xs font-extrabold transition-all text-center flex items-center justify-center gap-1.5 min-h-[38px]",
+              "py-1.5 px-3 rounded-xl text-xs font-semibold transition-all text-center flex items-center justify-center gap-1.5 min-h-[36px]",
               viewScope === "shared"
-                ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 shadow-sm"
+                : "text-slate-400 hover:text-slate-200",
             )}
           >
             <Users className="size-3.5" />
@@ -569,10 +569,7 @@ export function Inicio() {
         </div>
       </section>
 
-      {/* Acceso e Instalación PWA */}
-      <PWAInstallButton variant="banner" className="mb-3" />
-
-      {/* Alerta Inteligente de Comercio Detectado por GPS & Google Maps */}
+      {/* Alerta de Comercio Detectado (Discreta, no invasiva) */}
       {detectedPlace && (
         <LocationAlertBanner
           place={detectedPlace}
@@ -581,27 +578,24 @@ export function Inicio() {
         />
       )}
 
-      {/* Alertas críticas si las hay */}
+      {/* Alertas Críticas (Formato suave, sin tonos punitivos agresivos) */}
       {alerts.length > 0 && (
-        <section aria-label="Alertas" className="mb-3 space-y-2">
-          {alerts.slice(0, 2).map((a) => (
+        <section aria-label="Avisos" className="space-y-2">
+          {alerts.slice(0, 1).map((a) => (
             <div
               key={a.notificationId ?? a.text}
-              className={cn(
-                "flex items-start gap-2.5 rounded-2xl px-3.5 py-2.5 text-xs font-bold",
-                a.tone === "danger" && "bg-danger-soft text-danger border border-danger/30",
-                a.tone === "warning" && "bg-warning-soft text-foreground border border-warning/30",
-                a.tone === "info" && "bg-info-soft text-info border border-info/30",
-              )}
+              className="flex items-center justify-between gap-2.5 rounded-2xl px-4 py-3 text-xs bg-slate-900/80 border border-amber-500/30 text-amber-200 shadow-sm"
             >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-              <span className="min-w-0 flex-1 leading-snug">{a.text}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertTriangle className="size-4 shrink-0 text-amber-400" />
+                <span className="truncate">{a.text}</span>
+              </div>
               {a.notificationId && (
                 <button
                   type="button"
                   aria-label="Descartar aviso"
                   onClick={() => markReadMutation.mutate(a.notificationId!)}
-                  className="shrink-0 opacity-70 hover:opacity-100 p-0.5"
+                  className="shrink-0 text-slate-400 hover:text-slate-200 p-1"
                 >
                   <X className="size-4" />
                 </button>
@@ -611,803 +605,585 @@ export function Inicio() {
         </section>
       )}
 
-      {/* 2. TARJETA DE BALANCE MINIMALISTA (CENTRALIZADA, MÁX 120PX) */}
-      <section className="mb-3.5">
-        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/80 p-4 shadow-card">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+      {/* 2. VIEWPORT HERO: REGLA ESTRICTA DE LOS TRES ELEMENTOS MACRO */}
+      {/* En el viewport inicial solo se permiten 3 datos macro:
+          1. Balance General Sanitizado
+          2. Salud de Nido en porcentaje
+          3. Barra del Nivel Actual
+      */}
+      <section
+        aria-label="Resumen Esencial de Bienestar"
+        className="rounded-3xl bg-slate-900/60 border border-slate-800/80 p-6 sm:p-7 shadow-2xl backdrop-blur-md flex flex-col gap-6"
+      >
+        {/* ELEMENTO 1: BALANCE GENERAL SANITIZADO (Cero-Bug Fallback, no punitivo, sin rojos estresantes) */}
+        <div className="flex flex-col items-center text-center space-y-1.5">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-400">
               {viewScope === "shared"
-                ? "BALANCE EN COMPAÑÍA"
+                ? "Disponibilidad en Compañía"
                 : viewScope === "personal"
-                  ? "BALANCE PERSONAL"
-                  : "BALANCE TOTAL DISPONIBLE"}
+                  ? "Disponibilidad Personal"
+                  : "Balance General Disponible"}
             </span>
             <button
               type="button"
               onClick={() => setHideBalance((v) => !v)}
               aria-label={hideBalance ? "Mostrar balance" : "Ocultar balance"}
-              className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition active:scale-95"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95 cursor-pointer"
             >
               {hideBalance ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           </div>
 
-          {/* Saldo Centralizado Limpio */}
-          <div className="text-center py-1">
+          <div className="py-2">
             <div className="inline-flex items-baseline gap-1.5">
-              <span className="text-3xl sm:text-4xl font-black tracking-tight text-foreground font-sans">
+              <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-100 font-sans">
                 {hideBalance ? "••••••••" : money(stats.totalBalance)}
               </span>
-              <span className="text-xs font-black text-muted-foreground">USD</span>
+              <span className="text-xs font-bold text-slate-400">USD</span>
             </div>
-            {/* Sub-indicador discreto de remanente y neto */}
-            <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-semibold mt-0.5">
-              <span>
-                Remanente:{" "}
-                <strong className="text-foreground">
-                  {hideBalance ? "••••" : `+${money(stats.carryoverBalance)}`}
-                </strong>
-              </span>
-              <span>•</span>
-              <span>
-                Neto {currentMonthName()}:{" "}
-                <strong
-                  className={
-                    hideBalance
-                      ? "text-foreground"
-                      : stats.currentMonthNet >= 0
-                        ? "text-emerald-400"
-                        : "text-amber-400"
-                  }
-                >
-                  {hideBalance ? "••••" : money(stats.currentMonthNet)}
-                </strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Micro-Píldoras Horizontales Muy Compactas (Caja vs Nido) */}
-          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/60">
-            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-secondary/50 border border-border/60">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
-                <span className="text-[11px] font-bold text-muted-foreground truncate">
-                  En Caja:
-                </span>
-              </div>
-              <span className="text-xs font-black text-foreground shrink-0">
-                {hideBalance ? "••••" : money(stats.freeLiquidity)}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-secondary/50 border border-border/60">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="size-2 rounded-full bg-teal-400 shrink-0" />
-                <span className="text-[11px] font-bold text-muted-foreground truncate">
-                  Ahorro Nido:
-                </span>
-              </div>
-              <span className="text-xs font-black text-teal-400 shrink-0">
-                {hideBalance ? "••••" : money(stats.savedTotal)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. RETOS Y ESPACIO COMPARTIDO (GRID COMPACTA DE 2 COLUMNAS) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3.5">
-        {/* Espacio en Compañía */}
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setFamilySheetOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setFamilySheetOpen(true);
-            }
-          }}
-          className="bg-card border border-teal-500/40 hover:border-teal-400/70 rounded-2xl p-3 shadow-card transition cursor-pointer active:scale-[0.99] group"
-        >
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="size-7 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
-                <Users className="size-3.5" />
-              </div>
-              <h3 className="text-xs font-black text-foreground truncate">
-                {inFamily ? familyQuery.data?.name || "Espacio Compartido" : "Espacio en Compañía"}
-              </h3>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="text-xs font-black text-foreground">
-                {inFamily ? money(sharedBreakdown.total) : "1 / 2"}
-              </span>
-              <span className="text-[10px] text-teal-400 font-bold ml-1">
-                {inFamily ? `${sharedBreakdown.myPct}%` : "50%"}
-              </span>
-            </div>
-          </div>
-          {/* Barra de progreso */}
-          <div className="w-full bg-secondary h-2 rounded-full overflow-hidden flex border border-border/60">
-            {inFamily ? (
-              <>
-                <div
-                  className="bg-emerald-400 h-full transition-all duration-500"
-                  style={{ width: `${sharedBreakdown.myPct}%` }}
-                />
-                <div
-                  className="bg-teal-500 h-full transition-all duration-500"
-                  style={{ width: `${sharedBreakdown.partnerPct}%` }}
-                />
-              </>
-            ) : (
-              <div
-                className="bg-gradient-to-r from-blue-500 to-teal-400 h-full transition-all duration-500"
-                style={{ width: "50%" }}
-              />
-            )}
+            <p className="text-xs text-slate-400 font-medium mt-1">
+              {hideBalance
+                ? "Modo seguro de privacidad activo"
+                : "Calculado en calma • Fondos en conservación"}
+            </p>
           </div>
         </div>
 
-        {/* Reto Semanal */}
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setChallengeModalOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setChallengeModalOpen(true);
-            }
-          }}
-          className="bg-card border border-amber-500/40 hover:border-amber-400/70 rounded-2xl p-3 shadow-card transition cursor-pointer active:scale-[0.99] group"
-        >
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="size-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
-                <Sparkles className="size-3.5" />
-              </div>
-              <h3 className="text-xs font-black text-foreground truncate">Reto Semanal</h3>
+        {/* ELEMENTO 2: SALUD DE NIDO EN PORCENTAJE (Blindaje no punitivo con acceso directo a recarga) */}
+        <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 text-lg shrink-0 shadow-inner">
+              🛡️
             </div>
-            <div className="text-right shrink-0">
-              <span className="text-xs font-black text-amber-400">2 / 3 días</span>
-              <span className="text-[10px] font-bold text-slate-400 ml-1">+100 FFOS</span>
-            </div>
-          </div>
-          {/* Barra de progreso */}
-          <div className="w-full bg-secondary h-2 rounded-full overflow-hidden border border-border/60">
-            <div
-              className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500"
-              style={{ width: "67%" }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 4. EL HUB DE LOS GUARDIANES (CARRUSEL HORIZONTAL / SELECTOR MODULAR) */}
-      <section className="mb-3.5">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
-            <h3 className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
-              Mi Progreso & Guardianes
-            </h3>
-          </div>
-          <Link
-            to="/aprender"
-            className="text-[11px] font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-0.5"
-          >
-            <span>Ver mapa</span>
-            <ChevronRight className="size-3" />
-          </Link>
-        </div>
-
-        {/* Fila de 3 Guardianes Ultra-Compacta (Pestañas de datos directos, sin robar espacio) */}
-        <div className="grid grid-cols-3 gap-1.5 p-1 bg-secondary/60 rounded-xl border border-border/70 mb-2">
-          {/* Nido */}
-          <button
-            type="button"
-            onClick={() => setGuardianTab("nido")}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-lg transition-all text-xs font-bold",
-              guardianTab === "nido"
-                ? "bg-[#00897B] text-white shadow-xs font-black"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <span className="text-xs">🐷</span>
-            <span className="text-[11px] font-black truncate">Ahorro ({savingsPct}%)</span>
-          </button>
-
-          {/* Chispa */}
-          <button
-            type="button"
-            onClick={() => setGuardianTab("chispa")}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-lg transition-all text-xs font-bold",
-              guardianTab === "chispa"
-                ? "bg-[#592E8E] text-white shadow-xs font-black"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <span className="text-xs">📐</span>
-            <span className="text-[11px] font-black truncate">
-              Nv.{level} ({xpProgressPct}%)
-            </span>
-          </button>
-
-          {/* Toto */}
-          <button
-            type="button"
-            onClick={() => setGuardianTab("toto")}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-lg transition-all text-xs font-bold",
-              guardianTab === "toto"
-                ? "bg-[#1E52B7] text-white shadow-xs font-black"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <span className="text-xs">🪙</span>
-            <span className="text-[11px] font-black truncate">
-              Misión ({nextLessonSubProg ? `${nextLessonSubProg.completedCount}/3` : "1/3"})
-            </span>
-          </button>
-        </div>
-
-        {/* Tarjeta Detallada Activa: Máxima Prioridad a la Información Financiera y de Progreso */}
-        {guardianTab === "nido" && (
-          <div className="rounded-2xl bg-gradient-to-r from-[#00897B] to-[#006D62] p-3.5 text-white border border-[#14A898]/80 shadow-card animate-in fade-in duration-200">
-            <div className="w-full space-y-2">
-              {/* Cabecera: Micro-insignia y Números Clave de Ahorro */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="size-6 rounded-lg bg-black/25 border border-white/20 flex items-center justify-center text-xs shrink-0 shadow-inner">
-                    🐷
-                  </span>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-200 block truncate">
-                      Fondo de Ahorro • Nido
-                    </span>
-                    <h3 className="text-xs font-bold text-white truncate">Meta de Respaldo</h3>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <div className="flex items-baseline gap-1 justify-end">
-                    <span className="text-sm font-black text-white">{money(savingsCurrent)}</span>
-                    <span className="text-[10px] text-teal-200/90 font-bold">
-                      / {money(savingsGoal)}
-                    </span>
-                  </div>
-                  <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-black bg-teal-950/70 text-emerald-300 border border-teal-400/30">
-                    {savingsPct}% completado
-                  </span>
-                </div>
-              </div>
-
-              {/* Barra de progreso nítida y datos de faltante */}
-              <div className="space-y-1">
-                <div className="w-full bg-[#004D45] h-2 rounded-full overflow-hidden p-0.5 border border-teal-300/40">
-                  <div
-                    className="bg-gradient-to-r from-emerald-300 to-teal-200 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${savingsPct}%` }}
-                  />
-                </div>
-                <div className="flex justify-between items-center text-xs font-sans">
-                  <span className="text-[11px] text-teal-100 font-medium">
-                    Faltan{" "}
-                    <strong className="text-amber-200 font-black">
-                      {money(Math.max(0, savingsGoal - savingsCurrent))}
-                    </strong>
-                  </span>
-                  <span className="text-[10px] text-teal-200 font-semibold">
-                    {savingsPct >= 100
-                      ? "¡Meta lista!"
-                      : `${Math.max(0, 100 - savingsPct)}% restante`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Acciones directas compactas */}
-              <div className="flex items-center justify-between pt-1 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={handleAportarNido}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-lg shadow-xs transition active:scale-95 cursor-pointer",
-                    pigShieldPulse && "ring-2 ring-emerald-400 animate-pulse",
-                  )}
-                >
-                  <Plus className="size-3 stroke-[3]" />
-                  <span>Aportar ahora</span>
-                </button>
-                <Link
-                  to="/ahorro"
-                  className="text-xs text-teal-100 hover:text-white font-bold flex items-center gap-0.5 transition"
-                >
-                  <span>Ver todas las metas</span>
-                  <ChevronRight className="size-3" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {guardianTab === "chispa" && (
-          <div className="rounded-2xl bg-gradient-to-r from-[#592E8E] to-[#452270] p-3.5 text-white border border-[#7A40C2]/80 shadow-card animate-in fade-in duration-200">
-            <div className="w-full space-y-2">
-              {/* Cabecera: Micro-insignia y Números Clave de Nivel */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="size-6 rounded-lg bg-black/25 border border-white/20 flex items-center justify-center text-xs shrink-0 shadow-inner">
-                    📐
-                  </span>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-purple-200 block truncate">
-                      Nivel & Gamificación • Chispa
-                    </span>
-                    <h3 className="text-xs font-bold text-white truncate">Experiencia Acumulada</h3>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-black text-amber-300">Nivel {level}</span>
-                  <span className="block text-[10px] text-purple-200 font-bold">
-                    {xpCurrent} / {xpLevelCap} XP
-                  </span>
-                </div>
-              </div>
-
-              {/* Barra de XP y faltante para subir de nivel */}
-              <div className="space-y-1">
-                <div className="w-full bg-[#341558] h-2 rounded-full overflow-hidden p-0.5 border border-purple-400/40">
-                  <div
-                    className="bg-gradient-to-r from-amber-400 to-amber-300 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${xpProgressPct}%` }}
-                  />
-                </div>
-                <div className="flex justify-between items-center text-xs font-sans">
-                  <span className="text-[11px] text-purple-200 font-medium">
-                    Progreso:{" "}
-                    <strong className="text-amber-300 font-black">{xpProgressPct}%</strong>
-                  </span>
-                  <span className="text-[11px] text-purple-100 font-semibold">
-                    Faltan {Math.max(0, xpLevelCap - xpCurrent)} XP para Nv.{level + 1}
-                  </span>
-                </div>
-              </div>
-
-              {/* Acción directa */}
-              <div className="flex items-center justify-between pt-1 border-t border-white/10">
-                <span className="text-[11px] text-purple-200 font-medium">
-                  +{xpInLevel} XP ganados en este nivel
-                </span>
-                <Link
-                  to="/aprender"
-                  className="text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-0.5 transition"
-                >
-                  <span>Ver mapa de aprendizaje</span>
-                  <ChevronRight className="size-3" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {guardianTab === "toto" && (
-          <div className="rounded-2xl bg-gradient-to-r from-[#1E52B7] to-[#153D8C] p-3.5 text-white border border-[#2D6BE4]/80 shadow-card animate-in fade-in duration-200">
-            <div className="w-full space-y-2">
-              {/* Cabecera: Micro-insignia y Datos de la Lección */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="size-6 rounded-lg bg-black/25 border border-white/20 flex items-center justify-center text-xs shrink-0 shadow-inner">
-                    🪙
-                  </span>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-sky-200 block truncate">
-                      {nextLessonSubProg && nextLessonSubProg.completedCount > 0
-                        ? `PASO ${Math.min(3, nextLessonSubProg.completedCount + 1)} DE 3 • TOTO`
-                        : "LECCIÓN ACTIVA • TOTO"}
-                    </span>
-                    <h3 className="text-xs font-bold text-white leading-tight truncate">
-                      {nextLesson?.title ?? "Presupuesto 0-base"}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-blue-950/70 text-amber-300 border border-blue-400/30">
-                    +50 FFOS
-                  </span>
-                  <span className="block text-[10px] text-sky-200 font-bold mt-0.5">
-                    {nextLessonSubProg ? `${nextLessonSubProg.completedCount}/3 listos` : "Paso 1"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Indicadores de submódulos en 3 segmentos */}
-              <div className="space-y-1">
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[0, 1, 2].map((stepIdx) => {
-                    const completed =
-                      nextLessonSubProg && nextLessonSubProg.completedCount > stepIdx;
-                    return (
-                      <div
-                        key={stepIdx}
-                        className={cn(
-                          "h-1.5 rounded-full border transition-all",
-                          completed
-                            ? "bg-amber-300 border-amber-300"
-                            : stepIdx === (nextLessonSubProg?.completedCount ?? 0)
-                              ? "bg-sky-400/70 border-sky-300"
-                              : "bg-blue-950/80 border-blue-400/30",
-                        )}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="flex justify-between items-center text-xs font-sans">
-                  <span className="text-[11px] text-sky-200 font-medium">
-                    {nextLessonSubProg
-                      ? `${nextLessonSubProg.completedCount} de 3 submódulos completados`
-                      : "Lección guiada paso a paso"}
-                  </span>
-                  <span className="text-[11px] font-black text-amber-300">
-                    Recompensa: +50 FFOS
-                  </span>
-                </div>
-              </div>
-
-              {/* Botón de acción */}
-              <div className="flex items-center justify-between pt-1 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (nextLesson) setOpenLesson({ lesson: nextLesson, done: false });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F6BE22] hover:bg-amber-300 text-slate-900 font-black text-xs rounded-lg shadow-xs transition active:scale-95 cursor-pointer"
-                >
-                  <span>
-                    {nextLessonSubProg && nextLessonSubProg.completedCount > 0
-                      ? `Continuar (Paso ${Math.min(3, nextLessonSubProg.completedCount + 1)})`
-                      : "Aprender lección"}
-                  </span>
-                  <ChevronRight className="size-3" />
-                </button>
-                <Link
-                  to="/aprender"
-                  className="text-xs text-sky-200 hover:text-white font-bold flex items-center gap-0.5 transition"
-                >
-                  <span>Ver todas</span>
-                  <ChevronRight className="size-3" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* 5. ACCESO RÁPIDO ANALÍTICO (FLUJO DE CAJA & COMPARATIVA MENSUAL) */}
-      <section className="mb-3.5">
-        <button
-          type="button"
-          onClick={() => setShowFlowAnalysis((v) => !v)}
-          className="w-full flex items-center justify-between p-3 rounded-2xl bg-card border border-border/80 hover:border-teal-500/50 transition shadow-card group active:scale-[0.99]"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-8.5 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
-              <TrendingUp className="size-4" />
-            </div>
-            <div className="text-left min-w-0">
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-xs font-black uppercase tracking-wider text-foreground">
-                  Flujo de Caja & Comparativa
-                </p>
-                <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-teal-500/15 text-teal-400 border border-teal-500/30">
-                  {currentMonthName()} vs {previousMonthName()}
+                <span className="text-xs font-bold text-slate-200 truncate">Salud de Nido</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                  Reserva Activa
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground font-semibold truncate mt-0.5">
-                Remanente (+{money(stats.carryoverBalance)}) • Margen Neto (
-                {stats.currentMonthNet >= 0 ? "+" : ""}
-                {money(stats.currentMonthNet)})
+              <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                {hideBalance
+                  ? "••••"
+                  : `${money(savingsCurrent)} de ${money(savingsGoal)} protegidos`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-xs font-bold text-teal-400 shrink-0 group-hover:translate-x-0.5 transition-transform ml-2">
-            <span className="hidden sm:inline">
-              {showFlowAnalysis ? "Ocultar" : "Ver análisis"}
-            </span>
-            <ChevronDown
+
+          <div className="text-right shrink-0 flex items-center gap-3">
+            <div className="flex flex-col items-end">
+              <span className="text-base font-black text-teal-300 font-mono">{savingsPct}%</span>
+              <span className="text-[10px] text-slate-400">Blindaje</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleAportarNido}
               className={cn(
-                "size-4 transition-transform duration-200",
-                showFlowAnalysis && "rotate-180",
+                "p-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 transition active:scale-95 shadow-sm cursor-pointer",
+                pigShieldPulse && "ring-2 ring-teal-300 animate-pulse",
               )}
+              title="Aportar y recargar salud de Nido"
+            >
+              <Plus className="size-4 stroke-[3]" />
+            </button>
+          </div>
+        </div>
+
+        {/* ELEMENTO 3: BARRA DEL NIVEL ACTUAL (Progresión gamificada fluida y armónica) */}
+        <div className="space-y-2 pt-1 border-t border-slate-800/50">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="size-3.5 text-amber-400 shrink-0" />
+              <span className="font-semibold text-slate-200">
+                {levelData.name} • Nivel {levelData.level}
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-amber-400 font-mono">
+              {xpProgressPct}% ({xpCurrent} XP)
+            </span>
+          </div>
+          <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+            <motion.div
+              className="bg-gradient-to-r from-amber-400 via-amber-300 to-teal-400 h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${xpProgressPct}%` }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             />
           </div>
-        </button>
-
-        {/* Acordeón Desplegable de Flujo de Caja y Comparativa */}
-        {showFlowAnalysis && (
-          <div className="mt-2 bg-card border border-border/80 rounded-2xl p-3.5 shadow-card space-y-3 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
-                Desglose Financiero
-              </span>
-              {/* Selector de Pestaña */}
-              <div className="grid grid-cols-2 gap-1 p-0.5 bg-secondary/80 rounded-xl border border-border/60">
-                <button
-                  type="button"
-                  onClick={() => setFlowViewMode("bridge")}
-                  className={cn(
-                    "py-1 px-2.5 rounded-lg text-xs font-bold transition-all",
-                    flowViewMode === "bridge"
-                      ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Puente
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFlowViewMode("compare")}
-                  className={cn(
-                    "py-1 px-2.5 rounded-lg text-xs font-bold transition-all",
-                    flowViewMode === "compare"
-                      ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Mes a Mes
-                </button>
-              </div>
-            </div>
-
-            {/* VISTA 1: PUENTE DE FLUJO CONTINUO */}
-            {flowViewMode === "bridge" ? (
-              <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  {/* 1. Remanente Mes Anterior */}
-                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-teal-500/30 flex flex-col justify-between">
-                    <span className="text-[11px] font-bold text-teal-400 block truncate">
-                      Remanente {previousMonthName()}
-                    </span>
-                    <span className="text-sm font-black text-foreground mt-1">
-                      {hideBalance ? "••••••" : `+${money(stats.carryoverBalance)}`}
-                    </span>
-                  </div>
-                  {/* 2. Ingresos Mes Actual */}
-                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60 flex flex-col justify-between">
-                    <span className="text-[11px] font-bold text-emerald-400 block truncate">
-                      Ingresos {currentMonthName()}
-                    </span>
-                    <span className="text-sm font-black text-emerald-400 mt-1">
-                      {hideBalance ? "••••••" : `+${money(stats.currentIncome)}`}
-                    </span>
-                  </div>
-                  {/* 3. Gastos Mes Actual */}
-                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60 flex flex-col justify-between">
-                    <span className="text-[11px] font-bold text-amber-400 block truncate">
-                      Gastos {currentMonthName()}
-                    </span>
-                    <span className="text-sm font-black text-amber-400 mt-1">
-                      {hideBalance
-                        ? "••••••"
-                        : `-${money(stats.currentExpense + stats.currentDebtPaid)}`}
-                    </span>
-                  </div>
-                  {/* 4. Saldo en Caja */}
-                  <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/40 flex flex-col justify-between">
-                    <span className="text-[11px] font-black text-teal-300 block truncate">
-                      Saldo en Caja
-                    </span>
-                    <span className="text-sm font-black text-foreground mt-1">
-                      {hideBalance ? "••••••" : `=${money(stats.totalBalance)}`}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-300 flex items-center gap-1.5">
-                    <Scale className="size-3.5 text-teal-400 shrink-0" />
-                    <span className="text-[11px]">Los fondos no se pierden al cambiar de mes.</span>
-                  </span>
-                  <Link
-                    to="/movimientos"
-                    className="font-bold text-teal-400 hover:underline flex items-center gap-0.5 shrink-0 text-[11px]"
-                  >
-                    <span>Historial</span>
-                    <ChevronRight className="size-3" />
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              /* VISTA 2: COMPARATIVA MES A MES (MoM Statistics) */
-              <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Ingresos MoM */}
-                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60">
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">
-                      <span>Ingresos</span>
-                      {stats.incomeDelta !== undefined && (
-                        <span
-                          className={cn(
-                            "px-1 py-0.2 rounded text-[10px] font-extrabold",
-                            stats.incomeDelta >= 0
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : "bg-amber-500/20 text-amber-400",
-                          )}
-                        >
-                          {stats.incomeDelta >= 0 ? "+" : ""}
-                          {stats.incomeDelta}%
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs sm:text-sm font-black text-foreground block">
-                      {hideBalance ? "••••••" : money(stats.currentIncome)}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold">
-                      Ant: {hideBalance ? "••••" : money(stats.prevIncome)}
-                    </span>
-                  </div>
-                  {/* Gastos MoM */}
-                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60">
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">
-                      <span>Gastos</span>
-                      {stats.expenseDelta !== undefined && (
-                        <span
-                          className={cn(
-                            "px-1 py-0.2 rounded text-[10px] font-extrabold",
-                            stats.expenseDelta <= 0
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : "bg-amber-500/20 text-amber-400",
-                          )}
-                        >
-                          {stats.expenseDelta >= 0 ? "+" : ""}
-                          {stats.expenseDelta}%
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs sm:text-sm font-black text-amber-400 block">
-                      {hideBalance ? "••••••" : money(stats.currentExpense)}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold">
-                      Ant: {hideBalance ? "••••" : money(stats.prevExpense)}
-                    </span>
-                  </div>
-                  {/* Ahorro Nido MoM */}
-                  <div className="p-2.5 rounded-xl bg-secondary/60 border border-border/60">
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">
-                      <span>Ahorro</span>
-                      <span className="text-teal-400 text-[10px] font-black">Nido</span>
-                    </div>
-                    <span className="text-xs sm:text-sm font-black text-teal-400 block">
-                      {hideBalance ? "••••••" : money(stats.currentSaved)}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold">
-                      Ant: {hideBalance ? "••••" : money(stats.prevSaved)}
-                    </span>
-                  </div>
-                </div>
-                {/* Tasa de Margen Neto del mes */}
-                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-[11px] font-semibold">
-                  <span className="text-slate-300">
-                    Margen neto:{" "}
-                    <strong
-                      className={
-                        hideBalance
-                          ? "text-foreground"
-                          : stats.currentMonthNet >= 0
-                            ? "text-emerald-400 font-black"
-                            : "text-amber-400 font-black"
-                      }
-                    >
-                      {hideBalance ? "••••••" : money(stats.currentMonthNet)}
-                    </strong>
-                  </span>
-                  <span className="text-slate-400">
-                    Mes ant:{" "}
-                    <strong className="text-foreground">
-                      {hideBalance ? "••••" : money(stats.prevMonthNet)}
-                    </strong>
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </section>
 
-      {/* 6. MICRO-HISTORIAL DE MOVIMIENTOS (COMPACTO) */}
-      <section className="mb-4">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <h4 className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
-            ÚLTIMOS MOVIMIENTOS
-          </h4>
-          <Link
-            to="/movimientos"
-            className="text-xs font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-1"
+      {/* 3. PROGRESSIVE DISCLOSURE: OCULTAMIENTO PROGRESIVO CON FRAMER-MOTION */}
+      {/* Encapsulamiento de desgloses analíticos y tablas de transacciones para evitar saturación y data dumping */}
+      <section aria-label="Desgloses Analíticos Progresivos" className="space-y-4">
+        {/* TARJETA 1: CANASTA DE GASTOS Y PRESUPUESTO CONSCIENTE */}
+        <CanastaGastosAccordion
+          titulo="Canasta de Consumo & Presupuesto"
+          montoUtilizado={stats.currentExpense}
+          montoMaximo={stats.plannedTotal > 0 ? stats.plannedTotal : 1200}
+          items={categoryExpenses}
+        />
+
+        {/* TARJETA 2: ANÁLISIS DE FLUJO DE CAJA & PUENTE MENSUAL */}
+        <div className="w-full max-w-md mx-auto bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800/80 overflow-hidden shadow-sm transition-colors">
+          <button
+            type="button"
+            onClick={() => setShowFlowAnalysis((v) => !v)}
+            className="w-full flex items-center justify-between p-4 focus:outline-none transition-colors hover:bg-slate-800/30 cursor-pointer text-left"
+            aria-expanded={showFlowAnalysis}
           >
-            <span>Ver todos ({scopedTransactions.length})</span>
-            <ChevronRight className="size-3.5" />
-          </Link>
+            <div className="flex items-center gap-3 min-w-0 pr-2">
+              <div className="size-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0">
+                <TrendingUp className="size-4" />
+              </div>
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-sm font-semibold text-slate-200 truncate">
+                  Flujo de Caja & Comparativa
+                </span>
+                <span className="text-xs text-slate-400 mt-0.5 truncate">
+                  {currentMonthName()} • Remanente (+{money(stats.carryoverBalance)})
+                </span>
+              </div>
+            </div>
+
+            <motion.span
+              animate={{ rotate: showFlowAnalysis ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-slate-400 text-xs inline-block shrink-0"
+              aria-hidden="true"
+            >
+              ▼
+            </motion.span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {showFlowAnalysis && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+              >
+                <div className="p-4 pt-1 border-t border-slate-800/60 bg-slate-950/40 space-y-3">
+                  {/* Selector Puente vs Comparativa */}
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setFlowViewMode("bridge")}
+                      className={cn(
+                        "py-1 px-2.5 rounded-lg text-xs font-semibold transition-all",
+                        flowViewMode === "bridge"
+                          ? "bg-teal-500 text-slate-950 font-bold shadow-xs"
+                          : "text-slate-400 hover:text-slate-200",
+                      )}
+                    >
+                      Puente de Caja
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFlowViewMode("compare")}
+                      className={cn(
+                        "py-1 px-2.5 rounded-lg text-xs font-semibold transition-all",
+                        flowViewMode === "compare"
+                          ? "bg-teal-500 text-slate-950 font-bold shadow-xs"
+                          : "text-slate-400 hover:text-slate-200",
+                      )}
+                    >
+                      Mes a Mes
+                    </button>
+                  </div>
+
+                  {flowViewMode === "bridge" ? (
+                    <div className="grid grid-cols-2 gap-2 text-center pt-1">
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block font-medium">
+                          Remanente
+                        </span>
+                        <span className="text-xs font-bold text-slate-200 mt-0.5 block">
+                          +{money(stats.carryoverBalance)}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block font-medium">
+                          Ingresos
+                        </span>
+                        <span className="text-xs font-bold text-emerald-400 mt-0.5 block">
+                          +{money(stats.currentIncome)}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block font-medium">Gastos</span>
+                        <span className="text-xs font-bold text-slate-300 mt-0.5 block">
+                          -{money(stats.currentExpense + stats.currentDebtPaid)}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-teal-500/30">
+                        <span className="text-[10px] text-teal-400 block font-medium">
+                          Saldo en Caja
+                        </span>
+                        <span className="text-xs font-bold text-teal-300 mt-0.5 block">
+                          ={money(stats.totalBalance)}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pt-1">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                          <span className="text-[10px] text-slate-400 block">Ingresos</span>
+                          <span className="text-xs font-bold text-slate-200 block mt-0.5">
+                            {money(stats.currentIncome)}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                          <span className="text-[10px] text-slate-400 block">Gastos</span>
+                          <span className="text-xs font-bold text-slate-300 block mt-0.5">
+                            {money(stats.currentExpense)}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                          <span className="text-[10px] text-slate-400 block">Ahorro</span>
+                          <span className="text-xs font-bold text-teal-400 block mt-0.5">
+                            {money(stats.currentSaved)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-slate-900/40 border border-slate-800 flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Margen neto:</span>
+                        <span className="font-bold text-slate-200 font-mono">
+                          {money(stats.currentMonthNet)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="space-y-2">
-          {latest.length === 0 ? (
-            <div className="p-4 rounded-2xl border border-border bg-card">
-              <EmptyState
-                title="Sin movimientos"
-                description="Presioná el botón '+' central para registrar tu primer movimiento."
-              />
+        {/* TARJETA 3: HISTORIAL DE TRANSACCIONES RECIENTES (Sin tablas infinitas mezcladas) */}
+        <div className="w-full max-w-md mx-auto bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800/80 overflow-hidden shadow-sm transition-colors">
+          <button
+            type="button"
+            onClick={() => setShowTxHistory((v) => !v)}
+            className="w-full flex items-center justify-between p-4 focus:outline-none transition-colors hover:bg-slate-800/30 cursor-pointer text-left"
+            aria-expanded={showTxHistory}
+          >
+            <div className="flex items-center gap-3 min-w-0 pr-2">
+              <div className="size-8 rounded-xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-slate-300 shrink-0">
+                <Wallet className="size-4" />
+              </div>
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-sm font-semibold text-slate-200 truncate">
+                  Historial de Movimientos
+                </span>
+                <span className="text-xs text-slate-400 mt-0.5 truncate">
+                  {scopedTransactions.length === 0
+                    ? "Sin registros en este ciclo"
+                    : `${scopedTransactions.length} registros • Toca para desplegar`}
+                </span>
+              </div>
             </div>
-          ) : (
-            latest.map((t) => {
-              const isExpense = t.type === "gasto";
-              const isIncome = t.type === "ingreso";
-              const isSavings = t.type === "ahorro";
-              return (
-                <div
-                  key={t.id}
-                  className="rounded-2xl p-2.5 sm:p-3 bg-card border border-border/80 flex items-center justify-between shadow-xs transition hover:border-border"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
-                    <div
-                      className={cn(
-                        "size-9 rounded-xl flex items-center justify-center font-bold shrink-0",
-                        isIncome &&
-                          "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
-                        isExpense && "bg-rose-500/15 text-rose-400 border border-rose-500/30",
-                        isSavings && "bg-teal-500/15 text-teal-400 border border-teal-500/30",
-                        t.type === "pago_deuda" &&
-                          "bg-purple-500/15 text-purple-400 border border-purple-500/30",
-                      )}
-                    >
-                      {isIncome ? (
-                        <ArrowDownRight className="size-4.5" />
-                      ) : isExpense ? (
-                        <ArrowUpRight className="size-4.5" />
-                      ) : isSavings ? (
-                        <Wallet className="size-4.5" />
-                      ) : (
-                        <TrendingDown className="size-4.5" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-extrabold text-xs sm:text-sm text-foreground truncate">
-                          {t.category}
-                        </span>
-                        {t.shared && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 font-extrabold border border-teal-500/30 shrink-0">
-                            En Compañía
+
+            <motion.span
+              animate={{ rotate: showTxHistory ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-slate-400 text-xs inline-block shrink-0"
+              aria-hidden="true"
+            >
+              ▼
+            </motion.span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {showTxHistory && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+              >
+                <div className="p-4 pt-1 border-t border-slate-800/60 bg-slate-950/40 space-y-2">
+                  {latest.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic py-2 text-center">
+                      No hay transacciones registradas.
+                    </p>
+                  ) : (
+                    latest.map((t) => {
+                      const isIncome = t.type === "ingreso";
+                      const isSavings = t.type === "ahorro";
+                      return (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-900/60 border border-slate-800/60 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <span
+                              className={cn(
+                                "size-2 rounded-full shrink-0",
+                                isIncome
+                                  ? "bg-emerald-400"
+                                  : isSavings
+                                    ? "bg-teal-400"
+                                    : "bg-slate-400",
+                              )}
+                            />
+                            <div className="min-w-0">
+                              <span className="text-slate-200 font-semibold block truncate">
+                                {t.category}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block truncate">
+                                {t.note || t.date}
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={cn(
+                              "font-mono font-bold shrink-0",
+                              isIncome ? "text-emerald-400" : "text-slate-300",
+                            )}
+                          >
+                            {isIncome ? "+" : "-"}
+                            {money(t.amount)}
                           </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground font-semibold truncate">
-                        {t.note || t.date}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span
-                      className={cn(
-                        "font-black text-sm sm:text-base block font-sans",
-                        isIncome && "text-emerald-400",
-                        isExpense && "text-rose-400",
-                        isSavings && "text-teal-400",
-                        t.type === "pago_deuda" && "text-purple-400",
-                      )}
+                        </div>
+                      );
+                    })
+                  )}
+
+                  <div className="pt-2 flex justify-end">
+                    <Link
+                      to="/movimientos"
+                      className="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition"
                     >
-                      {isIncome ? "+" : "-"}
-                      {money(t.amount)}
-                    </span>
+                      <span>Ver historial completo</span>
+                      <ChevronRight className="size-3.5" />
+                    </Link>
                   </div>
                 </div>
-              );
-            })
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* TARJETA 4: GUARDIANES & RETO DE COMPAÑÍA (Ocultamiento Progresivo) */}
+        <div className="w-full max-w-md mx-auto bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800/80 overflow-hidden shadow-sm transition-colors">
+          <button
+            type="button"
+            onClick={() => setShowGuardiansHub((v) => !v)}
+            className="w-full flex items-center justify-between p-4 focus:outline-none transition-colors hover:bg-slate-800/30 cursor-pointer text-left"
+            aria-expanded={showGuardiansHub}
+          >
+            <div className="flex items-center gap-3 min-w-0 pr-2">
+              <div className="size-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <Sparkles className="size-4" />
+              </div>
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-sm font-semibold text-slate-200 truncate">
+                  Guardianes & Misiones
+                </span>
+                <span className="text-xs text-slate-400 mt-0.5 truncate">
+                  Nido, Chispa y Toto • Desafíos activos
+                </span>
+              </div>
+            </div>
+
+            <motion.span
+              animate={{ rotate: showGuardiansHub ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-slate-400 text-xs inline-block shrink-0"
+              aria-hidden="true"
+            >
+              ▼
+            </motion.span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {showGuardiansHub && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+              >
+                <div className="p-4 pt-1 border-t border-slate-800/60 bg-slate-950/40 space-y-3">
+                  {/* Selector de Guardianes */}
+                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setGuardianTab("nido")}
+                      className={cn(
+                        "py-1 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                        guardianTab === "nido"
+                          ? "bg-teal-600 text-white font-bold shadow-xs"
+                          : "text-slate-400 hover:text-slate-200",
+                      )}
+                    >
+                      <span>🐷</span>
+                      <span className="text-[11px] truncate">Nido</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGuardianTab("chispa")}
+                      className={cn(
+                        "py-1 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                        guardianTab === "chispa"
+                          ? "bg-purple-600 text-white font-bold shadow-xs"
+                          : "text-slate-400 hover:text-slate-200",
+                      )}
+                    >
+                      <span>📐</span>
+                      <span className="text-[11px] truncate">Chispa</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGuardianTab("toto")}
+                      className={cn(
+                        "py-1 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                        guardianTab === "toto"
+                          ? "bg-blue-600 text-white font-bold shadow-xs"
+                          : "text-slate-400 hover:text-slate-200",
+                      )}
+                    >
+                      <span>🪙</span>
+                      <span className="text-[11px] truncate">Toto</span>
+                    </button>
+                  </div>
+
+                  {/* Detalle del Guardián Activo */}
+                  {guardianTab === "nido" && (
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-200 font-bold">Escudo Nido</span>
+                        <span className="text-teal-400 font-mono">
+                          {virtualTelemetry.escudoNidoHp} / {virtualTelemetry.escudoMaxHp} HP
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                        <div
+                          className="bg-teal-400 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${savingsPct}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center pt-1 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={handleAportarNido}
+                          className="text-amber-400 hover:underline font-bold"
+                        >
+                          + Aportar a Nido
+                        </button>
+                        <Link to="/ahorro" className="text-slate-400 hover:text-slate-200">
+                          Ver metas
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {guardianTab === "chispa" && (
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-200 font-bold">Batería del Clan</span>
+                        <span className="text-purple-400 font-mono">
+                          {virtualTelemetry.bateriaClanVoltaje}% Voltaje
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                        <div
+                          className="bg-purple-400 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${virtualTelemetry.bateriaClanVoltaje}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center pt-1 text-[11px]">
+                        <span className="text-slate-400">Progreso compartido</span>
+                        <Link to="/aprender" className="text-purple-300 hover:underline">
+                          Ver árbol
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {guardianTab === "toto" && (
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-200 font-bold">Liga de Tiburones</span>
+                        <span className="text-blue-400 font-mono">
+                          Rango {virtualTelemetry.sharkLeagueTier}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Solvencia evaluada: {virtualTelemetry.solvenciaScore} pts
+                      </p>
+                      <div className="flex justify-between items-center pt-1 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (nextLesson) setOpenLesson({ lesson: nextLesson, done: false });
+                          }}
+                          className="text-amber-400 hover:underline font-bold"
+                        >
+                          {nextLesson ? "Continuar lección" : "Ver lecciones"}
+                        </button>
+                        <Link to="/aprender" className="text-slate-400 hover:text-slate-200">
+                          Explorar
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
+
+      {/* 4. CONEXIÓN DE LA TRÍADA UALÍ: INICIO • PRESUPUESTO • APRENDER (SIMULADOR) */}
+      <section aria-label="Rutas Principales UALÍ" className="w-full max-w-md mx-auto grid grid-cols-2 gap-3 pt-1">
+        <Link
+          to="/presupuesto"
+          className="p-3.5 rounded-2xl bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800/80 hover:border-amber-500/40 transition-all flex flex-col justify-between gap-2 shadow-sm group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="size-7 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 text-xs font-bold">
+              📊
+            </span>
+            <span className="text-[10px] text-slate-400 group-hover:text-amber-300 transition-colors">
+              ➔
+            </span>
+          </div>
+          <div>
+            <span className="text-xs font-black text-slate-200 block group-hover:text-amber-300 transition-colors">
+              Presupuesto
+            </span>
+            <span className="text-[10px] text-slate-400 line-clamp-1">
+              Canastas & flujo consciente
+            </span>
+          </div>
+        </Link>
+
+        <Link
+          to="/aprender?tab=simulador"
+          className="p-3.5 rounded-2xl bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800/80 hover:border-purple-500/40 transition-all flex flex-col justify-between gap-2 shadow-sm group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="size-7 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 text-xs font-bold">
+              🎮
+            </span>
+            <span className="text-[10px] text-slate-400 group-hover:text-purple-300 transition-colors">
+              ➔
+            </span>
+          </div>
+          <div>
+            <span className="text-xs font-black text-slate-200 block group-hover:text-purple-300 transition-colors">
+              Simulador de Vida
+            </span>
+            <span className="text-[10px] text-slate-400 line-clamp-1">
+              Decisiones por roles sin riesgo
+            </span>
+          </div>
+        </Link>
       </section>
 
       {/* Hojas modales */}

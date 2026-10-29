@@ -228,7 +228,7 @@ function AppGate() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {!isMobile && <DesktopNav onOpenNewTx={() => setGlobalTxOpen(true)} />}
+      <DesktopNav onOpenNewTx={() => setGlobalTxOpen(true)} />
       <div
         className={cn(
           "flex-1 w-full mx-auto transition-all",

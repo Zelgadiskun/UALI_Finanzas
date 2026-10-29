@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -10,6 +10,7 @@ import {
   Car,
   CheckCircle2,
   ChevronDown,
+  Compass,
   EyeOff,
   Flame,
   HelpCircle,
@@ -35,6 +36,7 @@ import { evaluateMathExpression } from "@/lib/ffos/calculator";
 import { SmartBudgetAssistantModal } from "@/components/ffos/SmartBudgetAssistantModal";
 import { TutorialModal } from "@/components/ffos/TutorialModal";
 import { BudgetAccordion } from "@/components/ffos/BudgetAccordion";
+import { CanastaGastosAccordion } from "@/components/ffos/CanastaGastosAccordion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,6 +142,9 @@ function PresupuestoRoute() {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [txSheetOpen, setTxSheetOpen] = useState(false);
   const [nidoModalOpen, setNidoModalOpen] = useState(false);
+  const [budgetViewMode, setBudgetViewMode] = useState<
+    "canastas_friccion_cero" | "rubros_detallados"
+  >("canastas_friccion_cero");
 
   // Form states for new budget
   const [newBudgetName, setNewBudgetName] = useState("");
@@ -382,6 +387,34 @@ function PresupuestoRoute() {
   );
   const ahorroPct = ahorroPlanned > 0 ? Math.round((ahorroSpent / ahorroPlanned) * 100) : 0;
 
+  // Listas de conceptos y montos para el acordeón de canastas progresivas (Anti-Data Dumping)
+  const necesidadesItems = useMemo(
+    () =>
+      necesidadesBudgets.map((b) => ({
+        concepto: b.name,
+        monto: b.spent || 0,
+      })),
+    [necesidadesBudgets],
+  );
+
+  const deseosItems = useMemo(
+    () =>
+      deseosBudgets.map((b) => ({
+        concepto: b.name,
+        monto: b.spent || 0,
+      })),
+    [deseosBudgets],
+  );
+
+  const ahorroItems = useMemo(
+    () =>
+      ahorroBudgets.map((b) => ({
+        concepto: b.name,
+        monto: b.spent || 0,
+      })),
+    [ahorroBudgets],
+  );
+
   // Totales generales consistentes que siempre cuadran matemáticamente con las 3 canastas
   const totalPlanned = useMemo(
     () => necesidadesPlanned + deseosPlanned + ahorroPlanned,
@@ -524,10 +557,12 @@ function PresupuestoRoute() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Badge de Racha Diaria con reacción en tiempo real */}
-          <DailyStreakBadge variant="compact" onOpenNewTx={() => setTxSheetOpen(true)} />
+          {/* Badge de Racha Diaria: visible en pantallas medianas (en móvil se muestra en la tarjeta dedicada abajo) */}
+          <div className="hidden md:flex">
+            <DailyStreakBadge variant="compact" onOpenNewTx={() => setTxSheetOpen(true)} />
+          </div>
 
-          {/* Menú de Herramientas del Presupuesto (Despeja la cabecera eliminando solapamiento) */}
+          {/* Menú de Herramientas del Presupuesto (Despeja la cabecera en móvil) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -605,12 +640,12 @@ function PresupuestoRoute() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Botón Guardián Nido 🐷 */}
+          {/* Botón Guardián Nido 🐷: visible en desktop, reubicado al menú en móvil */}
           <button
             type="button"
             onClick={() => setNidoModalOpen(true)}
             className={cn(
-              "relative size-9 rounded-xl bg-card border flex items-center justify-center transition active:scale-95 shadow-xs shrink-0",
+              "hidden md:flex relative size-9 rounded-xl bg-card border items-center justify-center transition active:scale-95 shadow-xs shrink-0",
               isOverdrawn
                 ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
                 : "border-teal-500/30 text-teal-400 bg-teal-500/10 hover:border-teal-500/50",
@@ -631,11 +666,12 @@ function PresupuestoRoute() {
             type="button"
             onClick={() => setTxSheetOpen(true)}
             aria-label="Nueva transacción"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 font-black text-xs active:scale-95 transition-all shadow-md shadow-[#2EC4B6]/25 shrink-0"
+            className="flex items-center gap-1 h-9 px-2.5 sm:px-3 rounded-xl bg-[#2EC4B6] hover:bg-[#20A39E] text-slate-950 font-black text-xs active:scale-95 transition-all shadow-md shadow-[#2EC4B6]/25 shrink-0"
             title="Registrar nueva transacción o gasto"
           >
             <Plus className="size-4 stroke-[3]" />
-            <span>Transacción</span>
+            <span className="hidden sm:inline">Transacción</span>
+            <span className="sm:hidden font-bold">Nuevo</span>
           </button>
         </div>
       </section>
@@ -679,7 +715,7 @@ function PresupuestoRoute() {
                 </button>
               ) : (
                 <span className="text-xs px-2.5 py-1 rounded-xl bg-teal-500/15 text-teal-400 font-black border border-teal-500/30">
-                  {totalPlanned > 0 ? `${percentUsed}% usado` : "0% usado"}
+                  {totalPlanned > 0 ? `${percentUsed}% usado` : "0% utilizado de tu cupo"}
                 </span>
               )}
             </div>
@@ -888,24 +924,95 @@ function PresupuestoRoute() {
         </button>
       </section>
 
-      {/* 4. COMPONENTE ACCORDION DE SHADCN/UI (Necesidades, Deseos, Ahorro Nido) */}
-      <BudgetAccordion
-        necesidadesBudgets={necesidadesBudgets}
-        deseosBudgets={deseosBudgets}
-        ahorroBudgets={ahorroBudgets}
-        necesidadesSpent={necesidadesSpent}
-        necesidadesPlanned={necesidadesPlanned}
-        necesidadesPct={necesidadesPct}
-        deseosSpent={deseosSpent}
-        deseosPlanned={deseosPlanned}
-        deseosPct={deseosPct}
-        ahorroSpent={ahorroSpent}
-        ahorroPlanned={ahorroPlanned}
-        ahorroPct={ahorroPct}
-        onOpenEmergencyModal={() => setEmergencyModalOpen(true)}
-        onOpenNewBudget={() => setModalOpen(true)}
-        onOpenTransaction={() => setTxSheetOpen(true)}
-      />
+      {/* 4. CANASTAS CON EXPOSICIÓN PROGRESIVA (ANTI DATA-DUMPING & FRICCIÓN CERO) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between pb-1">
+          <div className="flex items-center gap-1.5 p-1 bg-secondary/80 rounded-xl border border-border/60">
+            <button
+              type="button"
+              onClick={() => setBudgetViewMode("canastas_friccion_cero")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95",
+                budgetViewMode === "canastas_friccion_cero"
+                  ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Sparkles className="size-3.5" />
+              <span>Canastas 50/30/20</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setBudgetViewMode("rubros_detallados")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95",
+                budgetViewMode === "rubros_detallados"
+                  ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <SlidersHorizontal className="size-3.5" />
+              <span>Vista Rubros</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="text-xs font-bold text-[#2EC4B6] hover:underline flex items-center gap-1"
+          >
+            <Plus className="size-3.5" />
+            <span>Nuevo Rubro</span>
+          </button>
+        </div>
+
+        {budgetViewMode === "canastas_friccion_cero" ? (
+          <div className="space-y-2.5">
+            {/* Canasta 1: Necesidades Básicas (50%) */}
+            <CanastaGastosAccordion
+              titulo="Necesidades Básicas (50% Regla Consciente)"
+              montoUtilizado={necesidadesSpent}
+              montoMaximo={necesidadesPlanned}
+              items={necesidadesItems}
+              defaultOpen={true}
+            />
+
+            {/* Canasta 2: Deseos & Calidad de Vida (30%) */}
+            <CanastaGastosAccordion
+              titulo="Deseos & Calidad de Vida (30%)"
+              montoUtilizado={deseosSpent}
+              montoMaximo={deseosPlanned}
+              items={deseosItems}
+            />
+
+            {/* Canasta 3: Reserva Protegida Nido (20%) */}
+            <CanastaGastosAccordion
+              titulo="Ahorro Protegido Nido (20% Reserva)"
+              montoUtilizado={ahorroSpent}
+              montoMaximo={ahorroPlanned}
+              items={ahorroItems}
+            />
+          </div>
+        ) : (
+          <BudgetAccordion
+            necesidadesBudgets={necesidadesBudgets}
+            deseosBudgets={deseosBudgets}
+            ahorroBudgets={ahorroBudgets}
+            necesidadesSpent={necesidadesSpent}
+            necesidadesPlanned={necesidadesPlanned}
+            necesidadesPct={necesidadesPct}
+            deseosSpent={deseosSpent}
+            deseosPlanned={deseosPlanned}
+            deseosPct={deseosPct}
+            ahorroSpent={ahorroSpent}
+            ahorroPlanned={ahorroPlanned}
+            ahorroPct={ahorroPct}
+            onOpenEmergencyModal={() => setEmergencyModalOpen(true)}
+            onOpenNewBudget={() => setModalOpen(true)}
+            onOpenTransaction={() => setTxSheetOpen(true)}
+          />
+        )}
+      </section>
 
       {/* 5. PRIVACIDAD INTELIGENTE UALÍ (MICRO-CARD INFORMATIVA) */}
       <section className="bg-card border border-border/80 rounded-2xl p-3 flex items-center gap-2.5">
@@ -917,6 +1024,33 @@ function PresupuestoRoute() {
             Los rubros con <Lock className="size-3 inline text-purple-400 mx-0.5" /> se descuentan
             de tu balance general de forma privada sin exponerse a tu equipo.
           </p>
+        </div>
+      </section>
+
+      {/* 6. CONEXIÓN DE PILARES UALÍ (INICIO • PRESUPUESTO • APRENDER) */}
+      <section className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="size-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0">
+            <Compass className="size-4" />
+          </div>
+          <div>
+            <span className="font-bold text-slate-200 block">¿Dudas sobre cómo distribuir tus canastas?</span>
+            <span className="text-[11px] text-slate-400">Pruébalo sin riesgo en el Simulador de Vida Financiera.</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Link
+            to="/"
+            className="flex-1 sm:flex-none py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition text-center"
+          >
+            Ir a Inicio
+          </Link>
+          <Link
+            to="/aprender?tab=simulador"
+            className="flex-1 sm:flex-none py-2 px-3.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-black transition text-center shadow-xs"
+          >
+            Entrenar en Simulador ➔
+          </Link>
         </div>
       </section>
 

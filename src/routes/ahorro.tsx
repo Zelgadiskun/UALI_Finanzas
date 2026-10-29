@@ -13,7 +13,11 @@ import {
   Target,
   Trash2,
   X,
+  Box,
+  Eye,
 } from "lucide-react";
+import { GuardianNido } from "@/components/ffos/GuardianNido";
+import { Guardian3DCanvas } from "@/components/ffos/Guardian3DCanvas";
 import { NidoCharacter, TotoCharacter } from "@/components/ffos/characters/Characters";
 import { TransactionSheet } from "@/components/ffos/TransactionSheet";
 import { MoneyCalculatorInput } from "@/components/ui/MoneyCalculatorInput";
@@ -64,6 +68,8 @@ export function AhorroRoute() {
   const [newGoalName, setNewGoalName] = useState("");
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [triviaSelected, setTriviaSelected] = useState<number | null>(null);
+  const [show3DMode, setShow3DMode] = useState(false);
+  const [simulatedAlert, setSimulatedAlert] = useState(false);
 
   const transactions = useMemo(() => txQuery.data ?? [], [txQuery.data]);
   const progress = progressQuery.data;
@@ -172,16 +178,21 @@ export function AhorroRoute() {
             <ArrowLeft className="size-4.5" />
           </Link>
 
-          {/* Racha Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-300">
-            <Flame className="size-3.5 fill-amber-400 text-amber-400" />
-            <span className="text-xs font-semibold tracking-wide">{streak} días de constancia</span>
-          </div>
-
-          {/* User XP / Coins Tag */}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-200">
-            <span className="size-2.5 rounded-full bg-[#F59E0B] inline-block" />
-            <span className="text-xs font-bold">{ffosTokens} FFOS</span>
+          {/* Píldora Unificada: Racha & FFOS (Compacta, sin desbordamiento en móvil) */}
+          <div className="flex items-center h-8 px-2 sm:px-2.5 rounded-full bg-secondary/80 border border-border/80 text-amber-300 font-black text-xs shadow-xs shrink-0 divide-x divide-border/80">
+            <div className="flex items-center gap-1 sm:gap-1.5 pr-1.5 sm:pr-2">
+              <Flame className="size-3.5 fill-amber-400 text-amber-400" />
+              <span>{streak}d</span>
+              <span className="hidden sm:inline font-semibold text-muted-foreground text-[10px]">
+                constancia
+              </span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-1.5 pl-1.5 sm:pl-2">
+              <span className="size-3.5 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-[9px] font-black">
+                F
+              </span>
+              <span>{ffosTokens}</span>
+            </div>
           </div>
         </div>
 
@@ -213,13 +224,83 @@ export function AhorroRoute() {
           ✦
         </div>
 
-        {/* Header con Bocadillo de diálogo + SVG de Nido */}
-        <div className="flex items-center gap-3">
-          <div className="shrink-0">
-            <NidoCharacter className="size-22" />
+        {/* Selector de Modo: Guardián Nido React/Confetti vs Escudo 3D Three.js */}
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShow3DMode(false)}
+              className={cn(
+                "px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5",
+                !show3DMode
+                  ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                  : "bg-secondary/70 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Sparkles className="size-3.5" />
+              <span>Nido React & Dopamina</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShow3DMode(true)}
+              className={cn(
+                "px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5",
+                show3DMode
+                  ? "bg-[#2EC4B6] text-slate-950 font-black shadow-xs"
+                  : "bg-secondary/70 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Box className="size-3.5" />
+              <span>Escudo 3D Three.js</span>
+            </button>
           </div>
 
-          {/* Bocadillo de Nido */}
+          <button
+            type="button"
+            onClick={() => setSimulatedAlert(!simulatedAlert)}
+            className={cn(
+              "text-[11px] font-bold px-2 py-1 rounded-lg border transition",
+              simulatedAlert
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                : "bg-secondary/50 text-muted-foreground border-border/60 hover:text-foreground",
+            )}
+            title="Prueba la transición lenta del 40% adicional en tonos ámbar (Etiología de Fricción Cero)"
+          >
+            {simulatedAlert ? "Modo Alerta ON" : "Simular Alerta"}
+          </button>
+        </div>
+
+        {/* Visualizador Activo: GuardianNido o Three.js 3D */}
+        {show3DMode ? (
+          <div className="rounded-2xl bg-slate-950/80 border border-[#2EC4B6]/30 p-4 mb-4 text-center">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-teal-400">
+                Renderizado Three.js en Vista Previa
+              </span>
+              <span className="text-[10px] text-muted-foreground font-semibold">
+                Gira arrastrando con el ratón o dedo
+              </span>
+            </div>
+            <Guardian3DCanvas variant="shield" accentColor="#2EC4B6" className="w-full h-44" />
+            <p className="text-xs text-slate-300 font-medium mt-1">
+              Escudo de Titanio Nido con partículas orbitales aceleradas por WebGL
+            </p>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <GuardianNido
+              porcentajeAhorro={primaryPct}
+              isError={simulatedAlert || txQuery.isError}
+            />
+          </div>
+        )}
+
+        {/* Bocadillo de Diálogo y Estado */}
+        <div className="flex items-center gap-3">
+          <div className="shrink-0">
+            <NidoCharacter className="size-16" />
+          </div>
+
           <div className="flex-1 bg-secondary/80 border border-[#2EC4B6]/40 rounded-2xl p-3 relative shadow-inner">
             <div className="absolute -left-2 top-5 size-0 border-t-6 border-t-transparent border-r-[8px] border-r-[#2EC4B6]/40 border-b-6 border-b-transparent" />
             <p className="text-xs font-bold text-teal-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
@@ -227,11 +308,9 @@ export function AhorroRoute() {
               <span className="size-1.5 rounded-full bg-emerald-400 inline-block animate-ping" />
             </p>
             <p className="text-xs leading-relaxed text-foreground">
-              ¡Cuidando tus sueños! Estás a sólo{" "}
-              <strong className="font-bold text-amber-300 underline decoration-amber-400/50 underline-offset-2">
-                {money(primaryRemaining)}
-              </strong>{" "}
-              de completar tu meta de {primaryGoal?.name ?? "ahorro"}.
+              {simulatedAlert
+                ? "Nido activó el protocolo de resguardo sin penalización. Tu salud financiera está amortiguada."
+                : `¡Cuidando tus sueños! Estás a sólo ${money(primaryRemaining)} de completar tu meta de ${primaryGoal?.name ?? "ahorro"}.`}
             </p>
           </div>
         </div>

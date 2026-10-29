@@ -48,6 +48,7 @@ import {
 import { useLeaveFamilyMutation } from "@/lib/supabase/mutations";
 import { levelInfo } from "@/lib/ffos/gamification";
 import { applyTheme, getStoredTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 const title = "Más — UALI Finanzas";
 const description = "Progreso, logros, metas y ajustes de tu cuenta en UALI Finanzas.";
