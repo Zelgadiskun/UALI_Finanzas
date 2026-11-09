@@ -12,6 +12,8 @@ export function LevelBar({
   onOpen: () => void;
 }) {
   const info = levelInfo(xp);
+  const porcentaje = info.pct;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
 
   return (
     <button
@@ -32,7 +34,7 @@ export function LevelBar({
       </div>
       <div className="mt-3">
         <ProgressBar
-          value={info.pct}
+          value={renderPorcentaje}
           height={8}
           className="bg-[rgb(255_255_255/0.18)]"
           fillClassName="bg-white"

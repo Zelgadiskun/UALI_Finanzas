@@ -118,8 +118,8 @@ export function FinancialLifeSimulation({
             Aprende por Experimentación sin Arriesgar tu Dinero Real
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            Elige un rol cotidiano y toma 5 decisiones rápidas. Comprueba cómo cada elección impacta tu
-            flujo de caja, tu reserva Nido y tus niveles de estrés.
+            Elige un rol cotidiano y toma 5 decisiones rápidas. Comprueba cómo cada elección impacta
+            tu flujo de caja, tu reserva Nido y tus niveles de estrés.
           </p>
         </div>
 
@@ -188,7 +188,10 @@ export function FinancialLifeSimulation({
         <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <span className="size-2 rounded-full bg-teal-400" />
-            <span>Tus decisiones en este simulador no modifican tus cuentas bancarias ni balances reales.</span>
+            <span>
+              Tus decisiones en este simulador no modifican tus cuentas bancarias ni balances
+              reales.
+            </span>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <Link
@@ -220,9 +223,7 @@ export function FinancialLifeSimulation({
             <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
               Simulación Concluida • {gameState.role.title}
             </span>
-            <h2 className="text-2xl font-black text-slate-100">
-              {outcome.archetype}
-            </h2>
+            <h2 className="text-2xl font-black text-slate-100">{outcome.archetype}</h2>
             <div className="pt-2">
               <span
                 className={cn(
@@ -273,9 +274,7 @@ export function FinancialLifeSimulation({
               <Sparkles className="size-3.5" />
               <span>Aprendizaje Práctico para la Vida Real:</span>
             </div>
-            <p className="text-slate-300 leading-relaxed">
-              {outcome.recommendation}
-            </p>
+            <p className="text-slate-300 leading-relaxed">{outcome.recommendation}</p>
           </div>
 
           {/* Recompensa de Experiencia */}
@@ -395,9 +394,7 @@ export function FinancialLifeSimulation({
             <HeartPulse
               className={cn(
                 "size-3",
-                gameState.cortisol > 65
-                  ? "text-amber-400 animate-pulse"
-                  : "text-emerald-400",
+                gameState.cortisol > 65 ? "text-amber-400 animate-pulse" : "text-emerald-400",
               )}
             />
           </div>
@@ -405,9 +402,7 @@ export function FinancialLifeSimulation({
             <span
               className={cn(
                 "text-sm sm:text-base font-black font-mono",
-                gameState.cortisol > 65
-                  ? "text-amber-300"
-                  : "text-emerald-400",
+                gameState.cortisol > 65 ? "text-amber-300" : "text-emerald-400",
               )}
             >
               {gameState.cortisol}%
@@ -484,9 +479,7 @@ export function FinancialLifeSimulation({
                     <p className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-teal-300 transition-colors leading-snug">
                       {choice.label}
                     </p>
-                    <p className="text-[11px] text-slate-400 leading-snug">
-                      {choice.subtext}
-                    </p>
+                    <p className="text-[11px] text-slate-400 leading-snug">{choice.subtext}</p>
                   </div>
 
                   <span className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 group-hover:text-teal-300 group-hover:border-teal-500/30 transition-colors shrink-0">
@@ -516,7 +509,12 @@ export function FinancialLifeSimulation({
               </div>
               <div className="min-w-0">
                 <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider block">
-                  Retroalimentación de {lastChoice?.guardian === "nido" ? "Nido" : lastChoice?.guardian === "chispa" ? "Chispa" : "Toto"}
+                  Retroalimentación de{" "}
+                  {lastChoice?.guardian === "nido"
+                    ? "Nido"
+                    : lastChoice?.guardian === "chispa"
+                      ? "Chispa"
+                      : "Toto"}
                 </span>
                 <h4 className="text-base font-black text-slate-100 truncate">
                   {lastChoice?.feedbackTitle}
@@ -591,12 +589,18 @@ export function FinancialLifeSimulation({
 
       {/* Mini Barra de Atajo entre Pilares UALÍ */}
       <div className="flex items-center justify-between pt-2 px-1 text-[11px] text-slate-500">
-        <Link to={APP_ROUTES.INICIO} className="hover:text-slate-300 flex items-center gap-1 transition">
+        <Link
+          to={APP_ROUTES.INICIO}
+          className="hover:text-slate-300 flex items-center gap-1 transition"
+        >
           <Home className="size-3" />
           <span>Inicio</span>
         </Link>
         <span className="text-slate-700">•</span>
-        <Link to={APP_ROUTES.PRESUPUESTO} className="hover:text-slate-300 flex items-center gap-1 transition">
+        <Link
+          to={APP_ROUTES.PRESUPUESTO}
+          className="hover:text-slate-300 flex items-center gap-1 transition"
+        >
           <PieChart className="size-3" />
           <span>Presupuesto</span>
         </Link>

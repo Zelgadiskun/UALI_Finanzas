@@ -22,6 +22,9 @@ export function ProgressBar({
   /** Pisa el color de `state` — para cuando la barra vive sobre una superficie de color (ej. LevelBar sobre bg-primary), donde ok/warn/over no tiene sentido semántico y el verde/rojo desentona. */
   fillClassName?: string;
 }) {
+  const porcentaje = value;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+
   const fill =
     fillClassName ??
     {
@@ -34,7 +37,7 @@ export function ProgressBar({
   return (
     <div
       role="progressbar"
-      aria-valuenow={Math.round(value)}
+      aria-valuenow={Math.round(renderPorcentaje)}
       aria-valuemin={0}
       aria-valuemax={100}
       style={{ height }}
@@ -42,7 +45,7 @@ export function ProgressBar({
     >
       <div
         className={cn("h-full rounded-full transition-[width] duration-500", fill)}
-        style={{ width: `${Math.max(2, Math.min(100, value))}%` }}
+        style={{ width: `${Math.max(2, Math.min(100, renderPorcentaje))}%` }}
       />
     </div>
   );

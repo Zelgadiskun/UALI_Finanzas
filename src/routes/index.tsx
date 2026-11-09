@@ -443,12 +443,16 @@ export function Inicio() {
   const xpCurrent = progress.xp;
   const xpLevelCap = levelProgress.xpCap;
   const xpInLevel = levelProgress.xpIntoLevel;
-  const xpProgressPct = levelProgress.pct;
+  const nivelPorcentaje = levelProgress.pct;
+  const renderNivelPorcentaje = Number.isNaN(nivelPorcentaje) ? 0 : nivelPorcentaje;
+  const xpProgressPct = renderNivelPorcentaje;
 
-  // Calculo de ahorro meta
+  // Calculo de ahorro meta con Zero-Bug Fallback
   const savingsGoal = 600;
   const savingsCurrent = stats.savedTotal > 0 ? stats.savedTotal : 150;
-  const savingsPct = Math.min(100, Math.round((savingsCurrent / savingsGoal) * 100));
+  const porcentaje = savingsGoal > 0 ? (savingsCurrent / savingsGoal) * 100 : 0;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const savingsPct = Math.min(100, Math.max(0, Math.round(renderPorcentaje)));
 
   // Telemetría de Mapeo Real a Virtual:
   const virtualTelemetry = computeVirtualTelemetry({
@@ -462,7 +466,7 @@ export function Inicio() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 sm:px-6 md:px-8 pt-4 pb-32 md:pb-16 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto w-full space-y-8 antialiased selection:bg-teal-500/30 selection:text-teal-200">
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 sm:px-6 md:px-8 pt-4 pb-32 md:pb-16 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto w-full space-y-6 antialiased selection:bg-teal-500/30 selection:text-teal-200">
       {/* 1. Header Clínico de Identidad y Bienestar (Espaciado amplio y sin sobrecarga) */}
       <header className="flex items-center justify-between gap-3 pt-1">
         {/* Avatar y Bienvenida Amigable para Eduardo */}
@@ -650,17 +654,44 @@ export function Inicio() {
           </div>
         </div>
 
-        {/* ELEMENTO 2: SALUD DE NIDO EN PORCENTAJE (Blindaje no punitivo con acceso directo a recarga) */}
-        <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between gap-4">
+        {/* ============================================================== */}
+        {/* REGLA DE LOS TRES ELEMENTOS PARA EL VIEWPORT MÓVIL INICIAL     */}
+        {/* ============================================================== */}
+
+        {/* ELEMENTO 1: BARRA DE NIVEL REALTIME (Progresión gamificada fluida y armónica) */}
+        <div className="space-y-2 p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Sparkles className="size-3.5 text-amber-400 shrink-0" />
+              <span className="font-semibold text-slate-200 truncate">
+                {levelData.name} • Nivel {levelData.level}
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-amber-400 font-mono shrink-0">
+              {xpProgressPct}% ({xpCurrent} XP)
+            </span>
+          </div>
+          <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+            <motion.div
+              className="bg-gradient-to-r from-amber-400 via-amber-300 to-teal-400 h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${xpProgressPct}%` }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          </div>
+        </div>
+
+        {/* ELEMENTO 2: ESCUDO DE AHORRO (Salud de Nido en porcentaje sanitizado y recarga) */}
+        <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 text-lg shrink-0 shadow-inner">
               🛡️
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-200 truncate">Salud de Nido</span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30">
-                  Reserva Activa
+                <span className="text-xs font-bold text-slate-200 truncate">Escudo de Ahorro</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30 shrink-0">
+                  Salud Nido
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 truncate mt-0.5">
@@ -690,28 +721,35 @@ export function Inicio() {
           </div>
         </div>
 
-        {/* ELEMENTO 3: BARRA DEL NIVEL ACTUAL (Progresión gamificada fluida y armónica) */}
-        <div className="space-y-2 pt-1 border-t border-slate-800/50">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-amber-400 shrink-0" />
-              <span className="font-semibold text-slate-200">
-                {levelData.name} • Nivel {levelData.level}
-              </span>
+        {/* ELEMENTO 3: ACCESO AL MAPA SINUSOIDAL (Árbol de Resiliencia Gamificado) */}
+        <Link
+          to="/aprender"
+          className="p-4 rounded-2xl bg-slate-950/60 hover:bg-slate-900/80 border border-slate-800/80 hover:border-purple-500/40 transition-all flex items-center justify-between gap-3 group shadow-xs cursor-pointer"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 text-lg shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+              〰️
             </div>
-            <span className="text-xs font-semibold text-amber-400 font-mono">
-              {xpProgressPct}% ({xpCurrent} XP)
-            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-200 group-hover:text-purple-300 transition-colors truncate">
+                  Mapa Sinusoidal de Habilidades
+                </span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 shrink-0">
+                  Ruta Activa
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                Árbol de resiliencia con Chispa, Nido y Toto
+              </p>
+            </div>
           </div>
-          <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
-            <motion.div
-              className="bg-gradient-to-r from-amber-400 via-amber-300 to-teal-400 h-full rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${xpProgressPct}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
+
+          <div className="flex items-center gap-1 text-purple-400 shrink-0 group-hover:translate-x-0.5 transition-transform">
+            <span className="text-xs font-bold hidden sm:inline">Explorar</span>
+            <ChevronRight className="size-4" />
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* 3. PROGRESSIVE DISCLOSURE: OCULTAMIENTO PROGRESIVO CON FRAMER-MOTION */}
@@ -1140,7 +1178,10 @@ export function Inicio() {
       </section>
 
       {/* 4. CONEXIÓN DE LA TRÍADA UALÍ: INICIO • PRESUPUESTO • APRENDER (SIMULADOR) */}
-      <section aria-label="Rutas Principales UALÍ" className="w-full max-w-md mx-auto grid grid-cols-2 gap-3 pt-1">
+      <section
+        aria-label="Rutas Principales UALÍ"
+        className="w-full max-w-md mx-auto grid grid-cols-2 gap-3 pt-1"
+      >
         <Link
           to="/presupuesto"
           className="p-3.5 rounded-2xl bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800/80 hover:border-amber-500/40 transition-all flex flex-col justify-between gap-2 shadow-sm group"

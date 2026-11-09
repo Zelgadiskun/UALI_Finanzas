@@ -3,10 +3,15 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./client";
 
 const GUEST_STORAGE_KEY = "quali_guest_session_active";
+const EXPLICIT_LOGOUT_KEY = "quali_user_explicitly_logged_out";
 
 export function isGuestSession(): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(GUEST_STORAGE_KEY) === "true";
+  if (localStorage.getItem(EXPLICIT_LOGOUT_KEY) === "true") return false;
+  if (localStorage.getItem(GUEST_STORAGE_KEY) === "true") return true;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const isPlaceholder = !supabaseUrl || supabaseUrl.includes("placeholder-project");
+  return isPlaceholder;
 }
 
 export function createGuestSession(): Session {
@@ -27,6 +32,7 @@ export function createGuestSession(): Session {
 
 export function signInAsGuest() {
   if (typeof window !== "undefined") {
+    localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
     localStorage.setItem(GUEST_STORAGE_KEY, "true");
     window.dispatchEvent(new CustomEvent("quali-auth-state-changed"));
   }
@@ -138,6 +144,9 @@ export async function signUp(
 }
 
 export async function signIn(email: string, password: string) {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+  }
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
 }
@@ -157,6 +166,9 @@ export async function signIn(email: string, password: string) {
  * tiene que estar en Auth → URL Configuration → Redirect URLs del proyecto.
  */
 export async function signInWithGoogle() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+  }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: `${window.location.origin}/` },
@@ -166,6 +178,7 @@ export async function signInWithGoogle() {
 
 export async function signOut() {
   if (typeof window !== "undefined") {
+    localStorage.setItem(EXPLICIT_LOGOUT_KEY, "true");
     localStorage.removeItem(GUEST_STORAGE_KEY);
     window.dispatchEvent(new CustomEvent("quali-auth-state-changed"));
   }

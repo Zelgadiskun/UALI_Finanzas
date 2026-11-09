@@ -37,7 +37,10 @@ export function levelInfo(xp: number): LevelInfo {
 
   const xpForLevel = next ? next.xpRequired - current.xpRequired : 250;
   const xpIntoLevel = next ? xp - current.xpRequired : 250;
-  const pct = next ? Math.min(100, Math.max(0, (xpIntoLevel / xpForLevel) * 100)) : 100;
+  const rawPct = next && xpForLevel > 0 ? (xpIntoLevel / xpForLevel) * 100 : 100;
+  const porcentaje = Math.min(100, Math.max(0, rawPct));
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const pct = renderPorcentaje;
   const xpToNext = next ? next.xpRequired - xp : 0;
   const levelCap = current.level * 250;
 

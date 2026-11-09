@@ -426,7 +426,9 @@ function PresupuestoRoute() {
   );
   const isOverdrawn = totalSpent > totalPlanned;
   const overdraftAmount = Math.max(0, totalSpent - totalPlanned);
-  const percentUsed = totalPlanned > 0 ? Math.round((totalSpent / totalPlanned) * 100) : 0;
+  const porcentaje = totalPlanned > 0 ? (totalSpent / totalPlanned) * 100 : 0;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const percentUsed = Math.round(renderPorcentaje);
   const availableAmount = Math.max(0, totalPlanned - totalSpent);
 
   // Distribución porcentual 50/30/20 para gráfico de anillos circular (recharts)
@@ -1034,8 +1036,12 @@ function PresupuestoRoute() {
             <Compass className="size-4" />
           </div>
           <div>
-            <span className="font-bold text-slate-200 block">¿Dudas sobre cómo distribuir tus canastas?</span>
-            <span className="text-[11px] text-slate-400">Pruébalo sin riesgo en el Simulador de Vida Financiera.</span>
+            <span className="font-bold text-slate-200 block">
+              ¿Dudas sobre cómo distribuir tus canastas?
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Pruébalo sin riesgo en el Simulador de Vida Financiera.
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">

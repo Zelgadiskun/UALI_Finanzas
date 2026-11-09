@@ -159,7 +159,9 @@ export function calculateLevelProgress(xp: number): LevelProgressCalculation {
   const xpCap = level * 250;
   const xpIntoLevel = safeXp - xpFloor;
   const xpNeededForLevel = 250;
-  const pct = Math.min(100, Math.max(0, Math.round((xpIntoLevel / xpNeededForLevel) * 100)));
+  const porcentaje = Math.min(100, Math.max(0, Math.round((xpIntoLevel / xpNeededForLevel) * 100)));
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const pct = renderPorcentaje;
   const xpToNext = Math.max(0, xpCap - safeXp);
 
   const titles = [

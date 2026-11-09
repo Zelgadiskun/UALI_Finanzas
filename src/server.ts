@@ -63,11 +63,18 @@ export default {
           lng = Number(url.searchParams.get("lng") || lng);
           simulate = url.searchParams.get("simulate") || undefined;
         }
-        const { detectNearbyPlaceWithMaps } = await import("./server/locationRadar");
+        const { detectNearbyPlaceWithMaps } = await import("./server/locationRadar.ts");
         const result = await detectNearbyPlaceWithMaps(lat, lng, simulate);
         return new Response(JSON.stringify(result), {
           headers: { "content-type": "application/json" },
         });
+      }
+      if (url.pathname.startsWith("/api/")) {
+        const { handleApiFetch } = await import("./server/handleApiFetch.ts");
+        const apiResponse = await handleApiFetch(request);
+        if (apiResponse) {
+          return apiResponse;
+        }
       }
 
       const handler = await getServerEntry();

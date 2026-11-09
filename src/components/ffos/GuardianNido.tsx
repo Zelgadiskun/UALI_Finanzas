@@ -16,10 +16,9 @@ export function GuardianNido({
   className,
 }: GuardianNidoProps) {
   // Sanitización de Variables Matemáticas (Zero-Bug Fallback)
-  const safePercentage =
-    typeof porcentajeAhorro === "number" && !Number.isNaN(porcentajeAhorro)
-      ? Math.max(0, porcentajeAhorro)
-      : 0;
+  const porcentaje = porcentajeAhorro;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const safePercentage = Math.max(0, renderPorcentaje);
 
   // Disparar recompensa de dopamina inmediata si se llega a la meta
   useEffect(() => {

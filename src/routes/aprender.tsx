@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 
 import { FinancialLifeSimulation } from "@/components/ffos/FinancialLifeSimulation";
+import { GuardianDialogueCenter } from "@/components/ffos/GuardianDialogueCenter";
+import { EmergencyShieldMinigame } from "@/components/ffos/EmergencyShieldMinigame";
 import {
   ChispaCharacter,
   NidoCharacter,
@@ -100,6 +102,7 @@ export function AprenderRoute() {
     }
     return "mapa";
   });
+  const [simulationMode, setSimulationMode] = useState<"roles" | "dialogos" | "escudo">("roles");
   const [mapViewMode, setMapViewMode] = useState<"resilience_tree" | "phase_cards">(
     "resilience_tree",
   );
@@ -215,7 +218,9 @@ export function AprenderRoute() {
   const levelProgress = useMemo(() => calculateLevelProgress(xpCurrent), [xpCurrent]);
   const currentLevelNumber = levelProgress.level;
   const xpInLevel = levelProgress.xpIntoLevel;
-  const xpProgressPct = levelProgress.pct;
+  const porcentaje = levelProgress.pct;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const xpProgressPct = renderPorcentaje;
 
   // Encontrar la lección activa sugerida (respetando el bloqueo mecánico de ritual)
   const activeLesson = useMemo(() => {
@@ -1102,14 +1107,68 @@ export function AprenderRoute() {
       )}
 
       {/* ============================================================== */}
-      {/* VISTA 2: SIMULADOR DE VIDA FINANCIERA (ROLES & ENSAYO Y ERROR) */}
+      {/* VISTA 2: MOTOR DE SIMULACIONES Y MINIJUEGOS UALÍ              */}
       {/* ============================================================== */}
       {activeTab === "simulador" && (
         <section className="space-y-4 mb-4">
-          <FinancialLifeSimulation
-            userId={profile.data?.id}
-            onNavigateTab={(t) => setActiveTab(t)}
-          />
+          {/* Sub-selector espacioso y calmado para el usuario Eduardo */}
+          <div className="flex items-center justify-between pb-1">
+            <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-secondary/80 border border-border/80 w-full sm:w-auto shadow-xs">
+              <button
+                type="button"
+                onClick={() => setSimulationMode("roles")}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95",
+                  simulationMode === "roles"
+                    ? "bg-[#2EC4B6] text-slate-950 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span>🚀</span>
+                <span className="truncate">Roles de Vida</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSimulationMode("dialogos")}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95",
+                  simulationMode === "dialogos"
+                    ? "bg-purple-500 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span>💬</span>
+                <span className="truncate">Guardianes</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSimulationMode("escudo")}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95",
+                  simulationMode === "escudo"
+                    ? "bg-amber-400 text-slate-950 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span>🛡️</span>
+                <span className="truncate">Minijuego Escudo</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Renderizado del Módulo Activo */}
+          {simulationMode === "roles" && (
+            <FinancialLifeSimulation
+              userId={profile.data?.id}
+              onNavigateTab={(t) => setActiveTab(t)}
+            />
+          )}
+
+          {simulationMode === "dialogos" && <GuardianDialogueCenter />}
+
+          {simulationMode === "escudo" && <EmergencyShieldMinigame />}
         </section>
       )}
 

@@ -1,8 +1,8 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import tsConfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 function locationRadarApiPlugin(): Plugin {
@@ -63,8 +63,49 @@ function locationRadarApiPlugin(): Plugin {
   };
 }
 
+function expressApiPlugin(): Plugin {
+  return {
+    name: "express-api-plugin",
+    async configureServer(server) {
+      const { expressApp } = await import("./src/server/app.ts");
+      server.middlewares.use(expressApp);
+    },
+  };
+}
+
 export default defineConfig({
-  server: { port: 3000, host: "0.0.0.0" },
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+  server: {
+    port: 3000,
+    host: "0.0.0.0",
+    warmup: {
+      clientFiles: ["./src/routes/__root.tsx", "./src/routes/index.tsx", "./src/styles.css"],
+    },
+    watch: {
+      ignored: ["**/.output/**", "**/dist/**", "**/.git/**"],
+    },
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "@tanstack/react-router",
+      "@tanstack/react-start",
+      "@tanstack/react-query",
+      "canvas-confetti",
+      "clsx",
+      "tailwind-merge",
+      "lucide-react",
+      "framer-motion",
+      "sonner",
+      "date-fns",
+    ],
+  },
   build: {
     rollupOptions: {
       onwarn(warning, warn) {
@@ -81,8 +122,8 @@ export default defineConfig({
   },
   plugins: [
     tailwindcss(),
-    tsConfigPaths({ projects: ["./tsconfig.json"] }),
     locationRadarApiPlugin(),
+    expressApiPlugin(),
     tanstackStart({ spa: { enabled: true } }),
     nitro({
       preset: "node-server",

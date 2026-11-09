@@ -39,8 +39,11 @@ export function CanastaGastosAccordion({
       ? 0
       : Math.min(Math.round(baseCalculada), 100);
 
+  // Zero-Bug Fallback: Protección contra valores NaN en el cálculo de progreso
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+
   // Detección de peligro financiero para aplicar la Ley de Etiología de Fricción Cero
-  const esAlertaCritica = porcentaje >= 90;
+  const esAlertaCritica = renderPorcentaje >= 90;
 
   // Regla Psicológica: Amortiguación visual ralentizando la transición un 40% en estados estresantes (0.3s * 1.4 = 0.42s)
   const duracionTransicion = esAlertaCritica ? 0.42 : 0.3;
@@ -60,9 +63,9 @@ export function CanastaGastosAccordion({
           <span className="text-sm font-semibold text-slate-200 truncate">{titulo}</span>
           <span className="text-xs text-slate-400 mt-0.5 truncate">
             {/* Zero-Bug Fallback en texto adaptado al bienestar del jugador */}
-            {porcentaje === 0
+            {renderPorcentaje === 0
               ? "0% utilizado de tu cupo"
-              : `${porcentaje}% consumido de forma consciente`}
+              : `${renderPorcentaje}% consumido de forma consciente`}
           </span>
         </div>
 
@@ -72,7 +75,7 @@ export function CanastaGastosAccordion({
             <motion.div
               className={`h-full rounded-full ${esAlertaCritica ? "bg-amber-500" : "bg-emerald-400"}`}
               initial={{ width: 0 }}
-              animate={{ width: `${porcentaje}%` }}
+              animate={{ width: `${renderPorcentaje}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             />
           </div>

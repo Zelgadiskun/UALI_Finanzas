@@ -1,6 +1,6 @@
 /**
  * UALÍ Finanzas - Arquitectura Canónica de Rutas y Conexiones Principales
- * 
+ *
  * Conecta los tres pilares esenciales de la experiencia:
  * 1. Inicio (/): Tablero de respiración, regla de 3 elementos y control de cortisol.
  * 2. Presupuesto (/presupuesto): Asignación de canasta, 50/30/20 y límites saludables.
@@ -50,7 +50,8 @@ export const CORE_PILLARS: Record<"INICIO" | "PRESUPUESTO" | "APRENDER", RouteMe
     path: APP_ROUTES.PRESUPUESTO,
     title: "Presupuesto Consciente",
     shortTitle: "Presupuesto",
-    description: "Distribución de canastas (50/30/20), metas mensuales y balance de flujo sin fricción.",
+    description:
+      "Distribución de canastas (50/30/20), metas mensuales y balance de flujo sin fricción.",
     guardian: "toto",
     accentColor: "#F59E0B",
     badgeText: "Canastas",
@@ -60,7 +61,8 @@ export const CORE_PILLARS: Record<"INICIO" | "PRESUPUESTO" | "APRENDER", RouteMe
     path: APP_ROUTES.APRENDER,
     title: "Simulación & Aprendizaje",
     shortTitle: "Aprender",
-    description: "Simulador de vida financiera por roles, toma de decisiones rápidas y árbol de resiliencia.",
+    description:
+      "Simulador de vida financiera por roles, toma de decisiones rápidas y árbol de resiliencia.",
     guardian: "chispa",
     accentColor: "#A855F7",
     badgeText: "Simulador de Vida",

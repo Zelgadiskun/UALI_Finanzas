@@ -117,7 +117,9 @@ export function AhorroRoute() {
     totalSaved > 0 ? Math.min(totalSaved, primaryGoal?.target ?? 1000) : 850,
   );
   const primaryTarget = primaryGoal?.target ?? 1000;
-  const primaryPct = Math.min(100, Math.round((primarySaved / primaryTarget) * 100));
+  const porcentaje = primaryTarget > 0 ? (primarySaved / primaryTarget) * 100 : 0;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+  const primaryPct = Math.min(100, Math.round(renderPorcentaje));
   const primaryRemaining = Math.max(0, primaryTarget - primarySaved);
 
   const secondarySaved = secondaryGoal

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { Route } from "./mas";
+import { Route } from "../../routes/mas";
 
 // Mock router Link
 vi.mock("@tanstack/react-router", async () => {

@@ -99,3 +99,31 @@ export function greeting(): string {
   if (hour < 20) return "Buenas tardes";
   return "Buenas noches";
 }
+
+/**
+ * Sanitización de Variables Matemáticas (Zero-Bug Fallback).
+ * Evita cualquier ruptura visual de código (como NaN% o Infinity%) en interfaces de UALÍ,
+ * mitigando el cortisol y la inestabilidad cognitiva del usuario Eduardo.
+ */
+export function sanitizePercentage(
+  numerator: number | null | undefined,
+  denominator: number | null | undefined,
+  max = 100,
+): number {
+  if (
+    numerator === null ||
+    numerator === undefined ||
+    denominator === null ||
+    denominator === undefined ||
+    denominator <= 0 ||
+    Number.isNaN(numerator) ||
+    Number.isNaN(denominator) ||
+    !isFinite(numerator) ||
+    !isFinite(denominator)
+  ) {
+    return 0;
+  }
+  const calc = (numerator / denominator) * 100;
+  if (Number.isNaN(calc) || !isFinite(calc)) return 0;
+  return Math.max(0, Math.min(Math.round(calc), max));
+}

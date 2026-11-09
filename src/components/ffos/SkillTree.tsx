@@ -326,6 +326,11 @@ export function SkillTree({
   const siguienteNodo = listaNodos.find((n) => safeXP < n.xp_requerida);
   const faltaXP = siguienteNodo ? Math.max(0, siguienteNodo.xp_requerida - safeXP) : 0;
 
+  // Cálculo de progreso hacia el siguiente hito con Zero-Bug Fallback
+  const xpBaseSiguiente = siguienteNodo?.xp_requerida ?? (safeXP > 0 ? safeXP : 1000);
+  const porcentaje = xpBaseSiguiente > 0 ? (safeXP / xpBaseSiguiente) * 100 : 0;
+  const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+
   // Generar los puntos coordenados de la curva sinusoidal
   const puntos = Array.from({ length: 100 }, (_, i) => {
     const y = (i / 99) * (altoSVG - 120) + 60;
@@ -378,14 +383,25 @@ export function SkillTree({
         {/* Tracker del Siguiente Hito */}
         {siguienteNodo ? (
           <div className="mt-3 p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800 text-left flex items-center justify-between gap-2 shadow-xs">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
-                <Sparkles className="size-3 shrink-0" />
-                <span className="truncate">Siguiente Hito: {siguienteNodo.titulo}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
+                  <Sparkles className="size-3 shrink-0" />
+                  <span className="truncate">Siguiente Hito: {siguienteNodo.titulo}</span>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold shrink-0">
+                  {Math.round(renderPorcentaje)}%
+                </span>
               </div>
-              <p className="text-[10px] text-slate-400 truncate">
+              <p className="text-[10px] text-slate-400 truncate mt-0.5">
                 Faltan {faltaXP} XP para alcanzar este logro
               </p>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                <div
+                  className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, renderPorcentaje))}%` }}
+                />
+              </div>
             </div>
             <button
               type="button"

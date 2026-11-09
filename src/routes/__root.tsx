@@ -143,7 +143,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var rawFetch=typeof window!=='undefined'&&window.fetch?window.fetch.bind(window):undefined;var currentFetch=rawFetch;var desc=typeof window!=='undefined'?(Object.getOwnPropertyDescriptor(window,'fetch')||(window.constructor&&Object.getOwnPropertyDescriptor(window.constructor.prototype,'fetch'))):null;if(!desc||!desc.writable||desc.set===undefined){try{Object.defineProperty(window,'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e){try{Object.defineProperty(Object.getPrototypeOf(window),'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e2){}}}}catch(err){}})();`,
+            __html: `(function(){try{sessionStorage.removeItem('warmup_start_time');sessionStorage.removeItem('warmup_last_reload_time');sessionStorage.removeItem('warmup_failed_sent');}catch(e){}})();(function(){try{var rawFetch=typeof window!=='undefined'&&window.fetch?window.fetch.bind(window):undefined;var currentFetch=rawFetch;var desc=typeof window!=='undefined'?(Object.getOwnPropertyDescriptor(window,'fetch')||(window.constructor&&Object.getOwnPropertyDescriptor(window.constructor.prototype,'fetch'))):null;if(!desc||!desc.writable||desc.set===undefined){try{Object.defineProperty(window,'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e){try{Object.defineProperty(Object.getPrototypeOf(window),'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e2){}}}}catch(err){}})();`,
           }}
         />
         <HeadContent />
@@ -164,7 +164,7 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+    if (import.meta.env.PROD && typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
         .then((registration) => {

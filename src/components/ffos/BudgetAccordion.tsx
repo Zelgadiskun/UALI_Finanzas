@@ -174,7 +174,9 @@ export function BudgetAccordion({
             </div>
           ) : (
             necesidadesBudgets.map((b) => {
-              const pct = b.planned > 0 ? Math.round((b.spent / b.planned) * 100) : 0;
+              const porcentaje = b.planned > 0 ? (b.spent / b.planned) * 100 : 0;
+              const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+              const pct = Math.round(renderPorcentaje);
               const isCriticalExceeded = b.alertLevel === "critical_exceeded" || pct >= 100;
               const isCriticalLimit = b.alertLevel === "critical_limit" || (pct >= 90 && pct < 100);
 
@@ -351,7 +353,9 @@ export function BudgetAccordion({
             </div>
           ) : (
             deseosBudgets.map((b) => {
-              const pct = b.planned > 0 ? Math.round((b.spent / b.planned) * 100) : 0;
+              const porcentaje = b.planned > 0 ? (b.spent / b.planned) * 100 : 0;
+              const renderPorcentaje = Number.isNaN(porcentaje) ? 0 : porcentaje;
+              const pct = Math.round(renderPorcentaje);
               const isCriticalExceeded = b.alertLevel === "critical_exceeded" || pct >= 100;
               const isCriticalLimit = b.alertLevel === "critical_limit" || (pct >= 90 && pct < 100);
 
