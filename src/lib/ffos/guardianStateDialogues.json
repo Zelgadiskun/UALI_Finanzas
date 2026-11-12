@@ -1,0 +1,241 @@
+{
+  "guardianes": {
+    "nido": {
+      "nombre": "Nido",
+      "arquetipo": "El Escudo de la Paz Mental",
+      "rol": "Guardián de la Reserva, Ahorro Protegido y Mitigación del Cortisol",
+      "icono": "🐷",
+      "escenarios": {
+        "victoria": {
+          "id": "nido_victoria",
+          "estado": "victoria",
+          "condicionSupabase": "savings_current >= savings_goal && savings_goal > 0",
+          "dialogo": {
+            "titulo": "¡Blindaje al 100%! Paz mental consagrada",
+            "mensaje": "¡Eduardo, tu Escudo Nido está completamente cargado! Has protegido tu tranquilidad frente a cualquier tormenta externa. Disfruta esta sensación de ligereza.",
+            "sugerenciaAccion": "Celebrar este logro sin culpa y activar el efecto confeti en el clan.",
+            "tono": "Celebratorio, cálido y profundamente tranquilizador"
+          },
+          "estadoVisual": {
+            "mood": "happy",
+            "colorPrimario": "#2EC4B6",
+            "colorFondoClass": "bg-teal-500/10",
+            "colorBordeClass": "border-teal-500/40",
+            "colorTextoClass": "text-teal-300",
+            "badgeColorClass": "bg-teal-500/20 text-teal-200 border-teal-500/30",
+            "duracionTransicion": 0.3,
+            "animacion": "bounce_celebration",
+            "escudoVisualSugerido": false,
+            "ocultamientoProgresivoRecomendado": false
+          }
+        },
+        "neutro": {
+          "id": "nido_neutro",
+          "estado": "neutro",
+          "condicionSupabase": "savings_pct >= 20 && savings_pct < 100 && current_month_net >= 0",
+          "dialogo": {
+            "titulo": "El nido se construye paja a paja",
+            "mensaje": "Tu reserva avanza a paso firme y seguro. No hay prisa: la consistencia diaria vale diez veces más que un esfuerzo desmedido.",
+            "sugerenciaAccion": "Mantener tus aportes automáticos con la regla Págate Primero.",
+            "tono": "Sereno, paciente y metódico"
+          },
+          "estadoVisual": {
+            "mood": "calm",
+            "colorPrimario": "#38BDF8",
+            "colorFondoClass": "bg-slate-900/80",
+            "colorBordeClass": "border-slate-800",
+            "colorTextoClass": "text-sky-300",
+            "badgeColorClass": "bg-sky-500/15 text-sky-200 border-sky-500/30",
+            "duracionTransicion": 0.3,
+            "animacion": "gentle_pulse",
+            "escudoVisualSugerido": false,
+            "ocultamientoProgresivoRecomendado": false
+          }
+        },
+        "alerta_critica": {
+          "id": "nido_alerta_critica",
+          "estado": "alerta_critica",
+          "condicionSupabase": "current_balance < 0 || spent_vs_planned >= 1.0",
+          "dialogo": {
+            "titulo": "Refugio Activo: Estás en un espacio seguro, Eduardo",
+            "mensaje": "Respira hondo: los números son solo coordenadas temporales, jamás definen tu valor. He desplegado el Escudo Visual para amortiguar el ruido del mercado y mantener tu mente despejada.",
+            "sugerenciaAccion": "Activar el Ocultamiento Progresivo para revisar los rubros uno a uno sin sobrecarga cognitiva.",
+            "tono": "Contención afectiva, cero juicios punitivos y protección clínica contra el estrés"
+          },
+          "estadoVisual": {
+            "mood": "shield_alert",
+            "colorPrimario": "#F59E0B",
+            "colorFondoClass": "bg-slate-900/95",
+            "colorBordeClass": "border-amber-500/30",
+            "colorTextoClass": "text-amber-200",
+            "badgeColorClass": "bg-amber-500/15 text-amber-300 border-amber-500/30",
+            "duracionTransicion": 0.42,
+            "animacion": "friction_zero_soft_float",
+            "escudoVisualSugerido": true,
+            "ocultamientoProgresivoRecomendado": true
+          }
+        }
+      }
+    },
+    "chispa": {
+      "nombre": "Chispa",
+      "arquetipo": "La Brújula Estratégica",
+      "rol": "Guardiana de la Equidad, Acuerdos de Clan y Negociación Inteligente",
+      "icono": "📐",
+      "escenarios": {
+        "victoria": {
+          "id": "chispa_victoria",
+          "estado": "victoria",
+          "condicionSupabase": "clan_battery_voltage >= 90 && shared_expenses_balanced === true",
+          "dialogo": {
+            "titulo": "¡Sincronía perfecta en el equipo!",
+            "mensaje": "¡Impecable, Eduardo! Los acuerdos están balanceados al milímetro y la energía del clan vibra en armonía. La equidad genera confianza pura.",
+            "sugerenciaAccion": "Revisar los logros colaborativos y compartir la insignia del Trazo Equitativo.",
+            "tono": "Entusiasta, brillante e inspirador"
+          },
+          "estadoVisual": {
+            "mood": "happy",
+            "colorPrimario": "#A855F7",
+            "colorFondoClass": "bg-purple-500/10",
+            "colorBordeClass": "border-purple-500/40",
+            "colorTextoClass": "text-purple-300",
+            "badgeColorClass": "bg-purple-500/20 text-purple-200 border-purple-500/30",
+            "duracionTransicion": 0.3,
+            "animacion": "bounce_celebration",
+            "escudoVisualSugerido": false,
+            "ocultamientoProgresivoRecomendado": false
+          }
+        },
+        "neutro": {
+          "id": "chispa_neutro",
+          "estado": "neutro",
+          "condicionSupabase": "clan_battery_voltage >= 40 && clan_battery_voltage < 90",
+          "dialogo": {
+            "titulo": "El compás marca rumbo estable",
+            "mensaje": "La distribución de canastas se mantiene en equilibrio razonable. Los acuerdos fluyen sin roces innecesarios.",
+            "sugerenciaAccion": "Verificar la división proporcional antes del próximo corte mensual.",
+            "tono": "Analítico, constructivo y claro"
+          },
+          "estadoVisual": {
+            "mood": "calm",
+            "colorPrimario": "#818CF8",
+            "colorFondoClass": "bg-slate-900/80",
+            "colorBordeClass": "border-slate-800",
+            "colorTextoClass": "text-indigo-300",
+            "badgeColorClass": "bg-indigo-500/15 text-indigo-200 border-indigo-500/30",
+            "duracionTransicion": 0.3,
+            "animacion": "gentle_pulse",
+            "escudoVisualSugerido": false,
+            "ocultamientoProgresivoRecomendado": false
+          }
+        },
+        "alerta_critica": {
+          "id": "chispa_alerta_critica",
+          "estado": "alerta_critica",
+          "condicionSupabase": "debt_ratio >= 0.45 || shared_imbalance_detected === true",
+          "dialogo": {
+            "titulo": "Momento de pausa y rediseño, Eduardo",
+            "mensaje": "No hay presión ni reproches: detecto tensión en las cuotas compartidas. Ocultemos el desglose denso por ahora para evitar fatiga mental; lo resolveremos con un ajuste proporcional suave.",
+            "sugerenciaAccion": "Activar el Regulador de Presión y colapsar las tablas complejas en tarjetas discretas.",
+            "tono": "Empatía estratégica, descompresión de conflictos y respaldo firme"
+          },
+          "estadoVisual": {
+            "mood": "shield_alert",
+            "colorPrimario": "#F59E0B",
+            "colorFondoClass": "bg-slate-900/95",
+            "colorBordeClass": "border-amber-500/30",
+            "colorTextoClass": "text-amber-200",
+            "badgeColorClass": "bg-amber-500/15 text-amber-300 border-amber-500/30",
+            "duracionTransicion": 0.42,
+            "animacion": "friction_zero_soft_float",
+            "escudoVisualSugerido": true,
+            "ocultamientoProgresivoRecomendado": true
+          }
+        }
+      }
+    },
+    "toto": {
+      "nombre": "Toto",
+      "arquetipo": "El Motor de Flujo",
+      "rol": "Guardián de la Solvencia, Interés Compuesto y la Bola de Nieve",
+      "icono": "🪙",
+      "escenarios": {
+        "victoria": {
+          "id": "toto_victoria",
+          "estado": "victoria",
+          "condicionSupabase": "debt_total === 0 && liquid_cashflow_growth >= 0.15",
+          "dialogo": {
+            "titulo": "¡Engranaje perpetuo activado a toda marcha!",
+            "mensaje": "¡Brillante, Eduardo! Tus deudas están domadas y tu flujo de caja rueda multiplicándose con interés compuesto. La aceleración patrimonial es tuya.",
+            "sugerenciaAccion": "Explorar oportunidades de inversión de bajo riesgo para poner tu excedente a trabajar.",
+            "tono": "Enérgico, triunfante y pragmático"
+          },
+          "estadoVisual": {
+            "mood": "happy",
+            "colorPrimario": "#10B981",
+            "colorFondoClass": "bg-emerald-500/10",
+            "colorBordeClass": "border-emerald-500/40",
+            "colorTextoClass": "text-emerald-300",
+            "badgeColorClass": "bg-emerald-500/20 text-emerald-200 border-emerald-500/30",
+            "duracionTransicion": 0.3,
+            "animacion": "bounce_celebration",
+            "escudoVisualSugerido": false,
+            "ocultamientoProgresivoRecomendado": false
+          }
+        },
+        "neutro": {
+          "id": "toto_neutro",
+          "estado": "neutro",
+          "condicionSupabase": "liquid_cashflow > 0 && debt_service_ratio <= 0.3",
+          "dialogo": {
+            "titulo": "Flujo continuo: la máquina opera con balance",
+            "mensaje": "Tus entradas y salidas conservan oxígeno. El circuito financiero se mantiene alimentado y preparado para el siguiente ciclo.",
+            "sugerenciaAccion": "Monitorear la Canasta de Consumo para evitar fugas silenciosas de fin de semana.",
+            "tono": "Disciplinado, confiable y enfocado"
+          },
+          "estadoVisual": {
+            "mood": "calm",
+            "colorPrimario": "#F59E0B",
+            "colorFondoClass": "bg-slate-900/80",
+            "colorBordeClass": "border-slate-800",
+            "colorTextoClass": "text-amber-300",
+            "badgeColorClass": "bg-amber-500/15 text-amber-200 border-amber-500/30",
+            "duracionTransicion": 0.3,
+            "animacion": "gentle_pulse",
+            "escudoVisualSugerido": false,
+            "ocultamientoProgresivoRecomendado": false
+          }
+        },
+        "alerta_critica": {
+          "id": "toto_alerta_critica",
+          "estado": "alerta_critica",
+          "condicionSupabase": "liquid_cashflow <= 0 || credit_card_cat_exceeded === true",
+          "dialogo": {
+            "titulo": "Protocolo de Amortiguación: Fricción Cero en marcha",
+            "mensaje": "Calma, Eduardo: la máquina solo pide una recalibración técnica. Nada de alarmas rojas ni listas interminables de números negativos. Vamos a pausar los gastos secundarios mientras el escudo absorbe el golpe.",
+            "sugerenciaAccion": "Ocultar transacciones secundarias en el acordeón y activar el Rompehielos de Bola de Nieve.",
+            "tono": "Pragmático y contenedor, transformando la ansiedad en pasos tácticos de 1 toque"
+          },
+          "estadoVisual": {
+            "mood": "shield_alert",
+            "colorPrimario": "#F59E0B",
+            "colorFondoClass": "bg-slate-900/95",
+            "colorBordeClass": "border-amber-500/30",
+            "colorTextoClass": "text-amber-200",
+            "badgeColorClass": "bg-amber-500/15 text-amber-300 border-amber-500/30",
+            "duracionTransicion": 0.42,
+            "animacion": "friction_zero_soft_float",
+            "escudoVisualSugerido": true,
+            "ocultamientoProgresivoRecomendado": true
+          }
+        }
+      }
+    }
+  },
+  "reglasSanitizacion": {
+    "zeroBugFallback": "Number.isNaN(base) || !isFinite(base) ? 0 : Math.min(Math.round(base), 100)",
+    "leyEtiologiaFriccionCero": "duracionTransicion = esAlertaCritica ? 0.42 : 0.30",
+    "reglaTresElementos": "En viewport inicial solo 3 datos macro: Salud Nido (%), Balance Sanitizado ($) y Nivel actual",
+    "filosofiaContencion": "Prohibido el uso de tipografía roja estridente o indicadores punitivos que disparen cortisol"
+  }
+}

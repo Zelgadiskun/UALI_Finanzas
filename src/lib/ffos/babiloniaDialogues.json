@@ -1,0 +1,163 @@
+[
+  {
+    "id": "babilonia_m1_step1",
+    "personaje": "Narrador",
+    "texto": "Puerta de Ishtar, 590 a.C. Entras a Babilonia con 100 monedas de oro tras tu cosecha.",
+    "emocion": "entusiasta",
+    "opciones": [
+      {
+        "texto": "Cruzar los arcos hacia el Gran Bazar.",
+        "cambio_xp": 10,
+        "cambio_oro": 0,
+        "siguiente_id": "babilonia_m1_toto_oferta"
+      },
+      {
+        "texto": "Buscar primero el taller del Escriba Real.",
+        "cambio_xp": 15,
+        "cambio_oro": 0,
+        "siguiente_id": "babilonia_m1_nido_taller"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_toto_oferta",
+    "personaje": "Toto",
+    "texto": "¡Eduardo, forastero afortunado! Llegó seda de Tiro. Dame todo tu oro ya y duplicaremos.",
+    "emocion": "entusiasta",
+    "opciones": [
+      {
+        "texto": "Apostar todo el oro al cargamento de seda.",
+        "cambio_xp": 5,
+        "cambio_oro": -30,
+        "siguiente_id": "babilonia_m1_nido_contencion"
+      },
+      {
+        "texto": "Pausar y consultar la tabla de barro de Nido.",
+        "cambio_xp": 25,
+        "cambio_oro": 0,
+        "siguiente_id": "babilonia_m1_nido_taller"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_nido_contencion",
+    "personaje": "Nido",
+    "texto": "Tranquilo Eduardo, respira. El brillo del bazar deslumbra; protegí tus monedas a tiempo.",
+    "emocion": "alerta_amigable",
+    "opciones": [
+      {
+        "texto": "Aprender el secreto de la vasija protectora.",
+        "cambio_xp": 20,
+        "cambio_oro": 30,
+        "siguiente_id": "babilonia_m1_nido_taller"
+      },
+      {
+        "texto": "Examinar juntos las tablas de arcilla sagradas.",
+        "cambio_xp": 20,
+        "cambio_oro": 30,
+        "siguiente_id": "babilonia_m1_nido_regla"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_nido_taller",
+    "personaje": "Nido",
+    "texto": "Bienvenido a mi taller de arcilla, Eduardo. Aquí descansa la sabiduría de Babilonia.",
+    "emocion": "feliz",
+    "opciones": [
+      {
+        "texto": "Descifrar la primera ley de la tabla tallada.",
+        "cambio_xp": 20,
+        "cambio_oro": 0,
+        "siguiente_id": "babilonia_m1_nido_regla"
+      },
+      {
+        "texto": "Preguntar cómo blindar mi tesoro contra imprevistos.",
+        "cambio_xp": 15,
+        "cambio_oro": 0,
+        "siguiente_id": "babilonia_m1_nido_regla"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_nido_regla",
+    "personaje": "Nido",
+    "texto": "Primera Ley: De cada diez monedas de oro, una debe descansar sellada en arcilla sagrada.",
+    "emocion": "entusiasta",
+    "opciones": [
+      {
+        "texto": "Sellar 10 monedas en mi vasija de arcilla.",
+        "cambio_xp": 35,
+        "cambio_oro": 10,
+        "siguiente_id": "babilonia_m1_toto_negocio_justo"
+      },
+      {
+        "texto": "Gastar las diez monedas en vino dulce de dátiles.",
+        "cambio_xp": 10,
+        "cambio_oro": -15,
+        "siguiente_id": "babilonia_m1_nido_reparacion_fiesta"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_nido_reparacion_fiesta",
+    "personaje": "Nido",
+    "texto": "El vino endulzó la noche, Eduardo, y no hay culpa. Ahora sellemos la vasija con calma.",
+    "emocion": "alerta_amigable",
+    "opciones": [
+      {
+        "texto": "Sellar la vasija con el sello del escriba.",
+        "cambio_xp": 25,
+        "cambio_oro": 15,
+        "siguiente_id": "babilonia_m1_toto_negocio_justo"
+      },
+      {
+        "texto": "Agradecer la guía pacífica de Nido.",
+        "cambio_xp": 30,
+        "cambio_oro": 15,
+        "siguiente_id": "babilonia_m1_toto_negocio_justo"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_toto_negocio_justo",
+    "personaje": "Toto",
+    "texto": "¡Por Shamash! Veo el sello real en tu vasija. Ahora sí: ¿unimos 5 monedas en grano seguro?",
+    "emocion": "feliz",
+    "opciones": [
+      {
+        "texto": "Asociar 5 monedas al convoy de trigo de Toto.",
+        "cambio_xp": 40,
+        "cambio_oro": 25,
+        "siguiente_id": "babilonia_m1_victoria_nido"
+      },
+      {
+        "texto": "Conservar todo en arcilla hasta el otoño.",
+        "cambio_xp": 30,
+        "cambio_oro": 10,
+        "siguiente_id": "babilonia_m1_victoria_nido"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_victoria_nido",
+    "personaje": "Nido",
+    "texto": "¡Victoria, Eduardo! Grabaste tu nombre en arcilla real: tu tesoro está protegido para siempre.",
+    "emocion": "feliz",
+    "opciones": [
+      {
+        "texto": "Consagrar mi tablilla en el santuario de UALÍ.",
+        "cambio_xp": 50,
+        "cambio_oro": 20,
+        "siguiente_id": "babilonia_m1_concluido"
+      }
+    ]
+  },
+  {
+    "id": "babilonia_m1_concluido",
+    "personaje": "Narrador",
+    "texto": "Has dominado la Primera Ley de Babilonia sin fricción. La sabiduría del barro es tuya.",
+    "emocion": "entusiasta",
+    "opciones": []
+  }
+]
