@@ -1,5 +1,6 @@
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import type { Persister } from "@tanstack/query-persist-client-core";
+import { getSafeLocalStorage } from "./safeStorage";
 
 // Lets a mutation made while offline (add a transaction, complete a lesson...)
 // survive closing the PWA and come back: TanStack Query already pauses and
@@ -20,4 +21,4 @@ const noopPersister: Persister = {
 export const queryPersister: Persister =
   typeof window === "undefined"
     ? noopPersister
-    : createSyncStoragePersister({ storage: window.localStorage, key: "ffos-query-cache" });
+    : createSyncStoragePersister({ storage: getSafeLocalStorage(), key: "ffos-query-cache" });

@@ -3,7 +3,7 @@
 
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js");
 
-const CACHE_VERSION = "uali-v2";
+const CACHE_VERSION = "uali-v3";
 const APP_SHELL_ASSETS = [
   "/",
   "/index.html",
@@ -19,8 +19,24 @@ const APP_SHELL_ASSETS = [
   "/terminos.html",
 ];
 
+// Limpieza agresiva de cachés antiguas en activación
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter((name) => !name.includes(CACHE_VERSION))
+            .map((name) => caches.delete(name)),
+        ),
+      )
+      .then(() => self.clients.claim()),
+  );
+});
+
 if (typeof workbox !== "undefined" && workbox) {
-  // Configuración de Workbox
+  // Configuración de Workbox con toma de control inmediata
   workbox.setConfig({ debug: false });
 
   workbox.core.setCacheNameDetails({
@@ -30,7 +46,8 @@ if (typeof workbox !== "undefined" && workbox) {
     runtime: "runtime",
   });
 
-  // Tomar control inmediato de los clientes
+  // Tomar control inmediato sin dejar assets colgados en caché
+  self.skipWaiting();
   workbox.core.skipWaiting();
   workbox.core.clientsClaim();
 

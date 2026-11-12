@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 export type SubscriptionTier = "free" | "pro";
 
@@ -20,7 +21,7 @@ const DEFAULT_STATE: SubscriptionState = {
 export function getStoredSubscription(): SubscriptionState {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = safeLocalStorage.getItem(STORAGE_KEY);
     return raw ? { ...DEFAULT_STATE, ...JSON.parse(raw) } : DEFAULT_STATE;
   } catch {
     return DEFAULT_STATE;
@@ -29,7 +30,9 @@ export function getStoredSubscription(): SubscriptionState {
 
 export function saveSubscription(state: SubscriptionState) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
   window.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
 

@@ -1,4 +1,5 @@
 import type { LessonRow, SubLesson } from "@/lib/supabase/queries";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 export interface SpacedReviewData {
   lessonId: string;
@@ -16,7 +17,7 @@ const LOCAL_LESSONS_DONE_KEY = "uali_lessons_done_fallback_v1";
 export function getLocalLessonsDone(): string[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(LOCAL_LESSONS_DONE_KEY);
+    const raw = safeLocalStorage.getItem(LOCAL_LESSONS_DONE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -79,7 +80,7 @@ export function addLocalLessonDone(lessonId: string, slug?: string): void {
 
     if (updated) {
       const arr = Array.from(set);
-      localStorage.setItem(LOCAL_LESSONS_DONE_KEY, JSON.stringify(arr));
+      safeLocalStorage.setItem(LOCAL_LESSONS_DONE_KEY, JSON.stringify(arr));
       window.dispatchEvent(
         new CustomEvent("uali-lesson-completed", { detail: { lessonId, slug } }),
       );
@@ -92,7 +93,7 @@ export function addLocalLessonDone(lessonId: string, slug?: string): void {
 export function getAllSpacedReviews(): Record<string, SpacedReviewData> {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(SPACED_STORAGE_KEY);
+    const raw = safeLocalStorage.getItem(SPACED_STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -148,7 +149,7 @@ export function recordSpacedReview(
 
   all[lessonId] = updated;
   if (typeof window !== "undefined") {
-    localStorage.setItem(SPACED_STORAGE_KEY, JSON.stringify(all));
+    safeLocalStorage.setItem(SPACED_STORAGE_KEY, JSON.stringify(all));
   }
 
   return updated;

@@ -15,6 +15,8 @@ interface DeviceLayoutContextValue {
   browserName: string;
 }
 
+import { safeLocalStorage } from "@/lib/safeStorage";
+
 const STORAGE_KEY = "uali_device_layout_mode";
 
 export function detectDevice(): { type: DeviceType; isTouch: boolean; browser: string } {
@@ -89,8 +91,12 @@ const DeviceLayoutContext = createContext<DeviceLayoutContextValue | null>(null)
 export function DeviceProvider({ children }: { children: React.ReactNode }) {
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
     if (typeof window === "undefined") return "auto";
-    const stored = localStorage.getItem(STORAGE_KEY) as LayoutMode;
-    return stored === "mobile" || stored === "tablet" || stored === "desktop" ? stored : "auto";
+    try {
+      const stored = safeLocalStorage.getItem(STORAGE_KEY) as LayoutMode;
+      return stored === "mobile" || stored === "tablet" || stored === "desktop" ? stored : "auto";
+    } catch {
+      return "auto";
+    }
   });
 
   const [deviceInfo, setDeviceInfo] = useState(() => detectDevice());
@@ -124,11 +130,13 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
   function setLayoutMode(mode: LayoutMode) {
     setLayoutModeState(mode);
     if (typeof window !== "undefined") {
-      if (mode === "auto") {
-        localStorage.removeItem(STORAGE_KEY);
-      } else {
-        localStorage.setItem(STORAGE_KEY, mode);
-      }
+      try {
+        if (mode === "auto") {
+          safeLocalStorage.removeItem(STORAGE_KEY);
+        } else {
+          safeLocalStorage.setItem(STORAGE_KEY, mode);
+        }
+      } catch {}
     }
   }
 

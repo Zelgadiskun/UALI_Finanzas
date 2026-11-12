@@ -1,5 +1,6 @@
 import type { Transaction } from "@/lib/ffos/types";
 import type { GoalRow } from "@/lib/supabase/queries";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 export interface PendingTransaction {
   id: string;
@@ -21,7 +22,7 @@ const CACHED_TX_KEY_PREFIX = "uali_cached_tx_v2_";
 const PERSONAL_GOALS_KEY = "uali_personal_goals_v2";
 
 function isBrowser(): boolean {
-  return typeof window !== "undefined" && typeof localStorage !== "undefined";
+  return typeof window !== "undefined";
 }
 
 // ==========================================
@@ -31,7 +32,7 @@ function isBrowser(): boolean {
 export function getPendingTransactions(userId: string): PendingTransaction[] {
   if (!isBrowser() || !userId) return [];
   try {
-    const raw = localStorage.getItem(`${PENDING_TX_KEY_PREFIX}${userId}`);
+    const raw = safeLocalStorage.getItem(`${PENDING_TX_KEY_PREFIX}${userId}`);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -43,7 +44,7 @@ export function savePendingTransaction(tx: PendingTransaction): void {
   try {
     const current = getPendingTransactions(tx.userId);
     const updated = [tx, ...current.filter((item) => item.id !== tx.id)];
-    localStorage.setItem(`${PENDING_TX_KEY_PREFIX}${tx.userId}`, JSON.stringify(updated));
+    safeLocalStorage.setItem(`${PENDING_TX_KEY_PREFIX}${tx.userId}`, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("uali-pending-tx-updated"));
   } catch (err) {
     console.error("Error guardando transacción pendiente:", err);
@@ -55,7 +56,7 @@ export function removePendingTransaction(userId: string, txId: string): void {
   try {
     const current = getPendingTransactions(userId);
     const updated = current.filter((item) => item.id !== txId);
-    localStorage.setItem(`${PENDING_TX_KEY_PREFIX}${userId}`, JSON.stringify(updated));
+    safeLocalStorage.setItem(`${PENDING_TX_KEY_PREFIX}${userId}`, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("uali-pending-tx-updated"));
   } catch (err) {
     console.error("Error eliminando transacción pendiente:", err);
@@ -65,7 +66,7 @@ export function removePendingTransaction(userId: string, txId: string): void {
 export function clearPendingTransactions(userId: string): void {
   if (!isBrowser() || !userId) return;
   try {
-    localStorage.removeItem(`${PENDING_TX_KEY_PREFIX}${userId}`);
+    safeLocalStorage.removeItem(`${PENDING_TX_KEY_PREFIX}${userId}`);
     window.dispatchEvent(new CustomEvent("uali-pending-tx-updated"));
   } catch {
     // Ignore
@@ -79,7 +80,7 @@ export function clearPendingTransactions(userId: string): void {
 export function getCachedTransactions(userId: string): Transaction[] {
   if (!isBrowser() || !userId) return [];
   try {
-    const raw = localStorage.getItem(`${CACHED_TX_KEY_PREFIX}${userId}`);
+    const raw = safeLocalStorage.getItem(`${CACHED_TX_KEY_PREFIX}${userId}`);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -89,7 +90,7 @@ export function getCachedTransactions(userId: string): Transaction[] {
 export function saveCachedTransactions(userId: string, transactions: Transaction[]): void {
   if (!isBrowser() || !userId) return;
   try {
-    localStorage.setItem(`${CACHED_TX_KEY_PREFIX}${userId}`, JSON.stringify(transactions));
+    safeLocalStorage.setItem(`${CACHED_TX_KEY_PREFIX}${userId}`, JSON.stringify(transactions));
   } catch {
     // Ignore (e.g. storage quota exceeded)
   }
@@ -134,7 +135,7 @@ export function mergeWithPendingTransactions(
 export function getLocalGoals(): GoalRow[] {
   if (!isBrowser()) return [];
   try {
-    const raw = localStorage.getItem(PERSONAL_GOALS_KEY);
+    const raw = safeLocalStorage.getItem(PERSONAL_GOALS_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -144,7 +145,7 @@ export function getLocalGoals(): GoalRow[] {
 export function saveLocalGoals(goals: GoalRow[]): void {
   if (!isBrowser()) return;
   try {
-    localStorage.setItem(PERSONAL_GOALS_KEY, JSON.stringify(goals));
+    safeLocalStorage.setItem(PERSONAL_GOALS_KEY, JSON.stringify(goals));
   } catch {
     // Ignore
   }

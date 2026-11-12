@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./client";
+import { safeLocalStorage } from "../safeStorage";
 
 const GUEST_STORAGE_KEY = "quali_guest_session_active";
 const EXPLICIT_LOGOUT_KEY = "quali_user_explicitly_logged_out";
 
 export function isGuestSession(): boolean {
-  if (typeof window === "undefined") return false;
-  if (localStorage.getItem(EXPLICIT_LOGOUT_KEY) === "true") return false;
-  if (localStorage.getItem(GUEST_STORAGE_KEY) === "true") return true;
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const isPlaceholder = !supabaseUrl || supabaseUrl.includes("placeholder-project");
-  return isPlaceholder;
+  if (typeof window === "undefined") return true;
+  try {
+    if (safeLocalStorage.getItem(EXPLICIT_LOGOUT_KEY) === "true") return false;
+  } catch {
+    return true;
+  }
+  return true;
 }
 
 export function createGuestSession(): Session {
@@ -32,22 +34,26 @@ export function createGuestSession(): Session {
 
 export function signInAsGuest() {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
-    localStorage.setItem(GUEST_STORAGE_KEY, "true");
+    try {
+      safeLocalStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+      safeLocalStorage.setItem(GUEST_STORAGE_KEY, "true");
+    } catch (_err) {
+      // Ignore iframe storage restriction
+    }
     window.dispatchEvent(new CustomEvent("quali-auth-state-changed"));
   }
 }
 
 /**
- * Sesión actual + si ya se resolvió el estado inicial. `loading` distingue
- * "todavía no sabemos" de "sabemos que no hay sesión" — sin eso, un usuario
- * ya logueado vería un parpadeo a la pantalla de login antes de entrar.
+ * Sesión actual + si ya se resolvió el estado inicial.
+ * Inicia de inmediato en modo demo para permitir interacción y SSR instantáneo.
+ * Si existe una sesión real en Supabase, se actualiza automáticamente en segundo plano.
  */
 export function useSession(): { session: Session | null; loading: boolean } {
   const [session, setSession] = useState<Session | null>(() => {
     return isGuestSession() ? createGuestSession() : null;
   });
-  const [loading, setLoading] = useState(() => !isGuestSession());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -59,25 +65,11 @@ export function useSession(): { session: Session | null; loading: boolean } {
         setLoading(false);
       } else {
         setSession(null);
+        setLoading(false);
       }
     };
 
     window.addEventListener("quali-auth-state-changed", handleAuthEvent);
-
-    if (isGuestSession()) {
-      setSession(createGuestSession());
-      setLoading(false);
-      return () => {
-        active = false;
-        window.removeEventListener("quali-auth-state-changed", handleAuthEvent);
-      };
-    }
-
-    // Timeout defensivo de 1.5s: si la conexión con Supabase se demora o cuelga,
-    // liberamos loading para que la pantalla nunca quede en blanco perpetuo
-    const safetyTimer = setTimeout(() => {
-      if (active) setLoading(false);
-    }, 1500);
 
     supabase.auth
       .getSession()
@@ -90,7 +82,6 @@ export function useSession(): { session: Session | null; loading: boolean } {
         } else {
           setSession(null);
         }
-        setLoading(false);
       })
       .catch((err) => {
         if (!active) return;
@@ -100,10 +91,6 @@ export function useSession(): { session: Session | null; loading: boolean } {
         } else {
           setSession(null);
         }
-        setLoading(false);
-      })
-      .finally(() => {
-        clearTimeout(safetyTimer);
       });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
@@ -114,7 +101,6 @@ export function useSession(): { session: Session | null; loading: boolean } {
 
     return () => {
       active = false;
-      clearTimeout(safetyTimer);
       window.removeEventListener("quali-auth-state-changed", handleAuthEvent);
       sub?.subscription?.unsubscribe();
     };
@@ -145,7 +131,11 @@ export async function signUp(
 
 export async function signIn(email: string, password: string) {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+    try {
+      safeLocalStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+    } catch (_err) {
+      // Ignore iframe storage restriction
+    }
   }
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -167,7 +157,11 @@ export async function signIn(email: string, password: string) {
  */
 export async function signInWithGoogle() {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+    try {
+      safeLocalStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+    } catch (_err) {
+      // Ignore iframe storage restriction
+    }
   }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -178,8 +172,12 @@ export async function signInWithGoogle() {
 
 export async function signOut() {
   if (typeof window !== "undefined") {
-    localStorage.setItem(EXPLICIT_LOGOUT_KEY, "true");
-    localStorage.removeItem(GUEST_STORAGE_KEY);
+    try {
+      safeLocalStorage.setItem(EXPLICIT_LOGOUT_KEY, "true");
+      safeLocalStorage.removeItem(GUEST_STORAGE_KEY);
+    } catch (_err) {
+      // Ignore iframe storage restriction
+    }
     window.dispatchEvent(new CustomEvent("quali-auth-state-changed"));
   }
   try {

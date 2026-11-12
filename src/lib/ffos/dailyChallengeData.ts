@@ -3,6 +3,8 @@
  * Mecánica de Retención Diaria & Micro-Dilemas de Juicio Financiero Rápido
  */
 
+import { safeLocalStorage } from "@/lib/safeStorage";
+
 export interface DailyMicroDilemma {
   id: string;
   situation: string; // [SITUACIÓN LÍMITE EN 1 ORACIÓN] + [EL DILEMA FINANCIERO TÁCTICO]
@@ -253,7 +255,7 @@ export function getDilemmaForDate(dateKey: string = getTodayKey()): DailyMicroDi
 export function loadDailyChallengeState(): DailyChallengeState {
   const today = getTodayKey();
   try {
-    const raw = localStorage.getItem(DAILY_CHALLENGE_STORAGE_KEY);
+    const raw = safeLocalStorage.getItem(DAILY_CHALLENGE_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as DailyChallengeState;
       if (parsed.date === today) {
@@ -283,7 +285,7 @@ export function loadDailyChallengeState(): DailyChallengeState {
  */
 export function saveDailyChallengeState(state: DailyChallengeState): void {
   try {
-    localStorage.setItem(DAILY_CHALLENGE_STORAGE_KEY, JSON.stringify(state));
+    safeLocalStorage.setItem(DAILY_CHALLENGE_STORAGE_KEY, JSON.stringify(state));
   } catch (err) {
     console.error("Error saving daily challenge state", err);
   }

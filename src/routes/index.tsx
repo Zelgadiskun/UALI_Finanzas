@@ -36,6 +36,13 @@ import { UserAvatarDisplay } from "@/components/ffos/UserAvatarDisplay";
 import { LocationAlertBanner } from "@/components/ffos/LocationAlertBanner";
 import { PWAInstallButton } from "@/components/ffos/PWAInstallButton";
 import { NotificationCenterModal } from "@/components/ffos/NotificationCenterModal";
+import { BabiloniaFlashcardDialogue } from "@/components/ffos/BabiloniaFlashcardDialogue";
+import {
+  NidoCharacter,
+  ChispaCharacter,
+  TotoCharacter,
+} from "@/components/ffos/characters/Characters";
+import { UaliLogo } from "@/components/ffos/UaliLogo";
 import { useNotificationCenter } from "@/lib/ffos/notificationsStore";
 import {
   currentMonthName,
@@ -122,6 +129,7 @@ export function Inicio() {
   const [flowViewMode, setFlowViewMode] = useState<"bridge" | "compare">("bridge");
   const [openLesson, setOpenLesson] = useState<{ lesson: LessonRow; done: boolean } | null>(null);
   const [challengeModalOpen, setChallengeModalOpen] = useState(false);
+  const [babiloniaModalOpen, setBabiloniaModalOpen] = useState(false);
 
   // Estados de contención visual y progressive disclosure (Ocultamiento Progresivo anti-ansiedad)
   const [guardianTab, setGuardianTab] = useState<"nido" | "chispa" | "toto">("nido");
@@ -617,10 +625,14 @@ export function Inicio() {
       */}
       <section
         aria-label="Resumen Esencial de Bienestar"
-        className="rounded-3xl bg-slate-900/60 border border-slate-800/80 p-6 sm:p-7 shadow-2xl backdrop-blur-md flex flex-col gap-6"
+        className="relative rounded-3xl bg-gradient-to-b from-slate-900/90 via-slate-900/70 to-slate-950/80 border border-teal-500/20 p-6 sm:p-7 shadow-2xl backdrop-blur-md flex flex-col gap-6 overflow-hidden"
       >
+        {/* Luces sutiles de bienestar UALÍ (Teal Ishtar + Oro Solar) */}
+        <div className="absolute top-0 right-1/4 -mt-14 w-64 h-32 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-1/4 -mt-14 w-64 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
         {/* ELEMENTO 1: BALANCE GENERAL SANITIZADO (Cero-Bug Fallback, no punitivo, sin rojos estresantes) */}
-        <div className="flex flex-col items-center text-center space-y-1.5">
+        <div className="relative flex flex-col items-center text-center space-y-1.5">
           <div className="flex items-center justify-between w-full">
             <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-400">
               {viewScope === "shared"
@@ -1047,129 +1059,213 @@ export function Inicio() {
                 transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
               >
                 <div className="p-4 pt-1 border-t border-slate-800/60 bg-slate-950/40 space-y-3">
-                  {/* Selector de Guardianes */}
+                  {/* Selector de Guardianes con Avatares Reales */}
                   <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800">
                     <button
                       type="button"
                       onClick={() => setGuardianTab("nido")}
                       className={cn(
-                        "py-1 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                        "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5",
                         guardianTab === "nido"
                           ? "bg-teal-600 text-white font-bold shadow-xs"
                           : "text-slate-400 hover:text-slate-200",
                       )}
                     >
-                      <span>🐷</span>
-                      <span className="text-[11px] truncate">Nido</span>
+                      <span className="size-4 rounded-full bg-teal-400/20 text-[10px] flex items-center justify-center">
+                        🛡️
+                      </span>
+                      <span className="text-xs truncate">Nido</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setGuardianTab("chispa")}
                       className={cn(
-                        "py-1 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                        "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5",
                         guardianTab === "chispa"
                           ? "bg-purple-600 text-white font-bold shadow-xs"
                           : "text-slate-400 hover:text-slate-200",
                       )}
                     >
-                      <span>📐</span>
-                      <span className="text-[11px] truncate">Chispa</span>
+                      <span className="size-4 rounded-full bg-purple-400/20 text-[10px] flex items-center justify-center">
+                        ⚡
+                      </span>
+                      <span className="text-xs truncate">Chispa</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setGuardianTab("toto")}
                       className={cn(
-                        "py-1 px-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                        "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5",
                         guardianTab === "toto"
                           ? "bg-blue-600 text-white font-bold shadow-xs"
                           : "text-slate-400 hover:text-slate-200",
                       )}
                     >
-                      <span>🪙</span>
-                      <span className="text-[11px] truncate">Toto</span>
+                      <span className="size-4 rounded-full bg-blue-400/20 text-[10px] flex items-center justify-center">
+                        🪙
+                      </span>
+                      <span className="text-xs truncate">Toto</span>
                     </button>
                   </div>
 
-                  {/* Detalle del Guardián Activo */}
+                  {/* Detalle del Guardián Activo con Arte Vectorial */}
                   {guardianTab === "nido" && (
-                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-200 font-bold">Escudo Nido</span>
-                        <span className="text-teal-400 font-mono">
-                          {virtualTelemetry.escudoNidoHp} / {virtualTelemetry.escudoMaxHp} HP
-                        </span>
+                    <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-teal-500/30 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-xl bg-teal-950/60 border border-teal-500/40 p-1 flex items-center justify-center shrink-0">
+                          <NidoCharacter className="w-10 h-10" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-100">
+                              Nido • Vasija Protectora
+                            </span>
+                            <span className="text-[10px] font-bold text-teal-300 font-mono">
+                              {virtualTelemetry.escudoNidoHp} / {virtualTelemetry.escudoMaxHp} HP
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                            Guardián del fondo de emergencia (590 a.C.)
+                          </p>
+                        </div>
                       </div>
+
                       <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
                         <div
-                          className="bg-teal-400 h-full rounded-full transition-all duration-500"
+                          className="bg-gradient-to-r from-teal-500 to-teal-300 h-full rounded-full transition-all duration-500"
                           style={{ width: `${savingsPct}%` }}
                         />
                       </div>
-                      <div className="flex justify-between items-center pt-1 text-[11px]">
+
+                      <div className="flex justify-between items-center pt-0.5 text-xs">
                         <button
                           type="button"
                           onClick={handleAportarNido}
-                          className="text-amber-400 hover:underline font-bold"
+                          className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1"
                         >
-                          + Aportar a Nido
+                          <span>+ Aportar a Nido</span>
                         </button>
-                        <Link to="/ahorro" className="text-slate-400 hover:text-slate-200">
-                          Ver metas
+                        <Link
+                          to="/ahorro"
+                          className="text-slate-400 hover:text-slate-200 font-semibold"
+                        >
+                          Ver metas protegidas ➔
                         </Link>
                       </div>
                     </div>
                   )}
 
                   {guardianTab === "chispa" && (
-                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-200 font-bold">Batería del Clan</span>
-                        <span className="text-purple-400 font-mono">
-                          {virtualTelemetry.bateriaClanVoltaje}% Voltaje
-                        </span>
+                    <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-purple-500/30 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-xl bg-purple-950/60 border border-purple-500/40 p-1 flex items-center justify-center shrink-0">
+                          <ChispaCharacter className="w-10 h-10" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-100">
+                              Chispa • Dinamo de Hábitos
+                            </span>
+                            <span className="text-[10px] font-bold text-purple-300 font-mono">
+                              {virtualTelemetry.bateriaClanVoltaje}% Voltaje
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                            Transforma el día a día en serenidad sin culpas
+                          </p>
+                        </div>
                       </div>
+
                       <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
                         <div
-                          className="bg-purple-400 h-full rounded-full transition-all duration-500"
+                          className="bg-gradient-to-r from-purple-500 to-purple-300 h-full rounded-full transition-all duration-500"
                           style={{ width: `${virtualTelemetry.bateriaClanVoltaje}%` }}
                         />
                       </div>
-                      <div className="flex justify-between items-center pt-1 text-[11px]">
-                        <span className="text-slate-400">Progreso compartido</span>
-                        <Link to="/aprender" className="text-purple-300 hover:underline">
-                          Ver árbol
+
+                      <div className="flex justify-between items-center pt-0.5 text-xs">
+                        <span className="text-slate-400 text-[11px]">
+                          Racha activa: {progress.streakDays || 1} días
+                        </span>
+                        <Link
+                          to="/aprender"
+                          className="text-purple-300 hover:text-purple-200 font-semibold"
+                        >
+                          Árbol de resiliencia ➔
                         </Link>
                       </div>
                     </div>
                   )}
 
                   {guardianTab === "toto" && (
-                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-200 font-bold">Liga de Tiburones</span>
-                        <span className="text-blue-400 font-mono">
-                          Rango {virtualTelemetry.sharkLeagueTier}
-                        </span>
+                    <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-blue-500/30 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-xl bg-blue-950/60 border border-blue-500/40 p-1 flex items-center justify-center shrink-0">
+                          <TotoCharacter className="w-10 h-10" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-slate-100">
+                              Toto • Mercader y Estratega
+                            </span>
+                            <span className="text-[10px] font-bold text-blue-300 font-mono">
+                              Rango {virtualTelemetry.sharkLeagueTier}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                            Destructor de deudas (bola de nieve) y multiplicador
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-400">
-                        Solvencia evaluada: {virtualTelemetry.solvenciaScore} pts
+
+                      <p className="text-[11px] text-slate-400 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800/80">
+                        Solvencia evaluada:{" "}
+                        <strong className="text-blue-300">
+                          {virtualTelemetry.solvenciaScore} pts
+                        </strong>{" "}
+                        • Cero fricción de cobro
                       </p>
-                      <div className="flex justify-between items-center pt-1 text-[11px]">
+
+                      <div className="flex justify-between items-center pt-0.5 text-xs">
                         <button
                           type="button"
                           onClick={() => {
                             if (nextLesson) setOpenLesson({ lesson: nextLesson, done: false });
                           }}
-                          className="text-amber-400 hover:underline font-bold"
+                          className="text-amber-400 hover:text-amber-300 font-bold"
                         >
                           {nextLesson ? "Continuar lección" : "Ver lecciones"}
                         </button>
-                        <Link to="/aprender" className="text-slate-400 hover:text-slate-200">
-                          Explorar
+                        <Link
+                          to="/deudas"
+                          className="text-blue-300 hover:text-blue-200 font-semibold"
+                        >
+                          Plan de amortización ➔
                         </Link>
                       </div>
                     </div>
                   )}
+
+                  {/* BANNER ESPECIAL: CRÓNICAS DE BABILONIA (LORE & HISTORIA INTERACTIVA) */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-slate-900 border border-amber-500/30 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
+                        <span>📜</span>
+                        <span>Crónicas de Babilonia • 590 a.C.</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 truncate mt-0.5">
+                        El secreto de las 5 leyes del oro para Eduardo
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setBabiloniaModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shrink-0 active:scale-95 transition shadow-sm cursor-pointer"
+                    >
+                      Aventura
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -1268,6 +1364,25 @@ export function Inicio() {
         onClose={() => setNotifModalOpen(false)}
         onOpenTransactionWithCategory={handleQuickRegisterFromLocation}
       />
+      {babiloniaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl border border-amber-500/40 bg-slate-950 p-2 sm:p-4 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setBabiloniaModalOpen(false)}
+              className="absolute top-4 right-4 z-20 size-8 rounded-full bg-slate-900 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer active:scale-95 transition"
+              aria-label="Cerrar crónica de Babilonia"
+            >
+              <X className="size-4" />
+            </button>
+            <BabiloniaFlashcardDialogue
+              onComplete={() => {
+                // Completado exitoso
+              }}
+            />
+          </div>
+        </div>
+      )}
       {actions.element}
     </main>
   );

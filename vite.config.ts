@@ -86,10 +86,19 @@ export default defineConfig({
       clientFiles: ["./src/routes/__root.tsx", "./src/routes/index.tsx", "./src/styles.css"],
     },
     watch: {
-      ignored: ["**/.output/**", "**/dist/**", "**/.git/**"],
+      ignored: [
+        "**/.output/**",
+        "**/dist/**",
+        "**/.git/**",
+        "**/src/server/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/e2e/**",
+      ],
     },
   },
   optimizeDeps: {
+    exclude: ["better-sqlite3"],
     include: [
       "react",
       "react-dom",
@@ -107,6 +116,7 @@ export default defineConfig({
     ],
   },
   build: {
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       onwarn(warning, warn) {
         if (
@@ -117,6 +127,19 @@ export default defineConfig({
           return;
         }
         warn(warning);
+      },
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/three")) {
+            return "vendor-three";
+          }
+          if (id.includes("node_modules/@google/genai")) {
+            return "vendor-genai";
+          }
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) {
+            return "vendor-charts";
+          }
+        },
       },
     },
   },

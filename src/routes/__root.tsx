@@ -143,7 +143,46 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{sessionStorage.removeItem('warmup_start_time');sessionStorage.removeItem('warmup_last_reload_time');sessionStorage.removeItem('warmup_failed_sent');}catch(e){}})();(function(){try{var rawFetch=typeof window!=='undefined'&&window.fetch?window.fetch.bind(window):undefined;var currentFetch=rawFetch;var desc=typeof window!=='undefined'?(Object.getOwnPropertyDescriptor(window,'fetch')||(window.constructor&&Object.getOwnPropertyDescriptor(window.constructor.prototype,'fetch'))):null;if(!desc||!desc.writable||desc.set===undefined){try{Object.defineProperty(window,'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e){try{Object.defineProperty(Object.getPrototypeOf(window),'fetch',{get:function(){return currentFetch},set:function(val){currentFetch=(typeof val==='function')?val:rawFetch},configurable:true,enumerable:true})}catch(e2){}}}}catch(err){}})();`,
+            __html: `(function(){
+  try {
+    sessionStorage.removeItem('warmup_start_time');
+    sessionStorage.removeItem('warmup_last_reload_time');
+    sessionStorage.removeItem('warmup_failed_sent');
+  } catch(e) {}
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: '__aistudio_warmup_succeeded' }, '*');
+    }
+  } catch(e) {}
+  var mem = {};
+  var dummy = {
+    getItem: function(k){ return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+    setItem: function(k,v){ mem[k] = String(v); },
+    removeItem: function(k){ delete mem[k]; },
+    clear: function(){ mem = {}; },
+    get length(){ return Object.keys(mem).length; },
+    key: function(i){ return Object.keys(mem)[i] || null; }
+  };
+  var needsPatch = false;
+  try {
+    window.localStorage.setItem('__test_probe__', '1');
+    window.localStorage.removeItem('__test_probe__');
+  } catch(e) {
+    needsPatch = true;
+  }
+  if (needsPatch) {
+    try {
+      if (typeof Window !== 'undefined' && Window.prototype) {
+        Object.defineProperty(Window.prototype, 'localStorage', { get: function(){ return dummy; }, configurable: true, enumerable: true });
+        Object.defineProperty(Window.prototype, 'sessionStorage', { get: function(){ return dummy; }, configurable: true, enumerable: true });
+      }
+    } catch(e1) {}
+    try {
+      Object.defineProperty(window, 'localStorage', { get: function(){ return dummy; }, configurable: true, enumerable: true });
+      Object.defineProperty(window, 'sessionStorage', { get: function(){ return dummy; }, configurable: true, enumerable: true });
+    } catch(e2) {}
+  }
+})();`,
           }}
         />
         <HeadContent />
@@ -164,26 +203,44 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    if (import.meta.env.PROD && typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((registration) => {
-          // Detectar nuevas versiones del Service Worker con Workbox
-          registration.addEventListener("updatefound", () => {
-            const installingWorker = registration.installing;
-            if (installingWorker) {
-              installingWorker.addEventListener("statechange", () => {
-                if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
-                  installingWorker.postMessage({ type: "SKIP_WAITING" });
-                }
-              });
-            }
-          });
-        })
-        .catch(() => {
-          // Sin service worker la app sigue funcionando online
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    if (!import.meta.env.PROD) {
+      // En entorno de desarrollo (Google AI Studio): desregistrar Service Worker previo y purgar cachés obsoletas
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          for (const key of keys) {
+            caches.delete(key);
+          }
         });
+      }
+      return;
     }
+
+    // En producción (PWA instalable): registrar con actualización inmediata y bypass de caché
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .then((registration) => {
+        registration.update();
+        registration.addEventListener("updatefound", () => {
+          const installingWorker = registration.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener("statechange", () => {
+              if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+                installingWorker.postMessage({ type: "SKIP_WAITING" });
+              }
+            });
+          }
+        });
+      })
+      .catch(() => {
+        // Sin service worker la app sigue funcionando online
+      });
   }, []);
 
   return (

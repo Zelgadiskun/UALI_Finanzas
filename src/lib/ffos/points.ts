@@ -10,6 +10,7 @@ import {
 } from "@/lib/supabase/queries";
 import { emitGameEvent } from "@/lib/supabase/gameEvents";
 import { levelInfo, type LevelInfo } from "@/lib/ffos/gamification";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 const EXTRA_TOKENS_STORAGE_KEY = "uali_extra_tokens_v2";
 const LOCAL_XP_STORAGE_KEY = "uali_local_xp_v2";
@@ -30,7 +31,7 @@ export interface PointEvent {
 export function getLocalXp(userId?: string | null): number {
   if (typeof window === "undefined" || !userId) return 0;
   try {
-    const raw = localStorage.getItem(`${LOCAL_XP_STORAGE_KEY}_${userId}`);
+    const raw = safeLocalStorage.getItem(`${LOCAL_XP_STORAGE_KEY}_${userId}`);
     return raw ? parseInt(raw, 10) || 0 : 0;
   } catch {
     return 0;
@@ -45,7 +46,7 @@ export function addLocalXp(userId: string, amount: number): number {
   try {
     const current = getLocalXp(userId);
     const updated = current + amount;
-    localStorage.setItem(`${LOCAL_XP_STORAGE_KEY}_${userId}`, updated.toString());
+    safeLocalStorage.setItem(`${LOCAL_XP_STORAGE_KEY}_${userId}`, updated.toString());
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent("uali-xp-updated", { detail: { userId, xp: updated } }));
     }, 0);
@@ -64,7 +65,7 @@ const LAST_STREAK_DATE_KEY = "uali_last_streak_date_v2";
 export function getLocalStreak(userId?: string | null): number {
   if (typeof window === "undefined" || !userId) return 1;
   try {
-    const raw = localStorage.getItem(`${LOCAL_STREAK_STORAGE_KEY}_${userId}`);
+    const raw = safeLocalStorage.getItem(`${LOCAL_STREAK_STORAGE_KEY}_${userId}`);
     return raw ? Math.max(1, parseInt(raw, 10) || 1) : 1;
   } catch {
     return 1;
@@ -77,7 +78,7 @@ export function getLocalStreak(userId?: string | null): number {
 export function getBestStreak(userId?: string | null): number {
   if (typeof window === "undefined" || !userId) return 1;
   try {
-    const raw = localStorage.getItem(`${BEST_STREAK_STORAGE_KEY}_${userId}`);
+    const raw = safeLocalStorage.getItem(`${BEST_STREAK_STORAGE_KEY}_${userId}`);
     const localBest = raw ? parseInt(raw, 10) || 1 : 1;
     const current = getLocalStreak(userId);
     return Math.max(localBest, current);
@@ -92,7 +93,7 @@ export function getBestStreak(userId?: string | null): number {
 export function getLastStreakDate(userId?: string | null): string | null {
   if (typeof window === "undefined" || !userId) return null;
   try {
-    return localStorage.getItem(`${LAST_STREAK_DATE_KEY}_${userId}`);
+    return safeLocalStorage.getItem(`${LAST_STREAK_DATE_KEY}_${userId}`);
   } catch {
     return null;
   }
@@ -105,14 +106,14 @@ export function setLocalStreak(userId: string, streak: number, dateStr?: string)
   if (typeof window === "undefined" || !userId) return 1;
   try {
     const val = Math.max(1, streak);
-    localStorage.setItem(`${LOCAL_STREAK_STORAGE_KEY}_${userId}`, val.toString());
+    safeLocalStorage.setItem(`${LOCAL_STREAK_STORAGE_KEY}_${userId}`, val.toString());
 
     const prevBest = getBestStreak(userId);
     const newBest = Math.max(prevBest, val);
-    localStorage.setItem(`${BEST_STREAK_STORAGE_KEY}_${userId}`, newBest.toString());
+    safeLocalStorage.setItem(`${BEST_STREAK_STORAGE_KEY}_${userId}`, newBest.toString());
 
     const effectiveDate = dateStr || new Date().toISOString().slice(0, 10);
-    localStorage.setItem(`${LAST_STREAK_DATE_KEY}_${userId}`, effectiveDate);
+    safeLocalStorage.setItem(`${LAST_STREAK_DATE_KEY}_${userId}`, effectiveDate);
 
     setTimeout(() => {
       window.dispatchEvent(
@@ -139,7 +140,7 @@ export function setLocalStreak(userId: string, streak: number, dateStr?: string)
 export function getExtraTokens(userId?: string | null): number {
   if (typeof window === "undefined" || !userId) return 0;
   try {
-    const raw = localStorage.getItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`);
+    const raw = safeLocalStorage.getItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`);
     return raw ? parseInt(raw, 10) || 0 : 0;
   } catch {
     return 0;
@@ -154,7 +155,7 @@ export function addExtraTokens(userId: string, amount: number): number {
   try {
     const current = getExtraTokens(userId);
     const updated = current + amount;
-    localStorage.setItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`, updated.toString());
+    safeLocalStorage.setItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`, updated.toString());
     setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent("uali-tokens-updated", { detail: { userId, tokens: updated } }),
@@ -178,7 +179,7 @@ export function spendExtraTokens(
   try {
     const current = getExtraTokens(userId);
     const updated = current - amount;
-    localStorage.setItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`, updated.toString());
+    safeLocalStorage.setItem(`${EXTRA_TOKENS_STORAGE_KEY}_${userId}`, updated.toString());
     recordPointEvent(userId, {
       tokens: -amount,
       xp: 0,
@@ -201,7 +202,7 @@ export function spendExtraTokens(
 export function getPointsHistory(userId?: string | null): PointEvent[] {
   if (typeof window === "undefined" || !userId) return [];
   try {
-    const raw = localStorage.getItem(`${POINTS_HISTORY_STORAGE_KEY}_${userId}`);
+    const raw = safeLocalStorage.getItem(`${POINTS_HISTORY_STORAGE_KEY}_${userId}`);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -224,7 +225,7 @@ export function recordPointEvent(
       timestamp: new Date().toISOString(),
     };
     const updated = [newEntry, ...list].slice(0, 30);
-    localStorage.setItem(`${POINTS_HISTORY_STORAGE_KEY}_${userId}`, JSON.stringify(updated));
+    safeLocalStorage.setItem(`${POINTS_HISTORY_STORAGE_KEY}_${userId}`, JSON.stringify(updated));
     setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent("uali-points-history-updated", { detail: { userId, history: updated } }),

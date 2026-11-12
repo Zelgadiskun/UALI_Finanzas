@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { safeLocalStorage } from "../safeStorage";
 
 const url =
   import.meta.env.VITE_SUPABASE_URL ||
@@ -16,4 +17,11 @@ if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KE
   );
 }
 
-export const supabase = createClient<Database>(url, anonKey);
+export const supabase = createClient<Database>(url, anonKey, {
+  auth: {
+    storage: safeLocalStorage,
+    persistSession: true,
+    autoRefreshToken: false,
+    detectSessionInUrl: true,
+  },
+});

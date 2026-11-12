@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 export type AvatarPreset =
   "default" | "nido" | "toto" | "chispa" | "star" | "fire" | "money" | "custom";
@@ -16,19 +17,25 @@ export function getStoredAvatar(): UserAvatarState {
   if (typeof window === "undefined") {
     return { preset: "default", customPhoto: null };
   }
-  const preset = (localStorage.getItem(AVATAR_PRESET_KEY) as AvatarPreset) || "default";
-  const customPhoto = localStorage.getItem(CUSTOM_PHOTO_KEY);
-  return { preset, customPhoto };
+  try {
+    const preset = (safeLocalStorage.getItem(AVATAR_PRESET_KEY) as AvatarPreset) || "default";
+    const customPhoto = safeLocalStorage.getItem(CUSTOM_PHOTO_KEY);
+    return { preset, customPhoto };
+  } catch {
+    return { preset: "default", customPhoto: null };
+  }
 }
 
 export function saveStoredAvatar(preset: AvatarPreset, customPhoto: string | null = null) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(AVATAR_PRESET_KEY, preset);
-  if (customPhoto) {
-    localStorage.setItem(CUSTOM_PHOTO_KEY, customPhoto);
-  } else if (preset !== "custom") {
-    localStorage.removeItem(CUSTOM_PHOTO_KEY);
-  }
+  try {
+    safeLocalStorage.setItem(AVATAR_PRESET_KEY, preset);
+    if (customPhoto) {
+      safeLocalStorage.setItem(CUSTOM_PHOTO_KEY, customPhoto);
+    } else if (preset !== "custom") {
+      safeLocalStorage.removeItem(CUSTOM_PHOTO_KEY);
+    }
+  } catch {}
   window.dispatchEvent(new CustomEvent(AVATAR_EVENT_NAME, { detail: { preset, customPhoto } }));
 }
 

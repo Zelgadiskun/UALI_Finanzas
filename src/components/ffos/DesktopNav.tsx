@@ -28,6 +28,7 @@ import { useDeviceLayout } from "@/lib/ffos/deviceDetection";
 import { setNavDrawerListener } from "@/lib/ffos/navDrawerStore";
 import { UserAvatarDisplay } from "./UserAvatarDisplay";
 import { DailyStreakBadge } from "./DailyStreakBadge";
+import { UaliLogo } from "./UaliLogo";
 import { cn } from "@/lib/utils";
 
 interface DesktopNavProps {
@@ -170,17 +171,7 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
         /* Cabecera Móvil Compacta y Esencial con Botón Hamburguesa Accesible */
         <header className="sticky top-0 z-40 w-full bg-card/95 dark:bg-[#0B1323]/98 backdrop-blur-md border-b border-border/80 px-3.5 h-12 flex items-center justify-between transition-colors shadow-2xs">
           <Link to="/" className="flex items-center gap-2 group outline-hidden">
-            <div className="size-8 rounded-xl bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] flex items-center justify-center text-slate-950 font-black shadow-sm group-hover:scale-105 transition-transform">
-              <Wallet className="size-4 text-slate-950 stroke-[2.5]" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-black text-sm tracking-tight text-foreground">
-                UALÍ
-              </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6]">
-                Finanzas
-              </span>
-            </div>
+            <UaliLogo size="sm" showText={true} />
           </Link>
 
           <div className="flex items-center gap-2">
@@ -205,25 +196,12 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
             {/* Marca y Logotipo UALÍ */}
             <Link to="/" className="flex items-center gap-2.5 shrink-0 group outline-hidden">
-              <div className="size-10 rounded-2xl bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] flex items-center justify-center text-slate-950 font-black shadow-md shadow-[#2EC4B6]/25 group-hover:scale-105 transition-transform">
-                <Wallet className="size-5 text-slate-950 stroke-[2.5]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-display font-black text-lg tracking-tight text-foreground leading-none flex items-center gap-1.5">
-                  <span>UALÍ</span>
-                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6] tracking-normal">
-                    Finanzas
-                  </span>
-                  {isTablet && (
-                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                      Tablet
-                    </span>
-                  )}
+              <UaliLogo size="md" showText={true} showSubtitle={true} />
+              {isTablet && (
+                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30 ml-1">
+                  Tablet
                 </span>
-                <span className="text-[11px] font-bold text-muted-foreground leading-tight mt-0.5">
-                  Gestión inteligente y en equipo
-                </span>
-              </div>
+              )}
             </Link>
 
             {/* Navegación para Versiones de Pantalla Ancha (Tablet y Web) con Menú de Hamburguesa */}
@@ -328,20 +306,7 @@ export function DesktopNav({ onOpenNewTx, onOpenProfile }: DesktopNavProps) {
           >
             {/* Cabecera del Drawer */}
             <div className="p-5 border-b border-border/60 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-2xl bg-gradient-to-tr from-[#1E968B] via-[#2EC4B6] to-[#4EE2D5] flex items-center justify-center text-slate-950 font-black shadow-md shadow-[#2EC4B6]/25">
-                  <Wallet className="size-5 text-slate-950 stroke-[2.5]" />
-                </div>
-                <div>
-                  <h2 className="text-base font-black text-foreground tracking-tight flex items-center gap-1.5">
-                    <span>UALÍ Finanzas</span>
-                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-[#2EC4B6]/15 text-[#2EC4B6]">
-                      Menú
-                    </span>
-                  </h2>
-                  <p className="text-xs text-muted-foreground">Panel de navegación rápida</p>
-                </div>
-              </div>
+              <UaliLogo size="md" showText={true} showSubtitle={true} />
 
               <button
                 type="button"

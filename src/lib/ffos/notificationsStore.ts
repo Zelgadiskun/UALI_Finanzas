@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { LocationRadarResult, GroundingLink } from "@/server/locationRadar";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 export interface SmartNotification {
   id: string;
@@ -98,7 +99,7 @@ const INITIAL_NOTIFICATIONS: SmartNotification[] = [
 export function getStoredSettings(): NotificationSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = safeLocalStorage.getItem(SETTINGS_KEY);
     return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : DEFAULT_SETTINGS;
   } catch {
     return DEFAULT_SETTINGS;
@@ -107,14 +108,16 @@ export function getStoredSettings(): NotificationSettings {
 
 export function saveStoredSettings(settings: NotificationSettings) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  try {
+    safeLocalStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {}
   window.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
 
 export function getStoredNotifications(): SmartNotification[] {
   if (typeof window === "undefined") return INITIAL_NOTIFICATIONS;
   try {
-    const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+    const raw = safeLocalStorage.getItem(NOTIFICATIONS_KEY);
     return raw ? JSON.parse(raw) : INITIAL_NOTIFICATIONS;
   } catch {
     return INITIAL_NOTIFICATIONS;
@@ -123,7 +126,9 @@ export function getStoredNotifications(): SmartNotification[] {
 
 export function saveStoredNotifications(list: SmartNotification[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(list));
+  try {
+    safeLocalStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(list));
+  } catch {}
   window.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
 

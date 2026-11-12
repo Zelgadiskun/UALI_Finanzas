@@ -1,3 +1,5 @@
+import { safeLocalStorage } from "@/lib/safeStorage";
+
 export interface PersonalBudget {
   id: string;
   userId: string;
@@ -12,7 +14,7 @@ const STORAGE_KEY = "uali_personal_budgets_v1";
 export function getPersonalBudgets(userId: string): PersonalBudget[] {
   if (typeof window === "undefined" || !userId) return [];
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY}_${userId}`);
+    const raw = safeLocalStorage.getItem(`${STORAGE_KEY}_${userId}`);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -34,7 +36,9 @@ export function savePersonalBudget(
   };
   list.push(newBudget);
   if (typeof window !== "undefined") {
-    localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(list));
+    try {
+      safeLocalStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(list));
+    } catch {}
   }
   return newBudget;
 }
@@ -45,7 +49,7 @@ export function updatePersonalBudget(userId: string, id: string, planned: number
   if (found) {
     found.planned = planned;
     if (typeof window !== "undefined") {
-      localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(list));
+      safeLocalStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(list));
     }
   }
 }
@@ -54,7 +58,7 @@ export function deletePersonalBudget(userId: string, id: string): void {
   let list = getPersonalBudgets(userId);
   list = list.filter((b) => b.id !== id);
   if (typeof window !== "undefined") {
-    localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(list));
+    safeLocalStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(list));
   }
 }
 
@@ -89,7 +93,7 @@ export function setPersonalBudgetsBulk(
   }
 
   if (typeof window !== "undefined") {
-    localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updatedList));
+    safeLocalStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updatedList));
   }
   return updatedList;
 }

@@ -16,6 +16,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { addSmartNotification, type SmartNotification } from "@/lib/ffos/notificationsStore";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 export const MAX_PUSH_STRING_LENGTH = 90;
 export const STRESS_THRESHOLD_SOS = 75;
@@ -233,7 +234,7 @@ const STRESS_EVENT_NAME = "uali_financial_stress_changed";
 export function getStoredStressLevel(): number {
   if (typeof window === "undefined") return 40;
   try {
-    const raw = localStorage.getItem(STRESS_STORAGE_KEY);
+    const raw = safeLocalStorage.getItem(STRESS_STORAGE_KEY);
     return raw !== null ? Number(raw) : 40;
   } catch {
     return 40;
@@ -243,7 +244,9 @@ export function getStoredStressLevel(): number {
 export function saveStoredStressLevel(level: number): void {
   if (typeof window === "undefined") return;
   const clamped = Math.max(0, Math.min(100, Math.round(level)));
-  localStorage.setItem(STRESS_STORAGE_KEY, String(clamped));
+  try {
+    safeLocalStorage.setItem(STRESS_STORAGE_KEY, String(clamped));
+  } catch {}
   window.dispatchEvent(new CustomEvent(STRESS_EVENT_NAME, { detail: clamped }));
 }
 
